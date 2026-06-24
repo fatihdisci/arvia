@@ -24,6 +24,7 @@ struct RecordsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .tint(AppColors.accentPrimary)
                 .padding(.horizontal, AppSpacing.screenMarginH)
                 .padding(.vertical, AppSpacing.xs)
 

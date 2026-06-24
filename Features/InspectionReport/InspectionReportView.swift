@@ -51,7 +51,7 @@ struct InspectionReportFormView: View {
                 providerSection
                 detailSection
                 documentSection
-                statusSection
+                saleFileToggleSection
                 vehicleSection
                 legalSection
                 if !validationErrors.isEmpty { errorSection }
@@ -147,27 +147,11 @@ struct InspectionReportFormView: View {
         .listRowBackground(Color.appSurface)
     }
 
-    // MARK: - Verification Status
-    private var statusSection: some View {
+    // MARK: - Sale File Toggle
+    // TODO: Partner doğrulama entegrasyonu geldiğinde VerificationStatus UI'a eklenecek.
+    // MVP'de tüm raporlar .manual statüsünde oluşturulur.
+    private var saleFileToggleSection: some View {
         Section {
-            Picker(selection: $verificationStatus) {
-                ForEach(VerificationStatus.allCases, id: \.self) { s in
-                    Text(s.displayName).tag(s)
-                }
-            } label: {
-                Label("Doğrulama", systemImage: verificationStatus == .verified ? "checkmark.seal.fill" : "questionmark.circle")
-            }
-
-            if verificationStatus == .verified {
-                HStack {
-                    Image(systemName: "info.circle.fill")
-                        .foregroundColor(AppColors.accentPrimary)
-                    Text("Bu rapor partner sağlayıcı tarafından doğrulanmıştır. Rapor içeriğine ilişkin sorumluluk raporu düzenleyen sağlayıcıya aittir.")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-            }
-
             Toggle(isOn: $includeInSaleFile) {
                 Label("Satış dosyasına dahil et", systemImage: "doc.richtext")
             }

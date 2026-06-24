@@ -210,8 +210,8 @@ final class PDFExportService {
                 y += estimateTextHeight(report.summary, font: .systemFont(ofSize: 10), maxWidth: contentWidth - 12) + 10
             }
 
-            drawText("Durum: \(report.verificationStatus.displayName)", at: CGPoint(x: margin + 12, y: y), font: .systemFont(ofSize: 10, weight: .regular), color: .gray)
-            y += 24
+            // TODO: Partner doğrulama entegrasyonu geldiğinde durum satırı eklenecek
+            y += 8
         }
 
         y += 8

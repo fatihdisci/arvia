@@ -230,11 +230,7 @@ struct VehicleDetailView: View {
                             .font(AppTypography.bodyMedium)
                             .foregroundColor(AppColors.textPrimary)
                         Spacer()
-                        if latest.verificationStatus == .verified {
-                            Label("Doğrulandı", systemImage: "checkmark.seal.fill")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(AppColors.success)
-                        }
+                        // TODO: Partner doğrulama entegrasyonu geldiğinde badge eklenecek
                     }
 
                     VStack(alignment: .leading, spacing: 2) {

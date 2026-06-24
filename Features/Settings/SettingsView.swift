@@ -14,6 +14,9 @@ struct SettingsView: View {
     @State private var showDeleteAllConfirmation = false
     @State private var isExporting = false
     @State private var exportMessage: String?
+    @State private var showDemoSeedConfirmation = false
+    @State private var showDemoDeleteConfirmation = false
+    @State private var demoSeedMessage: String?
 
     // Privacy & Terms URL'leri — gerçek URL'ler ile değiştirilmeli
     private let privacyURL = URL(string: "https://ruhsatim.app/privacy")!
@@ -37,6 +40,11 @@ struct SettingsView: View {
 
                 // Uygulama Hakkında
                 aboutSection
+
+                // Geliştirici (sadece DEBUG)
+                #if DEBUG
+                developerSection
+                #endif
             }
             .scrollContentBackground(.hidden)
             .background(Color.appBackground)
@@ -53,6 +61,18 @@ struct SettingsView: View {
                 Button("İptal", role: .cancel) {}
             } message: {
                 Text("Bu işlem geri alınamaz. Tüm araçlar, hatırlatıcılar, masraflar, bakım kayıtları, belgeler ve raporlar kalıcı olarak silinir.")
+            }
+            .confirmationDialog("Demo Verileri Yükle", isPresented: $showDemoSeedConfirmation) {
+                Button("Demo Verileri Yükle") { seedDemoData() }
+                Button("İptal", role: .cancel) {}
+            } message: {
+                Text("Demo verileri eklenecek. Mevcut verilerin korunacak; aynı demo verileri tekrar eklenmesin.")
+            }
+            .confirmationDialog("Tüm Demo Verileri Sil", isPresented: $showDemoDeleteConfirmation) {
+                Button("Tüm Verileri Sil", role: .destructive) { deleteAllDemoData() }
+                Button("İptal", role: .cancel) {}
+            } message: {
+                Text("Bu işlem geri alınamaz. Tüm araçlar, hatırlatıcılar, masraflar, bakım kayıtları, belgeler ve raporlar kalıcı olarak silinir. Devam etmek istediğine emin misin?")
             }
         }
     }
@@ -235,6 +255,58 @@ struct SettingsView: View {
         }
         .listRowBackground(Color.appSurface)
     }
+
+    // MARK: - Developer Section (DEBUG only)
+    #if DEBUG
+    private var developerSection: some View {
+        Section {
+            Button {
+                showDemoSeedConfirmation = true
+            } label: {
+                Label("Demo Verileri Yükle", systemImage: "laptopcomputer")
+                    .foregroundColor(AppColors.accentPrimary)
+            }
+
+            Button(role: .destructive) {
+                showDemoDeleteConfirmation = true
+            } label: {
+                Label("Tüm Verileri Temizle", systemImage: "trash")
+            }
+
+            if let message = demoSeedMessage {
+                Text(message)
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+        } header: {
+            Text("Geliştirici")
+        } footer: {
+            Text("Bu bölüm sadece DEBUG build'de görünür. Release/TestFlight build'de yer almaz.")
+        }
+        .listRowBackground(Color.appSurface)
+    }
+
+    private func seedDemoData() {
+        let count = DemoDataSeeder.seed(context: modelContext)
+        if count > 0 {
+            demoSeedMessage = "✅ \(count) demo araç eklendi. Veriler yüklendi."
+        } else {
+            demoSeedMessage = "⚠️ Demo verileri zaten mevcut. Tekrar eklenmedi."
+        }
+        // Otomatik silinsin
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            demoSeedMessage = nil
+        }
+    }
+
+    private func deleteAllDemoData() {
+        DemoDataSeeder.deleteAll(context: modelContext)
+        demoSeedMessage = "🗑️ Tüm veriler silindi."
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            demoSeedMessage = nil
+        }
+    }
+    #endif
 
     // MARK: - Actions
     private func openSystemNotificationSettings() {
