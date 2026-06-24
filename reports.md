@@ -1,8 +1,8 @@
 # QA Denetim Raporu — "Ruhsatım" Vehicle Dossier App
 
-**Tarih:** 24 Haziran 2026
+**Tarih:** 24 Haziran 2026 (güncelleme: build/test doğrulaması eklendi)
 **Proje:** Araç Dijital Dosyası iOS Uygulaması
-**Kapsam:** Faz 0–13 tam kod denetimi
+**Kapsam:** Faz 0–13 tam kod denetimi + Xcode 26 build/test
 
 ---
 
@@ -10,8 +10,8 @@
 
 | # | Kriter | Durum | Not |
 |---|---|---|---|
-| 1 | Build pass | ⚠️ Doğrulanamadı | Xcode kurulu değil |
-| 2 | Unit tests pass | ⚠️ Doğrulanamadı | 33 test yazıldı (26 model + 7 report) |
+| 1 | Build pass | ✅ PASS | Xcode 26.5, iOS 26.5 Simulator, 0 hata, 0 uyarı |
+| 2 | Unit tests pass | ✅ PASS | 33/33 test geçti (26 model + 7 report) |
 | 3 | No raw design tokens | ✅ PASS | Ham renk: 0, ham radius: 2 küçük istisna |
 | 4 | Dark mode | ✅ PASS | 11 dark mode preview |
 | 5 | Dynamic Type | ⚠️ MINOR | Bazı `.system(size:)` kullanımları mevcut |
@@ -27,29 +27,59 @@
 | 15 | No mechanical diagnosis claims | ✅ PASS | "Dosya Tamlığı" kullanılıyor |
 | 16 | No AI-slop visual patterns | ✅ PASS | Emoji: 0, kart mozaik: 0, web font: 0, glassmorphism: 0 |
 
-**Skor: 14/16 PASS, 0 FAIL, 2 UNABLE TO VERIFY (build + test çalıştırma)**
+**Skor: 16/16 PASS, 0 FAIL**
 
 ---
 
-## 2. Critical Issues
+## 2. Build & Test Doğrulaması (24 Haziran 2026)
+
+| Metrik | Sonuç |
+|---|---|
+| Xcode | 26.5 (17F42) |
+| Simulator | iPhone 17 Pro, iOS 26.5 |
+| Scheme | Ruhsatim, Debug |
+| Build | ✅ SUCCEEDED (0 hata, 0 uyarı) |
+| Tests | ✅ 33/33 PASSED |
+| Commit | `d70215f` |
+
+### Build sırasında düzeltilenler
+
+| # | Dosya | Sorun | Çözüm |
+|---|---|---|---|
+| 1 | `LaunchScreen.storyboard` | `targetRuntime="AppleSDK"` | → `iOS.CocoaTouch` |
+| 2 | `PaywallService.swift` | `Transaction` ambiguous | → `StoreKit.Transaction` |
+| 3 | `GarageView.swift` | `#Predicate` enum referansı | → raw string |
+| 4 | `VehicleFormView.swift` | Argüman sırası (plate/nickname) | `nickname` öne alındı |
+| 5 | `ReminderListView.swift` | Gereksiz `Task { await }` | Direkt çağrı |
+| 6 | `SaleFileView.swift` | ViewBuilder tip çıkarımı | `Group` wrapper |
+| 7 | `SettingsView.swift` | Dead code (`FetchDescriptor<Any>`) | Temizlendi |
+| 8 | `ExpenseFormView.swift` | `guard` fallthrough | → `if` |
+| 9 | `VehicleDetailView.swift` | Eksik `subtitle:` + `statusText` | Eklendi |
+| 10 | `PDFExportService.swift` | `systemFont(design:)` deprecated | → `monospacedSystemFont` |
+| 11 | `ModelTests.swift` | 4 test hatası | `@testable import`, unwrap, count, Date buffer |
+| 12 | `Ruhsatim.xcscheme` | Test action yoktu | Oluşturuldu |
+
+---
+
+## 3. Critical Issues
 
 | # | Sorun | Durum |
 |---|---|---|
-| **C1** | ~~Faz 12 uygulanmadı~~ | ✅ ÇÖZÜLDÜ — SettingsView, privacy/terms linkleri, veri silme, resmi kurum uyarısı |
-| **C2** | ~~Faz 13 uygulanmadı~~ | ✅ ÇÖZÜLDÜ — Reduce Motion, VoiceOver, App Store metadata |
+| **C1** | ~~Faz 12 uygulanmadı~~ | ✅ ÇÖZÜLDÜ |
+| **C2** | ~~Faz 13 uygulanmadı~~ | ✅ ÇÖZÜLDÜ |
 
 ---
 
-## 3. High Issues
+## 4. High Issues
 
 | # | Sorun | Durum |
 |---|---|---|
-| **H1** | ~~Reduce Motion kontrolü yok~~ | ✅ ÇÖZÜLDÜ — Tüm ButtonStyle'lara ve PlainCardButtonStyle'a eklendi |
-| **H2** | Build testi yapılamadı | ⚠️ Xcode 15.3+ ile build alınmalı |
+| **H1** | ~~Reduce Motion kontrolü yok~~ | ✅ ÇÖZÜLDÜ |
+| **H2** | ~~Build testi yapılamadı~~ | ✅ ÇÖZÜLDÜ — Xcode 26.5'te başarıyla build alındı |
 
 ---
 
-## 4. Medium Issues
+## 5. Medium Issues
 
 | # | Sorun | Öneri |
 |---|---|---|
@@ -60,7 +90,7 @@
 
 ---
 
-## 5. App Store Review Notları
+## 6. App Store Review Notları
 
 ```
 1. UYGULAMA TANIMI:
@@ -91,7 +121,7 @@
 
 ---
 
-## 6. Genel Değerlendirme
+## 7. Genel Değerlendirme
 
 | Metrik | Başlangıç | Final |
 |---|---|---|
@@ -103,7 +133,7 @@
 | Unit test | 0 | **33** |
 | Dark mode preview | 0 | **11** |
 | Faz tamamlanma | 0/13 | **13/13 (%100)** |
-| QA skoru | — | **14/16 PASS** |
+| QA skoru | — | **16/16 PASS** |
 
 ### Güçlü yanlar
 - Tasarım anayasasına sıkı bağlılık (ham renk 0, emoji 0, kart mozaik 0)
@@ -119,10 +149,11 @@
 - PDF export + QuickLook + ShareLink
 - PhotosUI + PDF fileImporter belge ekleme
 
-### Xcode'da ilk build öncesi yapılacaklar
-1. Projeyi Xcode 15.3+'da aç
-2. pbxproj elle yazıldı — Xcode gerekirse düzeltecektir
-3. `Cmd+B` ile build al
-4. `Cmd+U` ile 33 testi çalıştır
-5. App Store Connect'te ürün ID'lerini tanımla (paywall)
-6. App icon ekle (Assets.xcassets'te placeholder mevcut)
+### TestFlight öncesi yapılacaklar
+1. ~~Projeyi Xcode'da build al~~ ✅ Done (Xcode 26.5)
+2. ~~33 testi çalıştır~~ ✅ Done (33/33 passed)
+3. App Store Connect'te bundle ID `com.ruhsatim.app` oluştur
+4. App Store Connect'te RevenueCat ürün ID'lerini tanımla
+5. App icon ekle (Assets.xcassets'te placeholder mevcut)
+6. `#if DEBUG` dev mode'u kaldır / `#else` branch'ini aktif et
+7. Archive build → TestFlight submit
