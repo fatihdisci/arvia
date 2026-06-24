@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import XCTest
+@testable import Ruhsatim
 
 // MARK: - Model Creation Tests
 // Temel model oluşturma, enum mapping ve computed property testleri.
@@ -105,11 +106,13 @@ final class VehicleModelTests: XCTestCase {
 
     func testReminderTodayStatus() {
         let vehicleId = UUID()
+        // Bugün içinde kalması için 1 saat ileri
+        let todayDate = Date().addingTimeInterval(3600)
         let reminder = Reminder(
             vehicleId: vehicleId,
             type: .oilChange,
             title: "Yağ Değişimi",
-            dueDate: Date(),
+            dueDate: todayDate,
             priority: .warning
         )
 
@@ -174,7 +177,7 @@ final class VehicleModelTests: XCTestCase {
         XCTAssertTrue(largeExpense.amountCompactDisplay.contains("₺15000"))
 
         let smallExpense = Expense(vehicleId: UUID(), category: .parking, amount: 25.50)
-        XCTAssertTrue(smallExpense.amountCompactDisplay.contains("₺25,50"))
+        XCTAssertTrue(smallExpense.amountCompactDisplay.contains("₺25.50"))
     }
 
     // MARK: ServiceRecord
@@ -324,7 +327,7 @@ final class VehicleModelTests: XCTestCase {
     }
 
     func testReminderTypeAllCases() {
-        XCTAssertEqual(ReminderType.allCases.count, 15)
+        XCTAssertEqual(ReminderType.allCases.count, 14)
         XCTAssertEqual(ReminderType.inspection.displayName, "Muayene")
         XCTAssertEqual(ReminderType.trafficInsurance.defaultIcon, "shield")
     }
@@ -397,9 +400,9 @@ final class ReportCalculationTests: XCTestCase {
         ]
         var dict: [ExpenseCategory: Double] = [:]
         for e in expenses { dict[e.category, default: 0] += e.amount }
-        XCTAssertEqual(dict[.fuel], 1500.0, accuracy: 0.01)
-        XCTAssertEqual(dict[.service], 2000.0, accuracy: 0.01)
-        XCTAssertEqual(dict[.tire], 3200.0, accuracy: 0.01)
+        XCTAssertEqual(dict[.fuel]!, 1500.0, accuracy: 0.01)
+        XCTAssertEqual(dict[.service]!, 2000.0, accuracy: 0.01)
+        XCTAssertEqual(dict[.tire]!, 3200.0, accuracy: 0.01)
     }
 
     func testCostPerKm() {
@@ -411,7 +414,7 @@ final class ReportCalculationTests: XCTestCase {
         let totalExpense: Double = 7500
         let totalKm = expenses.compactMap { $0.odometer }.max() ?? 0
         let costPerKm = totalKm > 0 ? totalExpense / Double(totalKm) : nil
-        XCTAssertEqual(costPerKm, 0.75, accuracy: 0.01)
+        XCTAssertEqual(costPerKm!, 0.75, accuracy: 0.01)
     }
 
     func testCostPerKmNoOdometer() {

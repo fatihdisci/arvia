@@ -9,7 +9,7 @@ struct GarageView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var paywallService: PaywallService
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
-    @Query(filter: #Predicate<Reminder> { $0.statusRaw != ReminderStatus.completed.rawValue },
+    @Query(filter: #Predicate<Reminder> { $0.statusRaw != "completed" },
            sort: \Reminder.dueDate)
     private var activeReminders: [Reminder]
 

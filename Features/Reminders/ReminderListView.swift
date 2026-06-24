@@ -149,15 +149,11 @@ struct ReminderListView: View {
         try? modelContext.save()
 
         // Bildirimleri iptal et
-        Task {
-            await NotificationService.shared.cancelReminder(reminder)
-        }
+        NotificationService.shared.cancelReminder(reminder)
     }
 
     private func deleteReminder(_ reminder: Reminder) {
-        Task {
-            await NotificationService.shared.cancelReminder(reminder)
-        }
+        NotificationService.shared.cancelReminder(reminder)
         modelContext.delete(reminder)
         try? modelContext.save()
     }

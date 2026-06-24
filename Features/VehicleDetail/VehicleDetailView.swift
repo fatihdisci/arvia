@@ -421,7 +421,8 @@ struct VehicleDetailView: View {
                             icon: "car",
                             title: "Henüz kayıt yok",
                             date: nil,
-                            isMilestone: false
+                            isMilestone: false,
+                            subtitle: nil
                         ),
                         isFirst: true,
                         isLast: true
@@ -710,6 +711,12 @@ struct UpcomingTaskCard: View {
         if reminder.isOverdue { return "Gecikmiş İş" }
         if reminder.isToday { return "Bugün" }
         return "Yaklaşan İş"
+    }
+
+    private var statusText: String {
+        if reminder.isOverdue { return "\(reminder.daysOverdue) gün gecikti" }
+        if reminder.isToday { return "Bugün" }
+        return "\(reminder.daysRemaining) gün kaldı"
     }
 }
 

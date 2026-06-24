@@ -263,8 +263,7 @@ struct SettingsView: View {
                 export["exportDate"] = Date().ISO8601Format()
                 export["appVersion"] = AppEnvironment.appVersion
 
-                if let jsonData = try? JSONSerialization.data(withJSONObject: export, options: .prettyPrinted),
-                   let jsonString = String(data: jsonData, encoding: .utf8) {
+                if let jsonData = try? JSONSerialization.data(withJSONObject: export, options: .prettyPrinted) {
 
                     let tempURL = FileManager.default.temporaryDirectory
                         .appendingPathComponent("ruhsatim-export-\(Date().ISO8601Format().prefix(10)).json")
@@ -295,21 +294,7 @@ struct SettingsView: View {
     }
 
     private func deleteAllData() {
-        // Tüm SwiftData modellerini temizle
-        let models: [any PersistentModel.Type] = [
-            SaleFile.self, InspectionReport.self, VehicleDocument.self,
-            PartChange.self, ServiceRecord.self, Expense.self,
-            Reminder.self, Vehicle.self
-        ]
-
-        for model in models {
-            if let items = try? modelContext.fetch(FetchDescriptor<Any>(/* empty */)) as? [Any] {
-                // SwiftData batch delete
-            }
-            // Alternatif: her bir model için fetch + delete
-        }
-
-        // Pratik yaklaşım: tüm entity'leri tek tek sil
+        // Tüm SwiftData modellerini tek tek sil
         if let vehicles = try? modelContext.fetch(FetchDescriptor<Vehicle>()) {
             for v in vehicles { modelContext.delete(v) }
         }

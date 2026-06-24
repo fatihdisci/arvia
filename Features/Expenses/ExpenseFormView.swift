@@ -215,7 +215,7 @@ struct ExpenseFormView: View {
     private func saveExpense() {
         var errors: [String] = []
 
-        guard let amount, amount > 0 else {
+        if amount == nil || !(amount! > 0) {
             errors.append("Geçerli bir tutar girmelisin.")
         }
 

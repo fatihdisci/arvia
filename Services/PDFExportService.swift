@@ -91,7 +91,7 @@ final class PDFExportService {
         y += 35
 
         // Plate
-        drawCenteredText(v.plate, at: y, font: .systemFont(ofSize: 32, weight: .bold, design: .monospaced), color: UIColor(red: 0.06, green: 0.47, blue: 0.43, alpha: 1))
+        drawCenteredText(v.plate, at: y, font: UIFont.monospacedSystemFont(ofSize: 32, weight: .bold), color: UIColor(red: 0.06, green: 0.47, blue: 0.43, alpha: 1))
         y += 45
 
         // Date
@@ -174,7 +174,7 @@ final class PDFExportService {
             .filter { Calendar.current.component(.year, from: $0.date) == Calendar.current.component(.year, from: Date()) }
             .reduce(0) { $0 + $1.amount }
 
-        drawKeyValue(label: "Bu Yıl Toplam", value: formatTRY(total), at: y); y += 28
+        drawKeyValue(label: "Bu Yıl Toplam", value: formatTRY(yearly), at: y); y += 28
         drawKeyValue(label: "Genel Toplam", value: formatTRY(total), at: y); y += 28
 
         y += 12

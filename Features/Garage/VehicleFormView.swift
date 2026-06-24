@@ -354,6 +354,7 @@ struct VehicleFormView: View {
 
     private func performSave() {
         let vehicle = Vehicle(
+            nickname: nickname.trimmingCharacters(in: .whitespaces),
             plate: plate.trimmingCharacters(in: .whitespaces).uppercased(),
             brand: brand.trimmingCharacters(in: .whitespaces),
             model: model.trimmingCharacters(in: .whitespaces),
@@ -362,7 +363,6 @@ struct VehicleFormView: View {
             transmissionType: transmissionType,
             currentOdometer: odometer ?? 0,
             usageType: usageType,
-            nickname: nickname.trimmingCharacters(in: .whitespaces),
             notes: ""
         )
         modelContext.insert(vehicle)

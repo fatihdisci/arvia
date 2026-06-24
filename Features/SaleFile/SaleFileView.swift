@@ -124,38 +124,40 @@ struct SaleFileView: View {
 
     // MARK: - Sections
     private var sectionsPicker: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            SectionHeader(title: "Dahil Edilecek Bölümler")
+        Group {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                SectionHeader(title: "Dahil Edilecek Bölümler")
 
-            VStack(spacing: 0) {
-                sectionToggle(.summary, "Araç Özeti", "Plaka, marka, model, km bilgileri")
-                Divider().padding(.leading, 44)
-                sectionToggle(.serviceHistory, "Bakım Geçmişi", "\(vehicleServiceRecords.count) kayıt")
-                Divider().padding(.leading, 44)
-                sectionToggle(.documents, "Belgeler", "\(vehicleDocuments.count) belge")
-                Divider().padding(.leading, 44)
-                sectionToggle(.inspectionReports, "Ekspertiz Raporu", "\(vehicleInspections.count) rapor")
-                Divider().padding(.leading, 44)
-                sectionToggle(.disclaimer, "Hukuki Uyarı", "Zorunlu yasal metin", editable: false)
+                VStack(spacing: 0) {
+                    sectionToggle(.summary, "Araç Özeti", "Plaka, marka, model, km bilgileri")
+                    Divider().padding(.leading, 44)
+                    sectionToggle(.serviceHistory, "Bakım Geçmişi", "\(vehicleServiceRecords.count) kayıt")
+                    Divider().padding(.leading, 44)
+                    sectionToggle(.documents, "Belgeler", "\(vehicleDocuments.count) belge")
+                    Divider().padding(.leading, 44)
+                    sectionToggle(.inspectionReports, "Ekspertiz Raporu", "\(vehicleInspections.count) rapor")
+                    Divider().padding(.leading, 44)
+                    sectionToggle(.disclaimer, "Hukuki Uyarı", "Zorunlu yasal metin", editable: false)
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: AppRadius.medium)
+                        .fill(Color.appSurface)
+                )
             }
-            .background(
-                RoundedRectangle(cornerRadius: AppRadius.medium)
-                    .fill(Color.appSurface)
-            )
-        }
-        .padding(.horizontal, AppSpacing.screenMarginH)
+            .padding(.horizontal, AppSpacing.screenMarginH)
 
-        // Expense summary toggle
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Toggle(isOn: $includeExpenseSummary) {
-                Label("Masraf Özeti", systemImage: "chart.bar.fill")
-                    .font(AppTypography.body)
+            // Expense summary toggle
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Toggle(isOn: $includeExpenseSummary) {
+                    Label("Masraf Özeti", systemImage: "chart.bar.fill")
+                        .font(AppTypography.body)
+                }
+                .tint(AppColors.accentPrimary)
             }
-            .tint(AppColors.accentPrimary)
+            .padding(AppSpacing.md)
+            .background(RoundedRectangle(cornerRadius: AppRadius.medium).fill(Color.appSurface))
+            .padding(.horizontal, AppSpacing.screenMarginH)
         }
-        .padding(AppSpacing.md)
-        .background(RoundedRectangle(cornerRadius: AppRadius.medium).fill(Color.appSurface))
-        .padding(.horizontal, AppSpacing.screenMarginH)
     }
 
     private func sectionToggle(_ section: SaleFileSection, _ title: String, _ subtitle: String, editable: Bool = true) -> some View {

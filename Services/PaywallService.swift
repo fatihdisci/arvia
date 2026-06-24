@@ -157,7 +157,7 @@ final class PaywallService: ObservableObject {
         isPro = hasPro
     }
 
-    private func handleTransaction(_ transaction: Transaction) async {
+    private func handleTransaction(_ transaction: StoreKit.Transaction) async {
         if productIDs.contains(transaction.productID),
            transaction.revocationDate == nil {
             isPro = true
