@@ -102,14 +102,24 @@ struct SettingsView: View {
         .listRowBackground(Color.appSurface)
     }
 
+    // MARK: - Notification Preferences (Retention)
+    @AppStorage("notif_pref_important_dates") private var prefImportantDates = true
+    @AppStorage("notif_pref_km_update") private var prefKmUpdate = true
+    @AppStorage("notif_pref_km_freq") private var prefKmFreq = RetentionNotificationService.KmUpdateFrequency.quarterly.rawValue
+    @AppStorage("notif_pref_monthly_summary") private var prefMonthlySummary = true
+    @AppStorage("notif_pref_doc_complete") private var prefDocComplete = true
+    @AppStorage("notif_pref_seasonal") private var prefSeasonal = true
+    @AppStorage("notif_pref_sale_file") private var prefSaleFile = false
+
     // MARK: - Notification Section
     private var notificationSection: some View {
         Section {
+            // Sistem bildirim ayarları
             Button {
                 openSystemNotificationSettings()
             } label: {
                 HStack {
-                    Label("Bildirim Ayarları", systemImage: "bell")
+                    Label("Sistem Bildirim İzni", systemImage: "bell.badge")
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -118,11 +128,85 @@ struct SettingsView: View {
                 }
             }
 
-            Text("Muayene, sigorta ve bakım tarihleri için hatırlatıcılar. Reklam bildirimi göndermiyoruz.")
+            // Önemli Tarihler
+            Toggle(isOn: $prefImportantDates) {
+                Label("Önemli Tarihler", systemImage: "calendar.badge.exclamationmark")
+                    .font(AppTypography.body)
+            }
+            .tint(AppColors.accentPrimary)
+            .onChange(of: prefImportantDates) { _, _ in
+                RetentionNotificationService.shared.isImportantDatesEnabled = prefImportantDates
+            }
+
+            // Kilometre Güncelleme
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Toggle(isOn: $prefKmUpdate) {
+                    Label("Kilometre Güncelleme", systemImage: "gauge.with.needle")
+                        .font(AppTypography.body)
+                }
+                .tint(AppColors.accentPrimary)
+                .onChange(of: prefKmUpdate) { _, _ in
+                    RetentionNotificationService.shared.isKmUpdateEnabled = prefKmUpdate
+                }
+
+                if prefKmUpdate {
+                    Picker("Sıklık", selection: $prefKmFreq) {
+                        ForEach(RetentionNotificationService.KmUpdateFrequency.allCases, id: \.rawValue) { freq in
+                            Text(freq.displayName).tag(freq.rawValue)
+                        }
+                    }
+                    .font(AppTypography.secondary)
+                    .onChange(of: prefKmFreq) { _, newValue in
+                        RetentionNotificationService.shared.kmUpdateFrequency = RetentionNotificationService.KmUpdateFrequency(rawValue: newValue) ?? .quarterly
+                    }
+                }
+            }
+
+            // Aylık Özet
+            Toggle(isOn: $prefMonthlySummary) {
+                Label("Aylık Özet", systemImage: "chart.bar.doc.horizontal")
+                    .font(AppTypography.body)
+            }
+            .tint(AppColors.accentPrimary)
+            .onChange(of: prefMonthlySummary) { _, _ in
+                RetentionNotificationService.shared.isMonthlySummaryEnabled = prefMonthlySummary
+            }
+
+            // Dosya Tamlığı
+            Toggle(isOn: $prefDocComplete) {
+                Label("Dosya Tamlığı", systemImage: "doc.text.magnifyingglass")
+                    .font(AppTypography.body)
+            }
+            .tint(AppColors.accentPrimary)
+            .onChange(of: prefDocComplete) { _, _ in
+                RetentionNotificationService.shared.isDocumentCompletenessEnabled = prefDocComplete
+            }
+
+            // Mevsimsel Bakım
+            Toggle(isOn: $prefSeasonal) {
+                Label("Mevsimsel Bakım", systemImage: "leaf")
+                    .font(AppTypography.body)
+            }
+            .tint(AppColors.accentPrimary)
+            .onChange(of: prefSeasonal) { _, _ in
+                RetentionNotificationService.shared.isSeasonalEnabled = prefSeasonal
+            }
+
+            // Satış Dosyası Hatırlatması
+            Toggle(isOn: $prefSaleFile) {
+                Label("Satış Dosyası Hatırlatması", systemImage: "doc.richtext")
+                    .font(AppTypography.body)
+            }
+            .tint(AppColors.accentPrimary)
+            .onChange(of: prefSaleFile) { _, _ in
+                RetentionNotificationService.shared.isSaleFileReminderEnabled = prefSaleFile
+            }
+        } header: {
+            Text("Bildirim Tercihleri")
+        } footer: {
+            Text("Reklam bildirimi göndermiyoruz. Tüm bildirimleri buradan kapatabilirsin. Plaka gibi hassas bilgiler bildirim içeriğinde gösterilmez. Sessiz saatler (21:00–09:00) arası bildirim gönderilmez.")
                 .font(AppTypography.caption)
                 .foregroundColor(AppColors.textTertiary)
-        } header: {
-            Text("Bildirimler")
         }
         .listRowBackground(Color.appSurface)
     }

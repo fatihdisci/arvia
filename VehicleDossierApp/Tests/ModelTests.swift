@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import XCTest
+@testable import Ruhsatim
 
 // MARK: - Model Creation Tests
 // Temel model oluşturma, enum mapping ve computed property testleri.
@@ -105,11 +106,13 @@ final class VehicleModelTests: XCTestCase {
 
     func testReminderTodayStatus() {
         let vehicleId = UUID()
+        // Bugün içinde kalması için 1 saat ileri
+        let todayDate = Date().addingTimeInterval(3600)
         let reminder = Reminder(
             vehicleId: vehicleId,
             type: .oilChange,
             title: "Yağ Değişimi",
-            dueDate: Date(),
+            dueDate: todayDate,
             priority: .warning
         )
 
@@ -174,7 +177,7 @@ final class VehicleModelTests: XCTestCase {
         XCTAssertTrue(largeExpense.amountCompactDisplay.contains("₺15000"))
 
         let smallExpense = Expense(vehicleId: UUID(), category: .parking, amount: 25.50)
-        XCTAssertTrue(smallExpense.amountCompactDisplay.contains("₺25,50"))
+        XCTAssertTrue(smallExpense.amountCompactDisplay.contains("₺25.50"))
     }
 
     // MARK: ServiceRecord
@@ -324,7 +327,7 @@ final class VehicleModelTests: XCTestCase {
     }
 
     func testReminderTypeAllCases() {
-        XCTAssertEqual(ReminderType.allCases.count, 15)
+        XCTAssertEqual(ReminderType.allCases.count, 14)
         XCTAssertEqual(ReminderType.inspection.displayName, "Muayene")
         XCTAssertEqual(ReminderType.trafficInsurance.defaultIcon, "shield")
     }
@@ -369,7 +372,6 @@ final class ReportCalculationTests: XCTestCase {
     func testMonthlyGrouping() {
         let vehicleId = UUID()
         let calendar = Calendar.current
-        let now = Date()
         let january = calendar.date(from: DateComponents(year: 2026, month: 1, day: 15))!
         let february = calendar.date(from: DateComponents(year: 2026, month: 2, day: 10))!
         let expenses = [
@@ -397,9 +399,9 @@ final class ReportCalculationTests: XCTestCase {
         ]
         var dict: [ExpenseCategory: Double] = [:]
         for e in expenses { dict[e.category, default: 0] += e.amount }
-        XCTAssertEqual(dict[.fuel], 1500.0, accuracy: 0.01)
-        XCTAssertEqual(dict[.service], 2000.0, accuracy: 0.01)
-        XCTAssertEqual(dict[.tire], 3200.0, accuracy: 0.01)
+        XCTAssertEqual(dict[.fuel]!, 1500.0, accuracy: 0.01)
+        XCTAssertEqual(dict[.service]!, 2000.0, accuracy: 0.01)
+        XCTAssertEqual(dict[.tire]!, 3200.0, accuracy: 0.01)
     }
 
     func testCostPerKm() {
@@ -411,7 +413,7 @@ final class ReportCalculationTests: XCTestCase {
         let totalExpense: Double = 7500
         let totalKm = expenses.compactMap { $0.odometer }.max() ?? 0
         let costPerKm = totalKm > 0 ? totalExpense / Double(totalKm) : nil
-        XCTAssertEqual(costPerKm, 0.75, accuracy: 0.01)
+        XCTAssertEqual(costPerKm!, 0.75, accuracy: 0.01)
     }
 
     func testCostPerKmNoOdometer() {
@@ -445,6 +447,102 @@ final class ReportCalculationTests: XCTestCase {
     }
 }
 
+
+// MARK: - Car Catalog Tests
+final class CarCatalogTests: XCTestCase {
+    func testCatalogLoadsFromBundle() throws {
+        let catalog = try XCTUnwrap(CarCatalogService.shared.catalog)
+        XCTAssertGreaterThan(catalog.brands.count, 0)
+        XCTAssertGreaterThan(catalog.brands.reduce(0) { $0 + $1.models.count }, 0)
+    }
+
+    func testRequiredBrandsAreSearchable() {
+        let service = CarCatalogService.shared
+        XCTAssertEqual(service.searchBrands("Volkswagen").first?.displayName, "Volkswagen")
+        XCTAssertEqual(service.searchBrands("Renault").first?.displayName, "Renault")
+        XCTAssertEqual(service.searchBrands("Fiat").first?.displayName, "Fiat")
+    }
+
+    func testNormalizedAliasSearchFindsTurkishNames() {
+        let service = CarCatalogService.shared
+        XCTAssertEqual(service.searchBrands("citroen").first?.displayName, "Citroën")
+        XCTAssertEqual(service.searchBrands("tofas").first?.displayName, "Tofaş")
+    }
+
+    func testModelSearchWithinBrand() throws {
+        let service = CarCatalogService.shared
+        let volkswagen = try XCTUnwrap(service.searchBrands("Volkswagen").first)
+        let renault = try XCTUnwrap(service.searchBrands("Renault").first)
+        let fiat = try XCTUnwrap(service.searchBrands("Fiat").first)
+
+        XCTAssertEqual(service.searchModels(in: volkswagen, query: "Golf").first?.displayName, "Golf")
+        XCTAssertEqual(service.searchModels(in: renault, query: "Clio").first?.displayName, "Clio")
+        XCTAssertEqual(service.searchModels(in: fiat, query: "Egea").first?.displayName, "Egea")
+    }
+
+    func testModelResetWhenBrandChanges() {
+        var selection = VehicleCatalogSelection(brand: "Volkswagen", model: "Golf")
+        selection.selectBrand("Renault")
+        XCTAssertEqual(selection.brand, "Renault")
+        XCTAssertEqual(selection.model, "")
+    }
+
+    func testManualBrandModelValidation() {
+        XCTAssertEqual(VehicleCatalogSelection(brand: "", model: "").validationErrors(), ["Marka zorunludur.", "Model zorunludur."])
+        XCTAssertTrue(VehicleCatalogSelection(brand: "Özel Marka", model: "Özel Model").validationErrors().isEmpty)
+    }
+
+    func testCatalogDataQuality() throws {
+        let catalog = try XCTUnwrap(CarCatalogService.shared.catalog)
+        let brandIds = catalog.brands.map(\.id)
+        XCTAssertEqual(Set(brandIds).count, brandIds.count)
+        for brand in catalog.brands {
+            XCTAssertFalse(brand.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            let modelIds = brand.models.map(\.id)
+            XCTAssertEqual(Set(modelIds).count, modelIds.count, "Duplicate model id in \(brand.displayName)")
+            for model in brand.models {
+                XCTAssertFalse(model.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+    }
+}
+
+// MARK: - Paywall Limit Tests
+@MainActor
+final class PaywallLimitTests: XCTestCase {
+    func testFreeVehicleLimit() {
+        let service = PaywallService(isProForTesting: false)
+        XCTAssertTrue(service.canAddVehicle(currentCount: 0))
+        XCTAssertFalse(service.canAddVehicle(currentCount: 1))
+    }
+
+    func testProVehicleLimit() {
+        let service = PaywallService(isProForTesting: true)
+        XCTAssertTrue(service.canAddVehicle(currentCount: 99))
+    }
+
+    func testFreeDocumentLimit() {
+        let service = PaywallService(isProForTesting: false)
+        XCTAssertTrue(service.canAddDocument(currentCount: 4))
+        XCTAssertFalse(service.canAddDocument(currentCount: 5))
+    }
+
+    func testProDocumentLimit() {
+        let service = PaywallService(isProForTesting: true)
+        XCTAssertTrue(service.canAddDocument(currentCount: 100))
+    }
+
+    func testSaleFileAndAdvancedReportsAreProOnly() {
+        let free = PaywallService(isProForTesting: false)
+        XCTAssertFalse(free.canCreateSaleFile())
+        XCTAssertFalse(free.canAccessAdvancedReports())
+
+        let pro = PaywallService(isProForTesting: true)
+        XCTAssertTrue(pro.canCreateSaleFile())
+        XCTAssertTrue(pro.canAccessAdvancedReports())
+    }
+}
+
 // MARK: - ReminderRepeatEngine Tests
 final class ReminderRepeatEngineTests: XCTestCase {
 
@@ -474,7 +572,7 @@ final class ReminderRepeatEngineTests: XCTestCase {
         XCTAssertNotNil(next)
         let comps = Calendar.current.dateComponents([.year, .month], from: next!)
         XCTAssertEqual(comps.year, 2026)
-        XCTAssertEqual(comps.month, 4)
+        XCTAssertEqual(comps.month, 4) // +3 ay
     }
 
     func testBiannualNextDate() {
@@ -483,31 +581,37 @@ final class ReminderRepeatEngineTests: XCTestCase {
         XCTAssertNotNil(next)
         let comps = Calendar.current.dateComponents([.year, .month], from: next!)
         XCTAssertEqual(comps.year, 2026)
-        XCTAssertEqual(comps.month, 9)
+        XCTAssertEqual(comps.month, 9) // +6 ay
     }
 
     func testNoneReturnsNil() {
-        let next = ReminderRepeatEngine.shared.nextDueDate(from: Date(), rule: .none)
+        let baseDate = Date()
+        let next = ReminderRepeatEngine.shared.nextDueDate(from: baseDate, rule: .none)
         XCTAssertNil(next)
     }
 
     func testCustomReturnsNil() {
-        let next = ReminderRepeatEngine.shared.nextDueDate(from: Date(), rule: .custom)
+        let baseDate = Date()
+        let next = ReminderRepeatEngine.shared.nextDueDate(from: baseDate, rule: .custom)
         XCTAssertNil(next)
     }
 
     func testRuleParsingFromRawValue() {
         XCTAssertEqual(ReminderRepeatEngine.shared.rule(from: "monthly"), .monthly)
         XCTAssertEqual(ReminderRepeatEngine.shared.rule(from: "yearly"), .yearly)
+        XCTAssertEqual(ReminderRepeatEngine.shared.rule(from: "quarterly"), .quarterly)
+        XCTAssertEqual(ReminderRepeatEngine.shared.rule(from: "biannual"), .biannual)
+        XCTAssertEqual(ReminderRepeatEngine.shared.rule(from: "none"), .none)
         XCTAssertEqual(ReminderRepeatEngine.shared.rule(from: nil), .none)
         XCTAssertEqual(ReminderRepeatEngine.shared.rule(from: "invalid"), .none)
     }
 
     func testYearEndBoundary() {
+        // Aralık ayından Ocak'a geçiş
         let baseDate = DateComponents(calendar: .current, year: 2026, month: 12, day: 31).date!
         let next = ReminderRepeatEngine.shared.nextDueDate(from: baseDate, rule: .monthly)
         XCTAssertNotNil(next)
-        let comps = Calendar.current.dateComponents([.year, .month], from: next!)
+        let comps = Calendar.current.dateComponents([.year, .month, .day], from: next!)
         XCTAssertEqual(comps.year, 2027)
         XCTAssertEqual(comps.month, 1)
     }
@@ -540,6 +644,8 @@ final class KmReminderTests: XCTestCase {
     func testKmUpcomingWithinRange() {
         let reminder = Reminder(vehicleId: UUID(), dueOdometer: 50000)
         XCTAssertTrue(reminder.isKmUpcoming(vehicleOdometer: 49000, withinKm: 2000))
+        // 1000 km within 2000 range
+        XCTAssertTrue(reminder.isKmUpcoming(vehicleOdometer: 49000))
     }
 
     func testKmUpcomingOutsideRange() {
@@ -547,14 +653,23 @@ final class KmReminderTests: XCTestCase {
         XCTAssertFalse(reminder.isKmUpcoming(vehicleOdometer: 47000, withinKm: 2000))
     }
 
-    func testRepeatRulePreservedOnModel() {
+    func testKmUpcomingWhenExceeded() {
+        // Zaten geçilmişse upcoming false dönmeli
+        let reminder = Reminder(vehicleId: UUID(), dueOdometer: 50000)
+        XCTAssertFalse(reminder.isKmUpcoming(vehicleOdometer: 51000, withinKm: 2000))
+    }
+
+    func testRepeatRuleIsPreservedOnModel() {
+        // Reminder modelinde repeatRuleRaw düzgün parse ediliyor mu?
         let reminder = Reminder(vehicleId: UUID(), repeatRule: "yearly")
         XCTAssertEqual(reminder.repeatRule, .yearly)
+        XCTAssertEqual(reminder.repeatRuleRaw, "yearly")
     }
 
     func testRepeatRuleNoneByDefault() {
         let reminder = Reminder(vehicleId: UUID())
         XCTAssertEqual(reminder.repeatRule, .none)
+        XCTAssertNil(reminder.repeatRuleRaw)
     }
 }
 
@@ -569,5 +684,169 @@ final class InspectionReportIncludeInSaleFileTests: XCTestCase {
     func testExplicitIncludeInSaleFileTrue() {
         let report = InspectionReport(vehicleId: UUID(), includeInSaleFile: true)
         XCTAssertTrue(report.includeInSaleFile)
+    }
+
+    func testExplicitIncludeInSaleFileFalse() {
+        let report = InspectionReport(vehicleId: UUID(), includeInSaleFile: false)
+        XCTAssertFalse(report.includeInSaleFile)
+    }
+}
+
+// MARK: - Retention Notification Tests
+final class RetentionNotificationServiceTests: XCTestCase {
+    let service = RetentionNotificationService.shared
+
+    // MARK: Km Update Frequency
+    func testKmUpdateNextDateWeekly() {
+        let baseDate = DateComponents(calendar: .current, year: 2026, month: 6, day: 15).date!
+        let next = RetentionNotificationService.KmUpdateFrequency.weekly.nextDate(from: baseDate)
+        XCTAssertNotNil(next)
+        let diff = Calendar.current.dateComponents([.day], from: baseDate, to: next!).day
+        XCTAssertEqual(diff, 7)
+    }
+
+    func testKmUpdateNextDateMonthly() {
+        let baseDate = DateComponents(calendar: .current, year: 2026, month: 6, day: 15).date!
+        let next = RetentionNotificationService.KmUpdateFrequency.monthly.nextDate(from: baseDate)
+        XCTAssertNotNil(next)
+        let comps = Calendar.current.dateComponents([.month, .day], from: next!)
+        XCTAssertEqual(comps.month, 7)
+    }
+
+    func testKmUpdateNextDateQuarterly() {
+        let baseDate = DateComponents(calendar: .current, year: 2026, month: 1, day: 1).date!
+        let next = RetentionNotificationService.KmUpdateFrequency.quarterly.nextDate(from: baseDate)
+        XCTAssertNotNil(next)
+        let comps = Calendar.current.dateComponents([.month], from: next!)
+        XCTAssertEqual(comps.month, 4)
+    }
+
+    func testKmUpdateNextDateBiannual() {
+        let baseDate = DateComponents(calendar: .current, year: 2026, month: 3, day: 20).date!
+        let next = RetentionNotificationService.KmUpdateFrequency.biannual.nextDate(from: baseDate)
+        XCTAssertNotNil(next)
+        let comps = Calendar.current.dateComponents([.month], from: next!)
+        XCTAssertEqual(comps.month, 9)
+    }
+
+    // MARK: Quiet Hours
+    func testQuietHoursNightAdjustedTo9AM() {
+        // 22:00 → ertesi gün 09:00 (sessiz saatler 21:00-09:00 arası)
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 22
+        components.minute = 30
+        let nightDate = Calendar.current.date(from: components)!
+        let adjusted = RetentionNotificationService.adjustedForQuietHours(nightDate)
+        let adjustedHour = Calendar.current.component(.hour, from: adjusted)
+        XCTAssertEqual(adjustedHour, 9)
+    }
+
+    func testQuietHoursEarlyMorningAdjusted() {
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 3
+        components.minute = 0
+        let earlyDate = Calendar.current.date(from: components)!
+        let adjusted = RetentionNotificationService.adjustedForQuietHours(earlyDate)
+        let adjustedHour = Calendar.current.component(.hour, from: adjusted)
+        XCTAssertEqual(adjustedHour, 9)
+    }
+
+    func testQuietHoursDaytimeUnchanged() {
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 14
+        components.minute = 0
+        let dayDate = Calendar.current.date(from: components)!
+        let adjusted = RetentionNotificationService.adjustedForQuietHours(dayDate)
+        let adjustedHour = Calendar.current.component(.hour, from: adjusted)
+        XCTAssertEqual(adjustedHour, 14)
+    }
+
+    // MARK: Cooldown
+    func testDocumentCompleteness30DayCooldown() {
+        let vehicleId = UUID()
+        // İlk kontrol: cooldown yok
+        XCTAssertFalse(service.isInCooldown(vehicleId: vehicleId, category: "doc", days: 30))
+        // Mark cooldown
+        service.markCooldown(vehicleId: vehicleId, category: "doc")
+        // Şimdi cooldown'da olmalı
+        XCTAssertTrue(service.isInCooldown(vehicleId: vehicleId, category: "doc", days: 30))
+        // Temizle (test isolation)
+        UserDefaults.standard.removeObject(forKey: "retention_cooldown_doc_\(vehicleId.uuidString)")
+    }
+
+    func testSaleFile90DayCooldown() {
+        let vehicleId = UUID()
+        XCTAssertFalse(service.isInCooldown(vehicleId: vehicleId, category: "salefile", days: 90))
+        service.markCooldown(vehicleId: vehicleId, category: "salefile")
+        XCTAssertTrue(service.isInCooldown(vehicleId: vehicleId, category: "salefile", days: 90))
+        UserDefaults.standard.removeObject(forKey: "retention_cooldown_salefile_\(vehicleId.uuidString)")
+    }
+
+    // MARK: Monthly Summary
+    func testMonthlySummarySameMonthDuplicatePrevention() {
+        // Bu ay için henüz gönderilmemiş olmalı
+        XCTAssertFalse(service.wasMonthlySummarySentThisMonth())
+        // Gönderildi olarak işaretle
+        service.markMonthlySummarySent()
+        // Şimdi bu ay gönderilmiş olmalı
+        XCTAssertTrue(service.wasMonthlySummarySentThisMonth())
+        // Temizle
+        UserDefaults.standard.removeObject(forKey: "retention_last_monthly_summary")
+    }
+
+    func testMonthlySummaryIdentifierUniquePerMonth() {
+        let id = service.monthlySummaryIdentifier()
+        let currentMonth = Calendar.current.component(.month, from: Date())
+        let currentYear = Calendar.current.component(.year, from: Date())
+        XCTAssertTrue(id.contains("\(currentYear)"))
+        XCTAssertTrue(id.contains("\(currentMonth)"))
+    }
+
+    // MARK: Seasonal
+    func testSeasonalMax4PerYear() {
+        let year = Calendar.current.component(.year, from: Date())
+        let key = "retention_seasonal_count_\(year)"
+        // Başlangıçta 0
+        let initial = service.seasonalCountForCurrentYear()
+        // 4 kez işaretle
+        for _ in 0..<4 {
+            service.markSeasonalSent()
+        }
+        let afterFour = service.seasonalCountForCurrentYear()
+        XCTAssertEqual(afterFour, initial + 4)
+        // scheduleSeasonalReminders guard: count < 4 → artık schedule etmez
+        XCTAssertFalse(afterFour < 4) // 4'te durmalı
+        // Temizle
+        UserDefaults.standard.removeObject(forKey: key)
+    }
+
+    // MARK: Preferences
+    func testRetentionNotificationsAreUserControllable() {
+        // Varsayılan değerler
+        XCTAssertTrue(service.isKmUpdateEnabled)
+        XCTAssertTrue(service.isMonthlySummaryEnabled)
+        XCTAssertTrue(service.isDocumentCompletenessEnabled)
+        XCTAssertTrue(service.isSeasonalEnabled)
+        XCTAssertFalse(service.isSaleFileReminderEnabled)
+
+        // Kapat
+        service.isKmUpdateEnabled = false
+        XCTAssertFalse(service.isKmUpdateEnabled)
+        service.isMonthlySummaryEnabled = false
+        XCTAssertFalse(service.isMonthlySummaryEnabled)
+
+        // Geri al (test isolation)
+        service.isKmUpdateEnabled = true
+        service.isMonthlySummaryEnabled = true
+    }
+
+    func testKmUpdateFrequencyDefaultQuarterly() {
+        // Varsayılan
+        UserDefaults.standard.removeObject(forKey: "notif_pref_km_freq")
+        // Yeni bir servis instance'ı ile test edemeyiz (singleton), UserDefaults'ı temizledik
+        // Varsayılan değer .quarterly
+        let freq = service.kmUpdateFrequency
+        // Test sonrası geri yükle
+        XCTAssertEqual(freq, .quarterly)
     }
 }

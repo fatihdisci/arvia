@@ -120,6 +120,39 @@ struct VehicleDossierApp: App {
                 .modelContainer(modelContainer)
                 .environmentObject(paywallService)
                 .environment(\.locale, Locale(identifier: "tr_TR"))
+                .task {
+                    await scheduleRetentionNotifications()
+                }
         }
+    }
+
+    // MARK: - Retention Notifications
+    private func scheduleRetentionNotifications() async {
+        // Ana context'te fetch yap
+        let context = modelContainer.mainContext
+        let vehicles = (try? context.fetch(FetchDescriptor<Vehicle>())) ?? []
+
+        // Dosya tamlık skoru hesapla
+        let reminders = (try? context.fetch(FetchDescriptor<Reminder>())) ?? []
+        var fileScores: [UUID: Int] = [:]
+        for vehicle in vehicles {
+            var score = 0
+            if !vehicle.brand.isEmpty { score += 10 }
+            if !vehicle.model.isEmpty { score += 10 }
+            if vehicle.year != nil { score += 10 }
+            if vehicle.currentOdometer > 0 { score += 10 }
+            if vehicle.transmissionType != nil { score += 10 }
+            if vehicle.purchaseDate != nil { score += 10 }
+            if vehicle.purchasePrice != nil { score += 10 }
+            let vehicleReminders = reminders.filter { $0.vehicleId == vehicle.id }
+            if !vehicleReminders.isEmpty { score += 15 }
+            if !vehicleReminders.contains(where: { $0.isOverdue }) { score += 15 }
+            fileScores[vehicle.id] = min(score, 100)
+        }
+
+        await RetentionNotificationService.shared.rescheduleAll(
+            vehicles: vehicles,
+            fileScores: fileScores
+        )
     }
 }
