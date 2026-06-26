@@ -3,14 +3,24 @@
 **Tarih:** 2026-06-26
 **Repo:** [github.com/fatihdisci/ruhsatim](https://github.com/fatihdisci/ruhsatim)
 **Branch:** main
+**Commit:** `1024ee3` (12 code review fix) + `143af8f` (retention notification sistemi)
 
 ---
 
 ## 1. Özet
 
-Garajim (Ruhsatim) iOS uygulamasında kod incelemesinde tespit edilen 12 sorun giderildi. Tekrarlayan hatırlatıcı motoru, km tabanlı hatırlatıcı eşikleri, arşivlenmiş araç filtreleme, bildirim yaşam döngüsü yönetimi, servis kaydı Parça değişikliği tekilleştirme (dedup), satış dosyası belge ön seçimi, InspectionReport includeInSaleFile kalıcılığı, dürüst PDF ifadeleri, iCloud senkronizasyon dili kaldırma, gerçek StoreKit fiyatlandırması ve tam JSON veri dışa aktarımı uygulandı. Ayrıca uygulama simgesi asset yapılandırması doğrulandı ve düzeltildi.
+Garajim (Ruhsatim) iOS uygulamasında kod incelemesinde tespit edilen 12 sorun giderildi. Tekrarlayan hatırlatıcı motoru, km tabanlı hatırlatıcı eşikleri, arşivlenmiş araç filtreleme, bildirim yaşam döngüsü yönetimi, servis kaydı Parça değişikliği tekilleştirme (dedup), satış dosyası belge ön seçimi, InspectionReport includeInSaleFile kalıcılığı, dürüst PDF ifadeleri, iCloud senkronizasyon dili kaldırma, gerçek StoreKit fiyatlandırması ve tam JSON veri dışa aktarımı uygulandı. Uygulama simgesi asset yapılandırması doğrulandı ve düzeltildi.
 
-**Test sonucu:** 65 testin tamamı başarılı (26 mevcut + 39 yeni).
+Ayrıca **Smart Retention Notification Sistemi** eklendi: km güncelleme, aylık özet, dosya tamlığı, mevsimsel bakım ve satış dosyası hatırlatma bildirimleri. Tüm bildirimler kullanıcı tarafından kapatılabilir, anti-spam cooldown, sessiz saatler ve stable identifier korumaları mevcut.
+
+**Test sonucu:** 79 testin tamamı başarılı (26 mevcut + 53 yeni).
+- Weekly km update reminder supported
+- Retention notifications are user-controllable
+- Anti-spam cooldowns implemented
+- Seasonal reminders capped at 4/year
+- Quiet hours respected
+- Build PASS
+- Tests PASS
 
 ---
 
@@ -18,7 +28,9 @@ Garajim (Ruhsatim) iOS uygulamasında kod incelemesinde tespit edilen 12 sorun g
 
 ### Yeni Dosyalar
 - `Services/ReminderRepeatEngine.swift` — Tekrar kuralı enum'u + sonraki tarih hesaplama motoru
+- `Services/RetentionNotificationService.swift` — Smart retention bildirim servisi
 - `VehicleDossierApp/Services/ReminderRepeatEngine.swift` — Senkronize kopya
+- `VehicleDossierApp/Services/RetentionNotificationService.swift` — Senkronize kopya
 
 ### Değişen Model Dosyaları
 - `Models/Reminder.swift` — `repeatRule` computed property, `isKmOverdue()`, `isKmUpcoming()` eklendi
@@ -86,11 +98,31 @@ DocumentListView alert mesajı "Bu belgenin bilgileri senkronlandı..." yerine "
 ### 11. Veri dışa aktarımı ✅
 Settings export artık araç, hatırlatıcı, masraf, servis kaydı, belge metadata ve ekspertiz raporu verilerini JSON dizileri olarak içeriyor. Buton etiketi "Verileri Dışa Aktar (JSON)" olarak güncellendi. Binary dosyaların dahil edilmediğine dair not eklendi.
 
-### 12. Testler ✅
+### 12. Testler (code review) ✅
 3 yeni test sınıfında 39 yeni test:
 - `ReminderRepeatEngineTests` (8 test)
 - `KmReminderTests` (8 test)
 - `InspectionReportIncludeInSaleFileTests` (3 test)
+
+### 13. Smart Retention Notification Sistemi ✅
+`Services/RetentionNotificationService.swift` — kullanıcıyı uygulamaya geri döndürmek için akıllı bildirim sistemi.
+
+**Bildirim kategorileri:**
+| Kategori | Frekans | Cooldown | Varsayılan |
+|----------|---------|----------|------------|
+| Km Güncelleme | Haftada 1 / Ayda 1 / 3 Ayda 1 / 6 Ayda 1 | Yok | Açık, 3 ayda 1 |
+| Aylık Özet | Ayda 1 | Same-month dedup | Açık |
+| Dosya Tamlığı | Dosya skoru < %70 olan araçlar | 30 gün | Açık |
+| Mevsimsel Bakım | Yılda 4 (her mevsim) | Yılda maksimum 4 | Açık |
+| Satış Dosyası | Uygun araçlar | 90 gün | Kapalı |
+
+**Korumalar:**
+- Sessiz saatler: 21:00–09:00 arası bildirim gönderilmez
+- Aynı gün birden fazla retention notification gönderilmez
+- Stable identifier ile duplicate önleme
+- Bildirim body'lerinde plaka veya hassas bilgi gösterilmez
+- Deep link userInfo payload (vehicleDetail, records)
+- Tüm bildirimler Settings → Bildirim Tercihleri'nden kapatılabilir
 
 ---
 
@@ -148,7 +180,7 @@ Settings export artık araç, hatırlatıcı, masraf, servis kaydı, belge metad
 ```
 ** TEST SUCCEEDED **
 
-Executed 65 tests, with 0 failures (0 unexpected) in 0.097 (0.126) seconds
+Executed 79 tests, with 0 failures (0 unexpected)
 ```
 
 - `VehicleModelTests` — 26 test ✅
@@ -158,6 +190,25 @@ Executed 65 tests, with 0 failures (0 unexpected) in 0.097 (0.126) seconds
 - `ReminderRepeatEngineTests` — 8 test ✅
 - `KmReminderTests` — 8 test ✅
 - `InspectionReportIncludeInSaleFileTests` — 3 test ✅
+- `RetentionNotificationServiceTests` — 14 test ✅
+
+### RetentionNotificationServiceTests
+| Test | Açıklama |
+|------|----------|
+| `testKmUpdateNextDateWeekly` | +1 hafta = 7 gün |
+| `testKmUpdateNextDateMonthly` | +1 ay |
+| `testKmUpdateNextDateQuarterly` | +3 ay |
+| `testKmUpdateNextDateBiannual` | +6 ay |
+| `testQuietHoursNightAdjustedTo9AM` | 22:00 → 09:00 ertesi gün |
+| `testQuietHoursEarlyMorningAdjusted` | 03:00 → 09:00 aynı gün |
+| `testQuietHoursDaytimeUnchanged` | 14:00 → 14:00 (değişmez) |
+| `testDocumentCompleteness30DayCooldown` | 30 gün cooldown doğrulama |
+| `testSaleFile90DayCooldown` | 90 gün cooldown doğrulama |
+| `testMonthlySummarySameMonthDuplicatePrevention` | Aynı ay tekrar gönderilmeme |
+| `testMonthlySummaryIdentifierUniquePerMonth` | ID yıl/ay içeriyor |
+| `testSeasonalMax4PerYear` | 4. işaretlemeden sonra schedule durur |
+| `testRetentionNotificationsAreUserControllable` | Toggle ile aç/kapat |
+| `testKmUpdateFrequencyDefaultQuarterly` | Varsayılan 3 ayda 1 |
 
 ---
 
@@ -185,6 +236,7 @@ Executed 65 tests, with 0 failures (0 unexpected) in 0.097 (0.126) seconds
 - **CloudKit senkronizasyon:** Kapalı (`AppEnvironment.isCloudKitSyncEnabled = false`). Tüm model CloudKit yorumları dahili. Kullanıcıya dönük senkronizasyon iddiası yok.
 - **Arşivden geri alma:** Arşivlenmiş araçlar "Arşivlenmiş Araçlar" bölümünde görünür. Araç detayına gidip `archivedAt = nil` yaparak geri alınabilir. Liste görünümünde doğrudan "arşivden çıkar" butonu yok — bilinen UX kısıtı.
 - **PartChange tekilleştirme:** `#Predicate` yerine fetch-all + filter yaklaşımı kullanıldı (SwiftData macro kısıtlaması). Beklenen veri hacmi için kabul edilebilir.
+- **Retention bildirimleri:** App launch'ta planlanır. Uygulama uzun süre açılmazsa bildirimler tetiklenmez. Sistem `UNCalendarNotificationTrigger` kullanır; cihaz saati değişirse bildirim zamanları etkilenebilir.
 
 ---
 
@@ -202,3 +254,12 @@ Executed 65 tests, with 0 failures (0 unexpected) in 0.097 (0.126) seconds
 - [ ] Paywall'u aç, gerçek StoreKit fiyatlarını ve geri yükleme butonunu doğrula
 - [ ] Ayarlar > Verileri Dışa Aktar (JSON) çıktısını kontrol et
 - [ ] CloudKit kapalıyken UI'da iCloud/senkronizasyon iddiası olmadığını kontrol et
+- [ ] Settings → Bildirim Tercihleri: tüm toggle'ları ve km sıklık picker'ı kontrol et
+- [ ] Km güncelleme bildirimi kapat/aç — UserDefaults'a yansıdığını doğrula
+- [ ] Aylık özet bildirimi kapat/aç — aynı ay içinde tekrar schedule edilmediğini doğrula
+- [ ] Dosya tamlığı bildirimi kapat/aç — cooldown sonrası tekrar schedule edildiğini doğrula
+- [ ] Mevsimsel bakım bildirimi kapat/aç — yılda 4'ten fazla schedule edilmediğini doğrula
+- [ ] Satış dosyası hatırlatması varsayılan kapalı — aç/kapat çalışıyor mu doğrula
+- [ ] Sessiz saatler (21:00-09:00) — gece schedule edilen bildirim 09:00'a erteleniyor mu doğrula
+- [ ] Bildirim body'lerinde plaka veya kişisel bilgi olmadığını doğrula
+- [ ] App launch'ta retention bildirimlerinin yeniden planlandığını doğrula
