@@ -28,42 +28,33 @@ final class CommunityService {
             throw CommunityServiceError.configMissing
         }
 
-        var query = client
+        // Önce düz select dene — join olmadan, decode garantili.
+        let posts: [CommunityPost] = try await client
             .from("community_posts")
-            .select("""
-                *,
-                author_username:author_id(username),
-                author_display_name:author_id(display_name),
-                author_avatar_url:author_id(avatar_url),
-                author_is_verified:author_id(is_verified),
-                author_role:author_id(role)
-            """)
+            .select("*")
             .eq("is_hidden", value: false)
             .is("deleted_at", value: nil)
-
-        if let type = type {
-            query = query.eq("post_type", value: type.rawValue)
-        }
-
-        if !tags.isEmpty {
-            query = query.contains("tags", value: tags)
-        }
-
-        if let brand = brand, !brand.isEmpty {
-            query = query.eq("vehicle_brand", value: brand)
-        }
-
-        if let model = model, !model.isEmpty {
-            query = query.eq("vehicle_model", value: model)
-        }
-
-        let posts: [CommunityPost] = try await query
             .order("is_pinned", ascending: false)
             .order("created_at", ascending: false)
             .range(from: page * pageSize, to: (page + 1) * pageSize - 1)
             .execute()
             .value
-        return posts
+
+        // Filtreleri client-side uygula (join olmadığı için server-side filtre limitli)
+        var result = posts
+        if let type = type {
+            result = result.filter { $0.postType == type }
+        }
+        if !tags.isEmpty {
+            result = result.filter { post in tags.allSatisfy { post.tags.contains($0) } }
+        }
+        if let brand = brand, !brand.isEmpty {
+            result = result.filter { $0.vehicleBrand == brand }
+        }
+        if let model = model, !model.isEmpty {
+            result = result.filter { $0.vehicleModel == model }
+        }
+        return result
     }
 
     /// Tek bir gönderiyi getir.
@@ -74,14 +65,7 @@ final class CommunityService {
 
         let posts: [CommunityPost] = try await client
             .from("community_posts")
-            .select("""
-                *,
-                author_username:author_id(username),
-                author_display_name:author_id(display_name),
-                author_avatar_url:author_id(avatar_url),
-                author_is_verified:author_id(is_verified),
-                author_role:author_id(role)
-            """)
+            .select("*")
             .eq("id", value: id.uuidString)
             .limit(1)
             .execute()
@@ -276,14 +260,7 @@ final class CommunityService {
 
         return try await client
             .from("community_comments")
-            .select("""
-                *,
-                author_username:author_id(username),
-                author_display_name:author_id(display_name),
-                author_avatar_url:author_id(avatar_url),
-                author_is_verified:author_id(is_verified),
-                author_role:author_id(role)
-            """)
+            .select("*")
             .eq("post_id", value: postId.uuidString)
             .eq("is_hidden", value: false)
             .is("deleted_at", value: nil)
@@ -292,7 +269,7 @@ final class CommunityService {
             .value
     }
 
-    func createComment(postId: UUID, body: String) async throws -> CommunityComment {
+    func createComment(postId: UUID, body: String) async throws {
         guard let client = client else {
             throw CommunityServiceError.configMissing
         }
@@ -307,13 +284,10 @@ final class CommunityService {
             "body": AnyJSON.string(body),
         ]
 
-        return try await client
+        try await client
             .from("community_comments")
             .insert(payload)
-            .select()
-            .single()
             .execute()
-            .value
     }
 
     func deleteComment(id: UUID) async throws {

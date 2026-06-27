@@ -12,42 +12,50 @@ struct OwnershipInsightCard: View {
     let color: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+        VStack(alignment: .leading, spacing: 6) {
             // Header
             HStack(spacing: AppSpacing.xs) {
                 Image(systemName: icon)
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundColor(color)
-                    .frame(width: 28, height: 28)
+                    .frame(width: 22, height: 22)
                     .background(
                         Circle()
                             .fill(color.opacity(0.1))
                     )
 
                 Text(title)
-                    .font(AppTypography.captionMedium)
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(AppColors.textTertiary)
                 Spacer()
             }
 
-            // Value
+            // Value — scaled to fit
             Text(value)
-                .font(AppTypography.amountLarge)
+                .font(.system(size: 17, weight: .bold, design: .rounded))
                 .foregroundColor(AppColors.textPrimary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.5)
+                .minimumScaleFactor(0.55)
                 .monospacedDigit()
+
+            Spacer(minLength: 0)
 
             // Subtitle
             if let subtitle {
                 Text(subtitle)
-                    .font(AppTypography.caption)
+                    .font(.system(size: 10))
                     .foregroundColor(AppColors.textSecondary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            } else {
+                // Placeholder to keep height consistent
+                Text(" ")
+                    .font(.system(size: 10))
             }
         }
-        .padding(AppSpacing.md)
-        .frame(maxWidth: .infinity, minHeight: 110, alignment: .leading)
+        .padding(AppSpacing.sm)
+        .frame(maxWidth: .infinity, minHeight: 110)
+        .frame(height: 110)
         .background(
             RoundedRectangle(cornerRadius: AppRadius.card)
                 .fill(Color.appSurface)

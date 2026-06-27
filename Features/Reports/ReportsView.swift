@@ -15,6 +15,7 @@ struct ReportsView: View {
     @State private var selectedYear: Int
     @State private var showSaleFile = false
     @State private var saleFileVehicle: Vehicle?
+    @State private var showVehiclePicker = false
 
     private let currentYear = Calendar.current.component(.year, from: Date())
 
@@ -126,6 +127,14 @@ struct ReportsView: View {
             .background(Color.appBackground)
             .sheet(item: $saleFileVehicle) { vehicle in
                 SaleFileView(vehicle: vehicle)
+            }
+            .confirmationDialog("Satış dosyası hangi araç için?", isPresented: $showVehiclePicker) {
+                ForEach(vehicles) { v in
+                    Button(v.plate.isEmpty ? v.fullName : "\(v.plate) · \(v.fullName)") {
+                        saleFileVehicle = v
+                    }
+                }
+                Button("Vazgeç", role: .cancel) {}
             }
         }
     }
@@ -422,8 +431,11 @@ struct ReportsView: View {
     // MARK: - Sale File CTA
     private var saleFileCTA: some View {
         Button {
-            let target = selectedVehicle ?? vehicles.first
-            saleFileVehicle = target
+            if vehicles.count == 1, let only = vehicles.first {
+                saleFileVehicle = only
+            } else {
+                showVehiclePicker = true
+            }
         } label: {
             HStack(spacing: AppSpacing.md) {
                 ZStack {
