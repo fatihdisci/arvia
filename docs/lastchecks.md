@@ -49,12 +49,14 @@
 
 ---
 
-### 4. VehicleEditView vehicleType UI — ⚠️ Kısmen
+### 4. VehicleEditView vehicleType UI — ✅ Yapıldı
 
-- ✅ `vehicleType`, `motorcycleType`, `engineCC` state değişkenleri var
-- ✅ Init'te mevcut araçtan değerler yükleniyor
-- ❌ UI'da araç türü Picker'ı **henüz eklenmedi.** State'ler hazır ama formda gösterilmiyor.
-- **Öneri:** Sonraki PR'da `VehicleEditView` body'sine `vehicleTypeSection` ve `motorcycleSection` eklenmeli.
+- ✅ Araç türü Picker (Otomobil / Motosiklet) eklendi
+- ✅ Motosiklet seçilince motorcycleType ve engineCC alanları görünür
+- ✅ Otomobil seçilince motosiklet alanları gizlenir
+- ✅ onChange: car'a geçince motorcycleType ve engineCC sıfırlanır
+- ✅ applyChanges(): vehicleTypeRaw, motorcycleTypeRaw, engineCC doğru update edilir
+- ✅ do/catch ile save error handling
 
 ---
 
@@ -77,13 +79,13 @@
 
 ---
 
-### 7. AppBrand Kullanımı — ⚠️ Kısmen
+### 7. AppBrand Kullanımı — ✅ Yapıldı
 
-- ✅ `Models/AppBrand.swift` dosyası mevcut: `appName`, `tagline`, `bundleIdentifier`
-- ❌ **Dosya pbxproj'da kayıtlı değil** — başka bir dosyadan referans verilemez
-- ❌ Hardcoded "Garajım" metinleri view'larda duruyor
-- **Not:** App adı değişirse, `AppBrand.swift` referans alınarak tüm metinler değiştirilmeli. Şu an pbxproj dışında olduğu için sadece dokümantasyon amaçlı.
-- **Öneri:** `AppBrand.swift` pbxproj'a eklendikten sonra kademeli geçiş yapılmalı.
+- ✅ `AppBrand.swift` pbxproj'a eklendi (Models grubu)
+- ✅ BrandIntroView: `AppBrand.appName` kullanıyor
+- ✅ SettingsView legal disclaimer: `AppBrand.appName` kullanıyor
+- ✅ Bundle ID değişmedi
+- Not: Diğer view'lardaki hardcoded "Garajım" metinleri kademeli değiştirilebilir. Kritik marka görünen yerler tamam.
 
 ---
 
