@@ -71,7 +71,7 @@ struct BrandIntroView<Content: View>: View {
 
                 // App name + tagline
                 VStack(spacing: AppSpacing.xxs) {
-                    Text("Garajım")
+                    Text(AppBrand.appName)
                         .font(.system(size: 34, weight: .bold, design: .default))
                         .foregroundColor(AppColors.textPrimary)
 

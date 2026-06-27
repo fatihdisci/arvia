@@ -125,6 +125,64 @@ struct VehicleEditView: View {
                     Text("Temel Bilgiler")
                 }
 
+                // Araç türü
+                Section {
+                    Picker(selection: $vehicleType) {
+                        ForEach(VehicleType.allCases, id: \.self) { type in
+                            HStack(spacing: AppSpacing.xs) {
+                                Image(systemName: type.heroSymbol)
+                                    .font(.body)
+                                Text(type.displayName)
+                            }
+                            .tag(type)
+                        }
+                    } label: {
+                        Label("Araç Türü", systemImage: "steeringwheel")
+                            .font(AppTypography.body)
+                            .foregroundColor(AppColors.textPrimary)
+                    }
+                    .onChange(of: vehicleType) { _, newType in
+                        if newType == .car {
+                            motorcycleType = nil
+                            engineCCText = ""
+                        }
+                    }
+                } header: {
+                    Text("Araç Türü")
+                }
+
+                // Motosiklet özel alanları
+                if vehicleType == .motorcycle {
+                    Section {
+                        Picker(selection: $motorcycleType) {
+                            Text("Seç (isteğe bağlı)").tag(nil as MotorcycleType?)
+                            ForEach(MotorcycleType.allCases, id: \.self) { type in
+                                Text(type.displayName).tag(type as MotorcycleType?)
+                            }
+                        } label: {
+                            Label("Motosiklet Tipi", systemImage: "gauge.with.needle")
+                                .font(AppTypography.body)
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: "engine.combustion")
+                                .foregroundColor(AppColors.textTertiary)
+                                .frame(width: 24)
+                            TextField("Motor Hacmi (cc)", text: $engineCCText)
+                                .font(AppTypography.body)
+                                .keyboardType(.numberPad)
+                            if !engineCCText.isEmpty {
+                                Text("cc")
+                                    .font(AppTypography.caption)
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
+                        }
+                    } header: {
+                        Text("Motosiklet Bilgileri")
+                    }
+                }
+
                 // Tip bilgileri
                 Section {
                     enumPicker("Yakıt Tipi", icon: "fuelpump", selection: $fuelType)
@@ -306,6 +364,7 @@ struct VehicleEditView: View {
     }
 
     private func applyChanges() {
+        vehicle.vehicleTypeRaw = vehicleType.rawValue
         vehicle.plate = plate.trimmingCharacters(in: .whitespaces).uppercased()
         vehicle.brand = brand.trimmingCharacters(in: .whitespaces)
         vehicle.model = model.trimmingCharacters(in: .whitespaces)
@@ -319,11 +378,16 @@ struct VehicleEditView: View {
         vehicle.purchaseOdometer = purchaseOdometer
         vehicle.purchasePrice = purchasePrice
         vehicle.notes = notes
+        vehicle.motorcycleTypeRaw = vehicleType == .motorcycle ? motorcycleType?.rawValue : nil
+        vehicle.engineCC = vehicleType == .motorcycle ? engineCC : nil
 
-        try? modelContext.save()
-
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
+        do {
+            try modelContext.save()
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+        } catch {
+            validationErrors = ["Kaydedilemedi: \(error.localizedDescription)"]
+        }
     }
 }
 

@@ -14,6 +14,7 @@
 		0E788B0A99B34A0B96BEC5EB /* ReminderFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0199BF34D747E7823A11B7 /* ReminderFormView.swift */; };
 		13D008DDDF18442092EBE56A /* ExpenseListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEF66CBCFD9C455BA670D36B /* ExpenseListView.swift */; };
 		146D5353FA054B2FBE506510 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 548314EA6F734C4EB2C921DE /* AppEnvironment.swift */; };
+		1AB85923BB039872BA1D181B /* AppBrand.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FFDAA0779F49F26FB74BF1 /* AppBrand.swift */; };
 		15A65146EDAC4AD7960763FD /* AppTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66ACCF15CABF440CB4B63F3C /* AppTypography.swift */; };
 		161FB887287A4BDFBEA0AFFE /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DB6C7ACE6A34B8593EB6519 /* PaywallView.swift */; };
 		18161EA37BAE902FA1E37876 /* PostCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA11741656C9B0E520A8014 /* PostCard.swift */; };
@@ -144,6 +145,7 @@
 		4D213AAFB5E2494FB14585B8 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
 		52DEE37DB37947F3807FE748 /* AppRadius.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRadius.swift; sourceTree = "<group>"; };
 		548314EA6F734C4EB2C921DE /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		C8FFDAA0779F49F26FB74BF1 /* AppBrand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBrand.swift; sourceTree = "<group>"; };
 		55E4D9980909222F1E5DD1C8 /* CommunityPost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityPost.swift; sourceTree = "<group>"; };
 		567D9A83B65DE309E9382DF3 /* CommunityReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityReport.swift; sourceTree = "<group>"; };
 		582BAA7536C7462E88C7F60F /* InspectionReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionReportView.swift; sourceTree = "<group>"; };
@@ -351,6 +353,7 @@
 				AA3B311C36494DCA985B4932 /* ServiceRecord.swift */,
 				B19373C4936A4A80A33AE072 /* SaleFile.swift */,
 				BCDA6923153449448599B46A /* Vehicle.swift */,
+				C8FFDAA0779F49F26FB74BF1 /* AppBrand.swift */,
 				E48F6D07AC53488B9D3CCFD2 /* Reminder.swift */,
 			);
 			path = Models;
@@ -660,6 +663,7 @@
 				05773851B83041A798E299FA /* VehicleDossierApp.swift in Sources */,
 				EBDA1AE0B43D4361A52F05E3 /* AppRouter.swift in Sources */,
 				146D5353FA054B2FBE506510 /* AppEnvironment.swift in Sources */,
+				1AB85923BB039872BA1D181B /* AppBrand.swift in Sources */,
 				C16D7E7E80264AABB7CDA00B /* AppColors.swift in Sources */,
 				15A65146EDAC4AD7960763FD /* AppTypography.swift in Sources */,
 				514491F02245429992D7514A /* AppSpacing.swift in Sources */,

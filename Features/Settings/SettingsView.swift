@@ -314,7 +314,7 @@ struct SettingsView: View {
                         .font(AppTypography.captionMedium)
                         .foregroundColor(AppColors.warning)
                 }
-                Text("Garajım bir resmi kurum uygulaması değildir. TÜVTÜRK, Gelir İdaresi Başkanlığı, sigorta şirketleri veya herhangi bir kamu kurumuyla bağlantısı yoktur. Hatırlatıcılar yalnızca bilgilendirme amaçlıdır.")
+                Text("\(AppBrand.appName) bir resmi kurum uygulaması değildir. TÜVTÜRK, Gelir İdaresi Başkanlığı, sigorta şirketleri veya herhangi bir kamu kurumuyla bağlantısı yoktur. Hatırlatıcılar yalnızca bilgilendirme amaçlıdır.")
                     .font(AppTypography.caption)
                     .foregroundColor(AppColors.textSecondary)
             }
