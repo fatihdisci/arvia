@@ -3,18 +3,16 @@ import SwiftData
 import Charts
 
 // MARK: - Reports View
-// Araç masraf raporları: yıllık toplam, aylık grafik, kategori dağılımı,
-// km başı maliyet, en pahalı kayıtlar.
-// Tasarım kuralı: Sakin, okunaklı, tek ana metrik.
+// Araç masraf raporları: sahiplik içgörüsü formatında sunulur.
+// PremiumMetricHero ana görsel çapa, OwnershipInsightCard'lar destekleyici.
+// Tasarım kuralı: Sakin, okunaklı, anlatısal (narrative).
 
 struct ReportsView: View {
-    @EnvironmentObject private var paywallService: PaywallService
     @Query(sort: \Expense.date, order: .reverse) private var allExpenses: [Expense]
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
 
     @State private var selectedVehicleId: UUID?
     @State private var selectedYear: Int
-    @State private var showPaywall = false
 
     private let currentYear = Calendar.current.component(.year, from: Date())
 
@@ -68,14 +66,54 @@ struct ReportsView: View {
         vehicles.first { $0.id == selectedVehicleId }
     }
 
+    // MARK: - Computed Insights
+    private var currentMonthIndex: Int {
+        Calendar.current.component(.month, from: Date()) - 1 // 0-based
+    }
+
+    private var currentMonthTotal: Double {
+        guard currentMonthIndex < monthlyData.count else { return 0 }
+        return monthlyData[currentMonthIndex].total
+    }
+
+    private var lastMonthTotal: Double {
+        let prevIndex = currentMonthIndex - 1
+        guard prevIndex >= 0, prevIndex < monthlyData.count else { return 0 }
+        return monthlyData[prevIndex].total
+    }
+
+    private var biggestExpense: (category: String, amount: Double)? {
+        guard let top = topExpenses.first else { return nil }
+        return (top.category.displayName, top.amount)
+    }
+
+    private var mostExpensiveMonth: (month: String, amount: Double)? {
+        monthlyData.max(by: { $0.total < $1.total })
+            .flatMap { $0.total > 0 ? ($0.month, $0.total) : nil }
+    }
+
+    private var lastYearTotal: Double {
+        allExpenses
+            .filter { Calendar.current.component(.year, from: $0.date) == selectedYear - 1 }
+            .reduce(0) { $0 + $1.amount }
+    }
+
+    private var yearTrendLabel: String? {
+        guard lastYearTotal > 0, yearlyTotal > 0 else { return nil }
+        let change = ((yearlyTotal - lastYearTotal) / lastYearTotal) * 100
+        if change > 5 { return "Geçen yıla göre %\(Int(abs(change))) daha fazla" }
+        if change < -5 { return "Geçen yıla göre %\(Int(abs(change))) daha az" }
+        return "Geçen yıla benzer seviyede"
+    }
+
     var body: some View {
         NavigationStack {
             Group {
                 if allExpenses.isEmpty {
                     EmptyStateView(
                         icon: "chart.bar.fill",
-                        title: "Masraf raporlarını keşfet",
-                        description: "Aracını ekleyip masraf kaydettikten sonra yıllık toplam, aylık grafik ve kategori dağılımını burada görebilirsin.",
+                        title: "İlk masraf kaydını ekle",
+                        description: "Masraf ve bakım kayıtları ekledikçe yıllık toplam, kategori dağılımı ve km başı maliyet burada görünür.",
                         actionTitle: nil, action: nil
                     )
                 } else {
@@ -84,9 +122,6 @@ struct ReportsView: View {
             }
             .navigationTitle("Raporlar")
             .background(Color.appBackground)
-            .sheet(isPresented: $showPaywall) {
-                PaywallView(feature: .advancedReports)
-            }
         }
     }
 
@@ -95,17 +130,30 @@ struct ReportsView: View {
         ScrollView {
             VStack(spacing: AppSpacing.lg) {
                 filters
-                primaryMetric
-                if paywallService.canAccessAdvancedReports() {
-                    monthlyChart
-                    categorySection
-                    if costPerKm != nil {
-                        costPerKmCard
-                    }
-                    topExpensesSection
-                } else {
-                    advancedReportsLockedCard
-                }
+
+                // Hero metric — anlatısal
+                PremiumMetricHero(
+                    label: selectedYear == currentYear ? "Bu yıl aracın sana" : "\(String(selectedYear)) yılında aracın sana",
+                    value: currencyFormat(yearlyTotal),
+                    vehicleName: selectedVehicle.map { $0.plate.isEmpty ? $0.fullName : "\($0.plate) · \($0.fullName)" },
+                    insightLine: yearTrendLabel
+                )
+
+                // Ownership insight cards
+                insightCardsGrid
+
+                // Monthly chart
+                monthlyChart
+
+                // Category breakdown
+                categorySection
+
+                // Top expenses
+                topExpensesSection
+
+                // Sale file CTA
+                saleFileCTA
+
                 Spacer().frame(height: AppSpacing.xxl)
             }
             .padding(.vertical, AppSpacing.md)
@@ -116,7 +164,6 @@ struct ReportsView: View {
     // MARK: - Filters
     private var filters: some View {
         HStack(spacing: AppSpacing.md) {
-            // Araç filtresi
             if vehicles.count > 1 {
                 Picker("Araç", selection: $selectedVehicleId) {
                     Text("Tüm Araçlar").tag(nil as UUID?)
@@ -129,7 +176,6 @@ struct ReportsView: View {
                 .tint(AppColors.accentPrimary)
             }
 
-            // Yıl filtresi
             Picker("Yıl", selection: $selectedYear) {
                 ForEach(availableYears(), id: \.self) { year in
                     Text(String(year)).tag(year)
@@ -147,30 +193,47 @@ struct ReportsView: View {
         return Array(minYear...maxYear).reversed()
     }
 
-    // MARK: - Primary Metric (yıllık toplam)
-    private var primaryMetric: some View {
-        VStack(spacing: AppSpacing.xxs) {
-            Text(selectedYear == currentYear ? "Bu Yıl Toplam" : "\(String(selectedYear)) Toplam")
-                .font(AppTypography.captionMedium)
-                .foregroundColor(AppColors.textSecondary)
-
-            Text(currencyFormat(yearlyTotal))
-                .heroNumberStyle()
-                .foregroundColor(AppColors.accentPrimary)
-
-            if let vehicle = selectedVehicle {
-                Text(vehicle.plate.isEmpty ? vehicle.fullName : "\(vehicle.plate) — \(vehicle.fullName)")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
+    // MARK: - Insight Cards Grid
+    private var insightCardsGrid: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm) {
+            if let cpk = costPerKm {
+                OwnershipInsightCard(
+                    icon: "gauge.with.needle",
+                    title: "Km Başı Maliyet",
+                    value: currencyFormat(cpk),
+                    subtitle: nil,
+                    color: AppColors.vehicle
+                )
             }
+
+            if let biggest = biggestExpense {
+                OwnershipInsightCard(
+                    icon: "arrow.up.right",
+                    title: "En Büyük Gider",
+                    value: currencyFormat(biggest.amount),
+                    subtitle: biggest.category,
+                    color: AppColors.critical
+                )
+            }
+
+            if let expensive = mostExpensiveMonth {
+                OwnershipInsightCard(
+                    icon: "calendar.badge.exclamationmark",
+                    title: "En Masraflı Ay",
+                    value: currencyFormat(expensive.amount),
+                    subtitle: expensive.month,
+                    color: AppColors.warning
+                )
+            }
+
+            OwnershipInsightCard(
+                icon: "arrow.left.arrow.right",
+                title: "Bu Ay / Geçen Ay",
+                value: currencyFormat(currentMonthTotal),
+                subtitle: lastMonthTotal > 0 ? "\(currencyFormat(lastMonthTotal)) geçen ay" : nil,
+                color: AppColors.success
+            )
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .fill(Color.appSurface)
-                .subtleShadow()
-        )
         .padding(.horizontal, AppSpacing.screenMarginH)
     }
 
@@ -219,33 +282,6 @@ struct ReportsView: View {
         .padding(.horizontal, AppSpacing.screenMarginH)
     }
 
-
-
-    // MARK: - Advanced Reports Paywall
-    private var advancedReportsLockedCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Label("Gelişmiş raporlar Pro ile açılır", systemImage: "lock.fill")
-                .font(AppTypography.bodyMedium)
-                .foregroundColor(AppColors.textPrimary)
-            Text("Free planda yıllık toplamı görebilirsin. Aylık grafik, kategori dağılımı, km başı maliyet ve en yüksek masraflar Pro kapsamındadır.")
-                .font(AppTypography.secondary)
-                .foregroundColor(AppColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Button {
-                showPaywall = true
-            } label: {
-                Label("Pro'ya Geç", systemImage: "crown.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.primary)
-        }
-        .padding(AppSpacing.md)
-        .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
-        .subtleShadow()
-        .padding(.horizontal, AppSpacing.screenMarginH)
-    }
-
-
     // MARK: - Category Breakdown
     private var categorySection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -292,7 +328,6 @@ struct ReportsView: View {
                     .foregroundColor(AppColors.textPrimary)
             }
 
-            // Progress bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 2)
@@ -306,34 +341,6 @@ struct ReportsView: View {
             }
             .frame(height: 4)
         }
-    }
-
-    // MARK: - Cost Per Km
-    private var costPerKmCard: some View {
-        HStack(spacing: AppSpacing.md) {
-            Image(systemName: "gauge.with.needle")
-                .font(.title2)
-                .foregroundColor(AppColors.vehicle)
-                .frame(width: 40, height: 40)
-                .background(Circle().fill(AppColors.vehicle.opacity(0.1)))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Km Başı Maliyet")
-                    .font(AppTypography.captionMedium)
-                    .foregroundColor(AppColors.textSecondary)
-                Text(costPerKm.map { currencyFormat($0) } ?? "—")
-                    .font(AppTypography.amount)
-                    .foregroundColor(AppColors.vehicle)
-            }
-            Spacer()
-        }
-        .padding(AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .fill(Color.appSurface)
-        )
-        .subtleShadow()
-        .padding(.horizontal, AppSpacing.screenMarginH)
     }
 
     // MARK: - Top Expenses
@@ -403,6 +410,40 @@ struct ReportsView: View {
         .padding(.vertical, AppSpacing.xs)
     }
 
+    // MARK: - Sale File CTA
+    private var saleFileCTA: some View {
+        VStack(spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppRadius.medium)
+                        .fill(AppColors.success.opacity(0.1))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "doc.richtext")
+                        .font(.title3)
+                        .foregroundColor(AppColors.success)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Kayıtlarından satış dosyası oluştur")
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("Bakım geçmişi, masraf özeti ve belgelerinle güven dosyası hazırla.")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+
+                Spacer()
+            }
+        }
+        .padding(AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .fill(Color.appSurface)
+        )
+        .subtleShadow()
+        .padding(.horizontal, AppSpacing.screenMarginH)
+    }
+
     // MARK: - Helpers
     private func currencyFormat(_ value: Double) -> String {
         let formatter = NumberFormatter()
@@ -417,12 +458,10 @@ struct ReportsView: View {
 #Preview("Raporlar — Dolu") {
     ReportsView()
         .modelContainer(MockDataProvider.previewContainer)
-        .environmentObject(PaywallService.shared)
 }
 
 #Preview("Raporlar — Dark Mode") {
     ReportsView()
         .modelContainer(MockDataProvider.previewContainer)
-        .environmentObject(PaywallService.shared)
         .preferredColorScheme(.dark)
 }

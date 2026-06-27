@@ -34,11 +34,18 @@ struct DocumentFormView: View {
     @State private var validationErrors: [String] = []
     @State private var isImporting = false
 
-    init(existingDocument: VehicleDocument? = nil) {
+    /// Başlık kullanıcı tarafından elle düzenlendiyse true.
+    /// Tip değişiminde başlığı otomatik güncellemeyi durdurur.
+    @State private var hasUserEditedTitle = false
+    /// Otomatik atanan son başlık. Kullanıcı düzenlediyse bu değer güncelliğini yitirir.
+    @State private var lastAutoTitle = ""
+
+    init(existingDocument: VehicleDocument? = nil, preselectedVehicleId: UUID? = nil) {
         self.existingDocument = existingDocument
         if let doc = existingDocument {
             _documentType = State(initialValue: doc.type)
             _title = State(initialValue: doc.title)
+            _hasUserEditedTitle = State(initialValue: true) // düzenleme modunda başlık zaten kullanıcıya ait
             _selectedVehicleId = State(initialValue: doc.vehicleId)
             _issueDate = State(initialValue: doc.issueDate)
             _expiryDate = State(initialValue: doc.expiryDate)
@@ -47,6 +54,14 @@ struct DocumentFormView: View {
             _hasIssueDate = State(initialValue: doc.issueDate != nil)
             _hasExpiryDate = State(initialValue: doc.expiryDate != nil)
             _importedFileName = State(initialValue: doc.originalFileName)
+        } else {
+            // Yeni belge: varsayılan tipin adını başlık olarak ata
+            let defaultTitle = DocumentType.other.displayName
+            _title = State(initialValue: defaultTitle)
+            _lastAutoTitle = State(initialValue: defaultTitle)
+            if let vid = preselectedVehicleId {
+                _selectedVehicleId = State(initialValue: vid)
+            }
         }
     }
 
@@ -115,7 +130,11 @@ struct DocumentFormView: View {
     private func docTypeButton(_ type: DocumentType) -> some View {
         Button {
             documentType = type
-            if title.isEmpty { title = type.displayName }
+            // Başlık elle düzenlenmediyse otomatik güncelle
+            if !hasUserEditedTitle {
+                title = type.displayName
+                lastAutoTitle = type.displayName
+            }
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: type.defaultIcon)
@@ -139,7 +158,16 @@ struct DocumentFormView: View {
     // MARK: - Details
     private var detailsSection: some View {
         Section {
-            TextField("Başlık", text: $title)
+            TextField("Başlık", text: Binding(
+                get: { title },
+                set: { newValue in
+                    title = newValue
+                    // Kullanıcı elle yazdıysa otomatik güncellemeyi durdur
+                    if newValue != lastAutoTitle {
+                        hasUserEditedTitle = true
+                    }
+                }
+            ))
                 .font(AppTypography.body)
 
             Toggle(isOn: $hasIssueDate) { Label("Düzenleme Tarihi", systemImage: "calendar") }
@@ -350,7 +378,12 @@ struct DocumentFormView: View {
         if let data = importedFileData, let fileName = importedFileName {
             // Geçici dosya oluştur
             let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-            try? data.write(to: tempURL)
+            do {
+                try data.write(to: tempURL)
+            } catch {
+                errors.append("Geçici dosya oluşturulamadı: \(error.localizedDescription)")
+                validationErrors = errors; return
+            }
 
             do {
                 let result = try DocumentStorageService.shared.saveFile(
@@ -373,8 +406,16 @@ struct DocumentFormView: View {
             }
         }
 
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            // Başarı haptik
+            let impact = UINotificationFeedbackGenerator()
+            impact.notificationOccurred(.success)
+            dismiss()
+        } catch {
+            errors.append("Kayıt sırasında bir hata oluştu. Lütfen tekrar dene.")
+            validationErrors = errors
+        }
     }
 }
 

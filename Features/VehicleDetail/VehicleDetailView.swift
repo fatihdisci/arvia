@@ -87,6 +87,10 @@ struct VehicleDetailView: View {
                 inspectionReportSection
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
+                // MARK: Sale File Preview
+                saleFilePreviewCard
+                    .padding(.horizontal, AppSpacing.screenMarginH)
+
                 // MARK: Documents (Belgeler)
                 documentsSection
                     .padding(.horizontal, AppSpacing.screenMarginH)
@@ -152,7 +156,7 @@ struct VehicleDetailView: View {
             SaleFileView(vehicle: vehicle)
         }
         .sheet(isPresented: $showAddDocument) {
-            DocumentFormView()
+            DocumentFormView(preselectedVehicleId: vehicle.id)
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView(feature: .documentLimit)
@@ -332,7 +336,7 @@ struct VehicleDetailView: View {
                                     .fill(AppColors.critical.opacity(0.12))
                             )
                     } else if doc.isExpiringSoon {
-                        Text("\(doc.daysUntilExpiry) gün")
+                        Text("\(doc.daysUntilExpiry ?? 0) gün")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundColor(AppColors.warning)
                             .padding(.horizontal, 6)
@@ -476,6 +480,51 @@ struct VehicleDetailView: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    // MARK: - Sale File Preview Card
+    /// Satış Dosyası önizleme kartı.
+    /// Güvenli dil: Mekanik/hukuki garanti ima etmez.
+    private var saleFilePreviewCard: some View {
+        Button {
+            showSaleFile = true
+        } label: {
+            HStack(spacing: AppSpacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppRadius.medium)
+                        .fill(AppColors.success.opacity(0.1))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "doc.richtext")
+                        .font(.title3)
+                        .foregroundColor(AppColors.success)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Satış Dosyası")
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("Bakım, belge ve ekspertiz kayıtlarından güven dosyası oluştur.")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .padding(AppSpacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.card)
+                    .fill(Color.appSurface)
+            )
+            .subtleShadow()
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Satış Dosyası — Bakım, belge ve ekspertiz kayıtlarından güven dosyası oluştur.")
+        .accessibilityHint("Satış dosyası oluşturmak için çift tıkla")
     }
 
     // MARK: - Recent Records Section

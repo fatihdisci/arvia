@@ -8,11 +8,80 @@
 	<!-- İzleme için kullanılan alan adı yok. -->
 	<key>NSPrivacyTrackingDomains</key>
 	<array/>
-	<!-- Uygulama cihaz dışına/üçüncü taraflara veri toplamaz veya göndermez.
-	     Veriler yalnızca cihazda; CloudKit açılırsa kullanıcının KENDİ iCloud
-	     hesabının private database'inde saklanır (Apple tanımına göre "toplama" değildir). -->
+	<!-- Toplanan veri türleri. -->
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array/>
+	<array>
+		<!-- Topluluk: Kullanıcı tarafından oluşturulan içerik (gönderi, yorum).
+		     Supabase veritabanında saklanır. -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<!-- Topluluk profili: Görünen ad, kullanıcı adı.
+		     Supabase veritabanında saklanır. -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeName</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<!-- Apple ile Giriş: E-posta adresi (Supabase Auth üzerinden).
+		     Kullanıcı Apple Private Relay kullanıyorsa gizlenmiş e-posta gelir. -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeEmailAddress</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<!-- Belge ekleme: Kullanıcının seçtiği fotoğraflar. Yerel cihazda
+		     saklanır; cihaz dışına gönderilmez (isteğe bağlı iCloud sync hariç). -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePhotosorVideos</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<!-- Satın alma: StoreKit 2 ile yönetilir. Uygulama kendi satın alma
+		     veri tabanı tutmaz, ancak abonelik durumu cihazda önbelleğe alınır. -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+	</array>
 	<!-- Required Reason API'leri: kullanılan API'ler için resmi gerekçe kodları. -->
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
@@ -33,6 +102,15 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>CA92.1</string>
+			</array>
+		</dict>
+		<!-- Disk alanı: DocumentStorageService depolama kullanımı bilgisi için. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>7D9E.1</string>
 			</array>
 		</dict>
 	</array>

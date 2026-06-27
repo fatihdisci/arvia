@@ -117,15 +117,17 @@ struct VehicleDossierApp: App {
 
     var body: some Scene {
         WindowGroup {
-            AppRouter()
-                .modelContainer(modelContainer)
-                .environmentObject(paywallService)
-                .environmentObject(communityAuthService)
-                .environment(\.locale, Locale(identifier: "tr_TR"))
-                .task {
-                    await communityAuthService.restoreSession()
-                    await scheduleRetentionNotifications()
-                }
+            BrandIntroView {
+                AppRouter()
+                    .modelContainer(modelContainer)
+                    .environmentObject(paywallService)
+                    .environmentObject(communityAuthService)
+                    .environment(\.locale, Locale(identifier: "tr_TR"))
+                    .task {
+                        await communityAuthService.restoreSession()
+                        await scheduleRetentionNotifications()
+                    }
+            }
         }
     }
 

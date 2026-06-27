@@ -42,7 +42,7 @@ final class CommunityAuthService: NSObject, ObservableObject {
 
     /// Apple ile giriş yap. Önce Apple ID doğrulaması, sonra Supabase auth.
     func signInWithApple() async throws -> Bool {
-        guard let client = client else {
+        guard client != nil else {
             authError = "Topluluk bağlantısı yapılandırılmamış."
             return false
         }

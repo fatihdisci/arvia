@@ -44,7 +44,7 @@ struct ServiceRecordFormView: View {
         var hasWarranty = false
     }
 
-    init(existingRecord: ServiceRecord? = nil) {
+    init(existingRecord: ServiceRecord? = nil, preselectedVehicleId: UUID? = nil) {
         self.existingRecord = existingRecord
         if let r = existingRecord {
             _serviceType = State(initialValue: r.serviceType)
@@ -57,6 +57,8 @@ struct ServiceRecordFormView: View {
             _oilType = State(initialValue: r.oilType ?? "")
             _notes = State(initialValue: r.notes)
             _selectedVehicleId = State(initialValue: r.vehicleId)
+        } else if let vid = preselectedVehicleId {
+            _selectedVehicleId = State(initialValue: vid)
         }
     }
 

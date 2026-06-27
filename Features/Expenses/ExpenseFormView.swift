@@ -25,7 +25,7 @@ struct ExpenseFormView: View {
 
     @State private var validationErrors: [String] = []
 
-    init(existingExpense: Expense? = nil) {
+    init(existingExpense: Expense? = nil, preselectedVehicleId: UUID? = nil) {
         self.existingExpense = existingExpense
         if let e = existingExpense {
             _selectedCategory = State(initialValue: e.category)
@@ -35,6 +35,8 @@ struct ExpenseFormView: View {
             _vendorName = State(initialValue: e.vendorName ?? "")
             _note = State(initialValue: e.note)
             _selectedVehicleId = State(initialValue: e.vehicleId)
+        } else if let vid = preselectedVehicleId {
+            _selectedVehicleId = State(initialValue: vid)
         }
     }
 

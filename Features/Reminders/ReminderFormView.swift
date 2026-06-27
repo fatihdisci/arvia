@@ -34,6 +34,12 @@ struct ReminderFormView: View {
 
     @State private var validationErrors: [String] = []
 
+    init(preselectedVehicleId: UUID? = nil) {
+        if let vid = preselectedVehicleId {
+            _selectedVehicleId = State(initialValue: vid)
+        }
+    }
+
     // ReminderRepeatRule enum'u shared olarak ReminderRepeatEngine.swift içinde tanımlı.
     // .custom opsiyonu UI'da gizlenir (henüz desteklenmiyor).
 

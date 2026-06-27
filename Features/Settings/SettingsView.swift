@@ -543,12 +543,23 @@ struct SettingsView: View {
                     ] as [String: Any]
                 }
 
+                export["saleFiles"] = saleFiles.map { sf in
+                    [
+                        "id": sf.id.uuidString,
+                        "vehicleId": sf.vehicleId.uuidString,
+                        "title": sf.title,
+                        "createdAt": sf.createdAt.ISO8601Format(),
+                        "hasPDF": sf.generatedPDFFileName != nil,
+                    ] as [String: Any]
+                }
+
                 export["exportDate"] = Date().ISO8601Format()
                 export["appVersion"] = AppEnvironment.appVersion
                 export["vehicleCount"] = vehicles.count
                 export["reminderCount"] = reminders.count
                 export["expenseCount"] = expenses.count
                 export["serviceCount"] = services.count
+                export["saleFileCount"] = saleFiles.count
                 export["note"] = "Belge dosyaları (PDF/fotoğraf) JSON içine dahil edilmez."
 
                 if let jsonData = try? JSONSerialization.data(withJSONObject: export, options: .prettyPrinted) {

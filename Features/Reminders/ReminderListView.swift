@@ -61,12 +61,71 @@ struct ReminderListView: View {
         .sheet(isPresented: $showAddReminder) { ReminderFormView() }
     }
 
+    // MARK: - 30 Gün Özeti
+    private var next30DaysCount: Int {
+        activeReminders.filter { reminder in
+            guard let dueDate = reminder.dueDate else { return false }
+            let days = Calendar.current.dateComponents([.day], from: Date(), to: dueDate).day ?? 999
+            return days >= 0 && days <= 30
+        }.count
+    }
+
+    private var overdueCount: Int { overdueReminders.count }
+    private var todayCount: Int { todayReminders.count }
+
+    // MARK: - Summary Module
+    private var summaryModule: some View {
+        HStack(spacing: AppSpacing.md) {
+            summaryItem(
+                count: overdueCount,
+                label: "Geciken",
+                icon: "exclamationmark.triangle.fill",
+                color: AppColors.critical
+            )
+            summaryItem(
+                count: todayCount,
+                label: "Bugün",
+                icon: "clock.fill",
+                color: AppColors.warning
+            )
+            summaryItem(
+                count: next30DaysCount,
+                label: "30 Gün",
+                icon: "calendar.badge.clock",
+                color: AppColors.accentPrimary
+            )
+        }
+        .padding(.vertical, AppSpacing.xs)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Önümüzdeki 30 gün: \(next30DaysCount) hatırlatıcı. Geciken: \(overdueCount). Bugün: \(todayCount).")
+    }
+
+    private func summaryItem(count: Int, label: String, icon: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(color)
+            Text("\(count)")
+                .font(AppTypography.amount)
+                .foregroundColor(AppColors.textPrimary)
+            Text(label)
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, AppSpacing.xs)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.medium)
+                .fill(color.opacity(0.06))
+        )
+    }
+
     // MARK: - Empty State
     private var emptyState: some View {
         EmptyStateView(
             icon: "bell.badge",
-            title: "Önemli tarihleri takip et",
-            description: "Muayene, sigorta ve bakım tarihlerini unutmamak için hatırlatıcı ekle.",
+            title: "İlk hatırlatıcını ekle",
+            description: "Muayene, sigorta ve bakım tarihlerini kaçırmamak için hatırlatıcı oluştur.",
             actionTitle: "Hatırlatıcı Ekle",
             action: { showAddReminder = true }
         )
@@ -75,6 +134,11 @@ struct ReminderListView: View {
     // MARK: - List Content
     private var reminderListContent: some View {
         List {
+            // Üst özet modülü
+            Section {
+                summaryModule
+            }
+
             if !overdueReminders.isEmpty {
                 reminderGroup(
                     title: "Gecikenler",
@@ -157,6 +221,10 @@ struct ReminderListView: View {
 
     // MARK: - Actions
     private func completeReminder(_ reminder: Reminder) {
+        // Başarı haptik
+        let impact = UINotificationFeedbackGenerator()
+        impact.notificationOccurred(.success)
+
         // Tekrar kuralını tamamlamadan önce al (completedAt set edildikten sonra da erişilebilir).
         let rule = reminder.repeatRule
         let oldDueDate = reminder.dueDate

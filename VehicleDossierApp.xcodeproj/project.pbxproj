@@ -22,6 +22,10 @@
 		2336CEB5BC41218AC5F2B8FC /* CommunityEmptyStates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172F0844A2F37F667AD8C5F9 /* CommunityEmptyStates.swift */; };
 		23FAB056376649C3AF48A795 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE62D7B7FDAE440B9176077B /* EmptyStateView.swift */; };
 		267995CAA5EF4E4AB73225A9 /* VehicleHeroHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58BBF161EF564CE285C7F17F /* VehicleHeroHeader.swift */; };
+		QUIKACTNQUIKACTNQUIKACTN /* QuickActionTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = QUIKACTRQUIKACTRQUIKACTR /* QuickActionTile.swift */; };
+		DOSICMPLDOSICMPLDOSICMPL /* DossierCompletenessCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DOSICMPRDOSICMPRDOSICMPR /* DossierCompletenessCard.swift */; };
+		OWNSINSGOWNSINSGOWNSINSG /* OwnershipInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = OWNSINSROWNSINSROWNSINSR /* OwnershipInsightCard.swift */; };
+		BRNDNTRVBRNDNTRVBRNDNTRV /* BrandIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BRNDNTRRBRNDNTRRBRNDNTRR /* BrandIntroView.swift */; };
 		28E816DC9F0D40E5BA7DCA19 /* DocumentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C9A3136160348AFBE76B0C3 /* DocumentsView.swift */; };
 		2DB927F9BFC27F98C25211F7 /* Supabase.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 921F32F152B20505593AD8E1 /* Supabase.framework */; };
 		301518BA95E44FD5A134BF8C /* MockDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7A9414480D45CD943E3DAC /* MockDataProvider.swift */; };
@@ -138,6 +142,10 @@
 		567D9A83B65DE309E9382DF3 /* CommunityReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityReport.swift; sourceTree = "<group>"; };
 		582BAA7536C7462E88C7F60F /* InspectionReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionReportView.swift; sourceTree = "<group>"; };
 		58BBF161EF564CE285C7F17F /* VehicleHeroHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleHeroHeader.swift; sourceTree = "<group>"; };
+		QUIKACTRQUIKACTRQUIKACTR /* QuickActionTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionTile.swift; sourceTree = "<group>"; };
+		DOSICMPRDOSICMPRDOSICMPR /* DossierCompletenessCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DossierCompletenessCard.swift; sourceTree = "<group>"; };
+		OWNSINSROWNSINSROWNSINSR /* OwnershipInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnershipInsightCard.swift; sourceTree = "<group>"; };
+		BRNDNTRRBRNDNTRRBRNDNTRR /* BrandIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandIntroView.swift; sourceTree = "<group>"; };
 		5B6942877FED47F5943E58C1 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
 		60619A1D363143F3840752AB /* RetentionNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetentionNotificationService.swift; sourceTree = "<group>"; };
 		6145ECA81043106F6EF7D91A /* CommunityRulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityRulesView.swift; sourceTree = "<group>"; };
@@ -446,6 +454,10 @@
 			children = (
 				257005EB358645CC82A80E96 /* SectionHeaderMetricCard.swift */,
 				58BBF161EF564CE285C7F17F /* VehicleHeroHeader.swift */,
+				QUIKACTRQUIKACTRQUIKACTR /* QuickActionTile.swift */,
+				DOSICMPRDOSICMPRDOSICMPR /* DossierCompletenessCard.swift */,
+				OWNSINSROWNSINSROWNSINSR /* OwnershipInsightCard.swift */,
+				BRNDNTRRBRNDNTRRBRNDNTRR /* BrandIntroView.swift */,
 				86FDB0BC84684A08AF49E08A /* VehicleCard.swift */,
 				AE62D7B7FDAE440B9176077B /* EmptyStateView.swift */,
 			);
@@ -633,6 +645,10 @@
 				4D612E3A381246C6AF78E7BF /* SectionHeaderMetricCard.swift in Sources */,
 				46AA631DF99F4D72842BB3B3 /* VehicleCard.swift in Sources */,
 				267995CAA5EF4E4AB73225A9 /* VehicleHeroHeader.swift in Sources */,
+				QUIKACTNQUIKACTNQUIKACTN /* QuickActionTile.swift in Sources */,
+				DOSICMPLDOSICMPLDOSICMPL /* DossierCompletenessCard.swift in Sources */,
+				OWNSINSGOWNSINSGOWNSINSG /* OwnershipInsightCard.swift in Sources */,
+				BRNDNTRVBRNDNTRVBRNDNTRV /* BrandIntroView.swift in Sources */,
 				62CFD3078AB54AE98354161B /* GarageView.swift in Sources */,
 				85B909F0A3694236A7C09766 /* VehicleFormView.swift in Sources */,
 				CCAT0004CCAT0004CCAT0004 /* VehicleCatalogPickerViews.swift in Sources */,

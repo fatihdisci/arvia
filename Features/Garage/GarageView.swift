@@ -3,7 +3,8 @@ import SwiftData
 
 // MARK: - Garaj (Garage) Tab
 // Kullanıcının araçlarını gösteren ana ekran.
-// Araç yoksa EmptyStateView, varsa araç kartları listesi.
+// Premium araç dijital dosyası hissi: Ana araç hero kartı, hızlı işlemler,
+// dosya tamlığı ve ikincil araçlar sakin bir hiyerarşide sunulur.
 
 struct GarageView: View {
     @Environment(\.modelContext) private var modelContext
@@ -18,12 +19,24 @@ struct GarageView: View {
     @State private var showSettings = false
     @State private var showArchivedVehicles = false
 
+    // QuickAction sheets
+    @State private var showAddExpense = false
+    @State private var showAddService = false
+    @State private var showAddDocument = false
+    @State private var showAddReminder = false
+    @State private var showSaleFile = false
+    @State private var paywallFeature: PaywallView.PaywallFeature = .secondVehicle
+
     private var activeVehicles: [Vehicle] {
         vehicles.filter { $0.archivedAt == nil }
     }
 
     private var archivedVehicles: [Vehicle] {
         vehicles.filter { $0.archivedAt != nil }
+    }
+
+    private var primaryVehicle: Vehicle? {
+        activeVehicles.first
     }
 
     var body: some View {
@@ -34,13 +47,13 @@ struct GarageView: View {
                 } else if activeVehicles.isEmpty {
                     onlyArchivedView
                 } else {
-                    vehicleList
+                    garageContent
                 }
             }
             .navigationTitle("Garaj")
             .background(Color.appBackground)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button {
                         showSettings = true
                     } label: {
@@ -51,21 +64,19 @@ struct GarageView: View {
                     .accessibilityLabel("Ayarlar")
                 }
 
-                if !vehicles.isEmpty {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            handleAddVehicle()
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.body)
-                                .foregroundColor(AppColors.accentPrimary)
-                        }
-                        .accessibilityLabel("Araç Ekle")
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        handleAddVehicle()
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.body)
+                            .foregroundColor(AppColors.accentPrimary)
                     }
+                    .accessibilityLabel("Araç Ekle")
                 }
 
                 if !archivedVehicles.isEmpty {
-                    ToolbarItem(placement: .cancellationAction) {
+                    ToolbarItem(placement: .navigationBarLeading) {
                         Button {
                             showArchivedVehicles.toggle()
                         } label: {
@@ -80,8 +91,25 @@ struct GarageView: View {
             .sheet(isPresented: $showAddVehicle) {
                 VehicleFormView()
             }
+            .sheet(isPresented: $showAddExpense) {
+                ExpenseFormView(preselectedVehicleId: primaryVehicle?.id)
+            }
+            .sheet(isPresented: $showAddService) {
+                ServiceRecordFormView(preselectedVehicleId: primaryVehicle?.id)
+            }
+            .sheet(isPresented: $showAddDocument) {
+                DocumentFormView(preselectedVehicleId: primaryVehicle?.id)
+            }
+            .sheet(isPresented: $showAddReminder) {
+                ReminderFormView(preselectedVehicleId: primaryVehicle?.id)
+            }
+            .sheet(isPresented: $showSaleFile) {
+                if let vehicle = primaryVehicle {
+                    SaleFileView(vehicle: vehicle)
+                }
+            }
             .sheet(isPresented: $showPaywall) {
-                PaywallView(feature: .secondVehicle)
+                PaywallView(feature: paywallFeature)
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView()
@@ -100,16 +128,7 @@ struct GarageView: View {
         )
     }
 
-    // MARK: - Actions
-    private func handleAddVehicle() {
-        if paywallService.canAddVehicle(currentCount: activeVehicles.count) {
-            showAddVehicle = true
-        } else {
-            showPaywall = true
-        }
-    }
-
-    // MARK: - Arşiv Görünümü
+    // MARK: - Only Archived
     private var onlyArchivedView: some View {
         VStack(spacing: AppSpacing.lg) {
             EmptyStateView(
@@ -126,6 +145,309 @@ struct GarageView: View {
         }
     }
 
+    // MARK: - Main Garage Content
+    private var garageContent: some View {
+        ScrollView {
+            VStack(spacing: AppSpacing.lg) {
+                // 1. Hero Vehicle Card
+                if let vehicle = primaryVehicle {
+                    heroSection(vehicle: vehicle)
+                }
+
+                // 2. Quick Action Rail
+                quickActionRail
+
+                // 3. Dossier Completeness
+                if let vehicle = primaryVehicle {
+                    DossierCompletenessCard(
+                        score: computeFileScore(for: vehicle),
+                        criteriaMet: criteriaMet(for: vehicle),
+                        criteriaMissing: criteriaMissing(for: vehicle)
+                    )
+                    .padding(.horizontal, AppSpacing.screenMarginH)
+                }
+
+                // 4. Recent activity preview
+                if let vehicle = primaryVehicle {
+                    recentActivitySection(vehicle: vehicle)
+                }
+
+                // 5. Secondary vehicles
+                if activeVehicles.count > 1 {
+                    secondaryVehiclesSection
+                }
+
+                // 6. Archived vehicles
+                if !archivedVehicles.isEmpty {
+                    archivedSection
+                }
+
+                Spacer().frame(height: AppSpacing.xxl)
+            }
+            .padding(.vertical, AppSpacing.md)
+        }
+    }
+
+    // MARK: - Hero Section
+    private func heroSection(vehicle: Vehicle) -> some View {
+        NavigationLink {
+            VehicleDetailView(vehicle: vehicle)
+        } label: {
+            VStack(spacing: 0) {
+                // Photo placeholder
+                ZStack {
+                    LinearGradient(
+                        colors: [
+                            AppColors.vehicle,
+                            AppColors.vehicle.opacity(0.6),
+                            AppColors.accentPrimary.opacity(0.2)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+
+                    Image(systemName: "car.fill")
+                        .font(.system(size: 48, weight: .light))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                .frame(height: 140)
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: AppRadius.heroCard,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: AppRadius.heroCard
+                    )
+                )
+
+                // Info section
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    // Plate capsule
+                    Text(vehicle.plate.isEmpty ? "—" : vehicle.plate)
+                        .plateTextStyle()
+                        .foregroundColor(AppColors.textPrimary)
+
+                    // Brand + Model + Year
+                    HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
+                        Text(vehicle.fullName)
+                            .font(AppTypography.sectionTitle)
+                            .foregroundColor(AppColors.textPrimary)
+
+                        if let year = vehicle.year {
+                            Text("·")
+                                .foregroundColor(AppColors.textTertiary)
+                            Text(String(year))
+                                .font(AppTypography.cardTitle)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                    }
+
+                    // Info badges
+                    HStack(spacing: AppSpacing.sm) {
+                        infoBadge(icon: "gauge.with.needle", text: vehicle.odometerDisplay)
+                        infoBadge(icon: "fuelpump", text: vehicle.fuelType.displayName)
+                        if let trans = vehicle.transmissionType {
+                            infoBadge(
+                                icon: trans == .automatic ? "a.circle" : "m.circle",
+                                text: trans.displayName
+                            )
+                        }
+                    }
+
+                    // Nickname + upcoming
+                    HStack {
+                        if !vehicle.nickname.isEmpty {
+                            HStack(spacing: AppSpacing.xxs) {
+                                Image(systemName: "heart.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(AppColors.accentPrimary)
+                                Text(vehicle.nickname)
+                                    .font(AppTypography.secondary)
+                                    .foregroundColor(AppColors.accentPrimary)
+                            }
+                        }
+
+                        Spacer()
+
+                        if let reminder = upcomingReminder(for: vehicle) {
+                            HStack(spacing: 4) {
+                                Image(systemName: reminder.isOverdue ? "exclamationmark.triangle.fill" : "bell.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(reminder.isOverdue ? AppColors.critical : AppColors.warning)
+                                Text(reminder.title)
+                                    .font(AppTypography.captionMedium)
+                                    .foregroundColor(reminder.isOverdue ? AppColors.critical : AppColors.warning)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
+                }
+                .padding(AppSpacing.md)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.heroCard)
+                    .fill(Color.appSurface)
+            )
+            .elevatedShadow()
+        }
+        .buttonStyle(PlainCardButtonStyle())
+        .padding(.horizontal, AppSpacing.screenMarginH)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(vehicle.plate), \(vehicle.fullName), \(vehicle.odometerDisplay)")
+    }
+
+    private func infoBadge(icon: String, text: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption2)
+            Text(text)
+                .font(AppTypography.captionMedium)
+        }
+        .foregroundColor(AppColors.textSecondary)
+        .padding(.horizontal, AppSpacing.xs)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.small)
+                .fill(AppColors.backgroundSecondary)
+        )
+    }
+
+    // MARK: - Quick Action Rail
+    private var quickActionRail: some View {
+        QuickActionRail(actions: [
+            .init(icon: "turkishlirasign.circle", label: "Masraf", color: AppColors.accentPrimary) {
+                showAddExpense = true
+            },
+            .init(icon: "wrench.and.screwdriver", label: "Bakım", color: AppColors.warning) {
+                showAddService = true
+            },
+            .init(icon: "doc.text.viewfinder", label: "Belge", color: AppColors.document) {
+                if paywallService.canAddDocument(currentCount: allDocumentsCount) {
+                    showAddDocument = true
+                } else {
+                    paywallFeature = .documentLimit
+                    showPaywall = true
+                }
+            },
+            .init(icon: "bell.badge", label: "Hatırlatıcı", color: AppColors.vehicle) {
+                showAddReminder = true
+            },
+            .init(icon: "doc.richtext", label: "Satış", color: AppColors.success) {
+                if paywallService.canCreateSaleFile() {
+                    showSaleFile = true
+                } else {
+                    paywallFeature = .saleFile
+                    showPaywall = true
+                }
+            },
+        ])
+    }
+
+    /// Tüm dökümanları sayar (paywall limit kontrolü için).
+    private var allDocumentsCount: Int {
+        (try? modelContext.fetch(FetchDescriptor<VehicleDocument>()))?.count ?? 0
+    }
+
+    // MARK: - Recent Activity
+    private func recentActivitySection(vehicle: Vehicle) -> some View {
+        let recentItems = recentRecords(for: vehicle)
+        if recentItems.isEmpty { return AnyView(EmptyView()) }
+
+        return AnyView(
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                SectionHeader(title: "Son İşlemler")
+
+                VStack(spacing: 0) {
+                    ForEach(Array(recentItems.prefix(3).enumerated()), id: \.element.id) { index, item in
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: item.icon)
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.accentPrimary)
+                                .frame(width: 28)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.title)
+                                    .font(AppTypography.secondary)
+                                    .foregroundColor(AppColors.textPrimary)
+                                Text(item.subtitle)
+                                    .font(AppTypography.caption)
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+
+                            Spacer()
+
+                            Text(item.date.formatted(date: .numeric, time: .omitted))
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                        .padding(.horizontal, AppSpacing.screenMarginH)
+                        .padding(.vertical, AppSpacing.sm)
+
+                        if index < min(recentItems.count, 3) - 1 {
+                            Divider()
+                                .padding(.leading, 44)
+                                .padding(.trailing, AppSpacing.screenMarginH)
+                        }
+                    }
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: AppRadius.card)
+                        .fill(Color.appSurface)
+                )
+                .subtleShadow()
+                .padding(.horizontal, AppSpacing.screenMarginH)
+            }
+        )
+    }
+
+    // MARK: - Secondary Vehicles
+    private var secondaryVehiclesSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            SectionHeader(title: "Diğer Araçlar")
+
+            ForEach(activeVehicles.dropFirst()) { vehicle in
+                NavigationLink {
+                    VehicleDetailView(vehicle: vehicle)
+                } label: {
+                    HStack(spacing: AppSpacing.sm) {
+                        ZStack {
+                            Circle()
+                                .fill(AppColors.vehicle.opacity(0.1))
+                                .frame(width: 40, height: 40)
+                            Image(systemName: "car")
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.vehicle)
+                        }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(vehicle.plate.isEmpty ? vehicle.fullName : vehicle.plate)
+                                .font(AppTypography.bodyMedium)
+                                .foregroundColor(AppColors.textPrimary)
+                            Text(vehicle.fullName)
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                    .padding(AppSpacing.md)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppRadius.medium)
+                            .fill(Color.appSurface)
+                    )
+                }
+                .buttonStyle(PlainCardButtonStyle())
+                .padding(.horizontal, AppSpacing.screenMarginH)
+            }
+        }
+    }
+
+    // MARK: - Archived Section
     private var archivedSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             DisclosureGroup(isExpanded: $showArchivedVehicles) {
@@ -167,83 +489,88 @@ struct GarageView: View {
         }
     }
 
-    // MARK: - Vehicle List
-    private var vehicleList: some View {
-        ScrollView {
-            LazyVStack(spacing: AppSpacing.md) {
-                // Header
-                SectionHeader(
-                    title: "Araçlarım",
-                    actionTitle: vehicles.count > 1 ? "\(vehicles.count) araç" : nil,
-                    action: nil
-                )
-
-                // Vehicle cards — NavigationLink ile detay ekranına (sadece aktif araçlar)
-                ForEach(activeVehicles) { vehicle in
-                    NavigationLink {
-                        VehicleDetailView(vehicle: vehicle)
-                    } label: {
-                        VehicleCard(
-                            vehicle: vehicle,
-                            upcomingReminderTitle: upcomingReminder(for: vehicle)?.title,
-                            upcomingReminderStatus: upcomingReminder(for: vehicle)?.status,
-                            fileCompletenessScore: computeFileScore(for: vehicle)
-                        )
-                    }
-                    .buttonStyle(PlainCardButtonStyle())
-                }
-
-                // Arşivlenmiş araçlar
-                if !archivedVehicles.isEmpty {
-                    archivedSection
-                }
-
-                Spacer().frame(height: AppSpacing.xxl)
-            }
-            .padding(.vertical, AppSpacing.md)
+    // MARK: - Actions
+    private func handleAddVehicle() {
+        if paywallService.canAddVehicle(currentCount: activeVehicles.count) {
+            showAddVehicle = true
+        } else {
+            paywallFeature = .secondVehicle
+            showPaywall = true
         }
     }
 
     // MARK: - Helpers
     private func upcomingReminder(for vehicle: Vehicle) -> Reminder? {
         let reminders = activeReminders.filter { $0.vehicleId == vehicle.id }
-
-        // Önce gecikmiş olanı göster
-        if let overdue = reminders.first(where: { $0.isOverdue && $0.statusRaw != ReminderStatus.completed.rawValue }) {
-            return overdue
-        }
-        // Sonra bugün olanı
-        if let today = reminders.first(where: { $0.isToday }) {
-            return today
-        }
-        // Sonra en yakın olanı
+        if let overdue = reminders.first(where: { $0.isOverdue }) { return overdue }
+        if let today = reminders.first(where: { $0.isToday }) { return today }
         return reminders
             .filter { $0.dueDate != nil && !$0.isOverdue }
             .min(by: { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) })
     }
 
-    /// Basit dosya tamlık skoru (0-100).
-    /// Kriterler: genel bilgiler, yaklaşan iş durumu, km güncelliği.
     private func computeFileScore(for vehicle: Vehicle) -> Int {
         var score = 0
-
-        // Temel bilgiler (max 40)
         if !vehicle.brand.isEmpty { score += 10 }
         if !vehicle.model.isEmpty { score += 10 }
         if vehicle.year != nil { score += 10 }
         if vehicle.currentOdometer > 0 { score += 10 }
-
-        // Detay bilgiler (max 30)
         if vehicle.transmissionType != nil { score += 10 }
         if vehicle.purchaseDate != nil { score += 10 }
         if vehicle.purchasePrice != nil { score += 10 }
-
-        // Reminder durumu (max 30)
-        let reminders = activeReminders.filter { $0.vehicleId == vehicle.id }
-        if !reminders.isEmpty { score += 15 }
-        if !reminders.contains(where: { $0.isOverdue }) { score += 15 }
-
+        let vehReminders = activeReminders.filter { $0.vehicleId == vehicle.id }
+        if !vehReminders.isEmpty { score += 15 }
+        if !vehReminders.contains(where: { $0.isOverdue }) { score += 15 }
+        if !recentExpenses(for: vehicle).isEmpty { score += 5 }
+        if !recentServices(for: vehicle).isEmpty { score += 5 }
         return min(score, 100)
+    }
+
+    private func recentExpenses(for vehicle: Vehicle) -> [Expense] {
+        (try? modelContext.fetch(FetchDescriptor<Expense>()))?.filter { $0.vehicleId == vehicle.id } ?? []
+    }
+
+    private func recentServices(for vehicle: Vehicle) -> [ServiceRecord] {
+        (try? modelContext.fetch(FetchDescriptor<ServiceRecord>()))?.filter { $0.vehicleId == vehicle.id } ?? []
+    }
+
+    private func criteriaMet(for vehicle: Vehicle) -> [String] {
+        var met: [String] = []
+        if !vehicle.brand.isEmpty { met.append("Marka") }
+        if !vehicle.model.isEmpty { met.append("Model") }
+        if vehicle.year != nil { met.append("Yıl") }
+        if vehicle.currentOdometer > 0 { met.append("Km") }
+        if vehicle.transmissionType != nil { met.append("Vites") }
+        return met
+    }
+
+    private func criteriaMissing(for vehicle: Vehicle) -> [String] {
+        var missing: [String] = []
+        if vehicle.brand.isEmpty { missing.append("Marka") }
+        if vehicle.model.isEmpty { missing.append("Model") }
+        if vehicle.year == nil { missing.append("Yıl") }
+        if vehicle.currentOdometer == 0 { missing.append("Km") }
+        if vehicle.transmissionType == nil { missing.append("Vites") }
+        return missing
+    }
+
+    private struct RecentRecordItem: Identifiable {
+        let id: UUID
+        let icon: String
+        let title: String
+        let subtitle: String
+        let date: Date
+    }
+
+    private func recentRecords(for vehicle: Vehicle) -> [RecentRecordItem] {
+        var items: [RecentRecordItem] = []
+        for e in recentExpenses(for: vehicle) {
+            items.append(RecentRecordItem(id: e.id, icon: e.category.defaultIcon, title: e.category.displayName, subtitle: e.amountCompactDisplay, date: e.date))
+        }
+        for s in recentServices(for: vehicle) {
+            items.append(RecentRecordItem(id: s.id, icon: "wrench.and.screwdriver", title: s.serviceType.displayName, subtitle: s.vendorName ?? s.totalCostDisplay ?? "", date: s.date))
+        }
+        return items.sorted { $0.date > $1.date }
     }
 }
 
