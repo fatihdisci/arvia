@@ -26,6 +26,8 @@
 		DOSICMPLDOSICMPLDOSICMPL /* DossierCompletenessCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DOSICMPRDOSICMPRDOSICMPR /* DossierCompletenessCard.swift */; };
 		OWNSINSGOWNSINSGOWNSINSG /* OwnershipInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = OWNSINSROWNSINSROWNSINSR /* OwnershipInsightCard.swift */; };
 		BRNDNTRVBRNDNTRVBRNDNTRV /* BrandIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BRNDNTRRBRNDNTRRBRNDNTRR /* BrandIntroView.swift */; };
+		E46A5A632F95865F5B6B2AFB /* ContextualTipBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A3E83514B5CDEC58D3BFAA /* ContextualTipBanner.swift */; };
+		938AB55FE3448B27D70E566C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B78599DD92099ED5CA8E93AF /* OnboardingView.swift */; };
 		F2A0D17DBF97281937D9318F /* TodosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4A47D3ECE9D5555483AAB3 /* TodosView.swift */; };
 		5074FE1D88DDA200D84D9582 /* ReminderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB7348B6E78A0AF27914E839 /* ReminderDetailView.swift */; };
 		37A0D11463B068D81D89D0A0 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D61F0BD9EE0EB3BFD65CEA /* HistoryView.swift */; };
@@ -149,6 +151,8 @@
 		DOSICMPRDOSICMPRDOSICMPR /* DossierCompletenessCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DossierCompletenessCard.swift; sourceTree = "<group>"; };
 		OWNSINSROWNSINSROWNSINSR /* OwnershipInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnershipInsightCard.swift; sourceTree = "<group>"; };
 		BRNDNTRRBRNDNTRRBRNDNTRR /* BrandIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandIntroView.swift; sourceTree = "<group>"; };
+		D2A3E83514B5CDEC58D3BFAA /* ContextualTipBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualTipBanner.swift; sourceTree = "<group>"; };
+		B78599DD92099ED5CA8E93AF /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		7B4A47D3ECE9D5555483AAB3 /* TodosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosView.swift; sourceTree = "<group>"; };
 		AB7348B6E78A0AF27914E839 /* ReminderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderDetailView.swift; sourceTree = "<group>"; };
 		38D61F0BD9EE0EB3BFD65CEA /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -258,6 +262,14 @@
 				6145ECA81043106F6EF7D91A /* CommunityRulesView.swift */,
 			);
 			path = Community;
+			sourceTree = "<group>";
+		};
+		ONBO0001ONBO0001ONBO0001 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				B78599DD92099ED5CA8E93AF /* OnboardingView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		30EDB42C0B274E9EBD72D638 /* Reminders */ = {
@@ -446,6 +458,7 @@
 				A2C60AF5041A4BD2BCA574F8 /* Reports */,
 				451856CC67004B5C8B808ECC /* VehicleDetail */,
 				1DCB387D9AB8BA3B2B3AF803 /* Community */,
+				ONBO0001ONBO0001ONBO0001 /* Onboarding */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -467,6 +480,7 @@
 				DOSICMPRDOSICMPRDOSICMPR /* DossierCompletenessCard.swift */,
 				OWNSINSROWNSINSROWNSINSR /* OwnershipInsightCard.swift */,
 				BRNDNTRRBRNDNTRRBRNDNTRR /* BrandIntroView.swift */,
+				D2A3E83514B5CDEC58D3BFAA /* ContextualTipBanner.swift */,
 				86FDB0BC84684A08AF49E08A /* VehicleCard.swift */,
 				AE62D7B7FDAE440B9176077B /* EmptyStateView.swift */,
 			);
@@ -658,6 +672,8 @@
 				DOSICMPLDOSICMPLDOSICMPL /* DossierCompletenessCard.swift in Sources */,
 				OWNSINSGOWNSINSGOWNSINSG /* OwnershipInsightCard.swift in Sources */,
 				BRNDNTRVBRNDNTRVBRNDNTRV /* BrandIntroView.swift in Sources */,
+				E46A5A632F95865F5B6B2AFB /* ContextualTipBanner.swift in Sources */,
+				938AB55FE3448B27D70E566C /* OnboardingView.swift in Sources */,
 				62CFD3078AB54AE98354161B /* GarageView.swift in Sources */,
 				85B909F0A3694236A7C09766 /* VehicleFormView.swift in Sources */,
 				CCAT0004CCAT0004CCAT0004 /* VehicleCatalogPickerViews.swift in Sources */,

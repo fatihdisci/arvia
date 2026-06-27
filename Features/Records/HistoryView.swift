@@ -21,6 +21,10 @@ struct HistoryView: View {
     @State private var showAddDocument = false
     @State private var showAddInspection = false
     @State private var previewURL: URL?
+    @State private var editingExpense: Expense?
+    @State private var editingService: ServiceRecord?
+    @State private var showDeleteConfirmation = false
+    @State private var itemToDelete: Any? = nil
 
     enum HistoryFilter: String, CaseIterable {
         case all = "Tümü"
@@ -74,6 +78,12 @@ struct HistoryView: View {
             .sheet(isPresented: $showAddService) { ServiceRecordFormView() }
             .sheet(isPresented: $showAddDocument) { DocumentFormView() }
             .sheet(isPresented: $showAddInspection) { InspectionReportFormView() }
+            .sheet(item: $editingExpense) { expense in ExpenseFormView(existingExpense: expense) }
+            .sheet(item: $editingService) { service in ServiceRecordFormView(existingRecord: service) }
+            .confirmationDialog("Kayıt Silinsin mi?", isPresented: $showDeleteConfirmation, actions: {
+                Button("Sil", role: .destructive) { performDelete() }
+                Button("Vazgeç", role: .cancel) {}
+            }, message: { Text("Bu işlem geri alınamaz.") })
             .quickLookPreview($previewURL)
         }
     }
@@ -211,51 +221,69 @@ struct HistoryView: View {
     // MARK: - Expense Section
     private var expenseSection: some View {
         ForEach(allExpenses) { expense in
-            HStack(spacing: AppSpacing.sm) {
-                Image(systemName: expense.category.defaultIcon)
-                    .foregroundColor(AppColors.accentPrimary).frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(expense.category.displayName)
-                        .font(AppTypography.secondary).foregroundColor(AppColors.textPrimary)
-                    if let vendor = expense.vendorName, !vendor.isEmpty {
-                        Text(vendor).font(AppTypography.caption).foregroundColor(AppColors.textTertiary)
+            Button {
+                editingExpense = expense
+            } label: {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: expense.category.defaultIcon)
+                        .foregroundColor(AppColors.accentPrimary).frame(width: 24)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(expense.category.displayName)
+                            .font(AppTypography.secondary).foregroundColor(AppColors.textPrimary)
+                        if let vendor = expense.vendorName, !vendor.isEmpty {
+                            Text(vendor).font(AppTypography.caption).foregroundColor(AppColors.textTertiary)
+                        }
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(expense.amountCompactDisplay)
+                            .font(AppTypography.bodyMedium).foregroundColor(AppColors.textPrimary)
+                        Text(expense.dateDisplay)
+                            .font(AppTypography.caption).foregroundColor(AppColors.textTertiary)
                     }
                 }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(expense.amountCompactDisplay)
-                        .font(AppTypography.bodyMedium).foregroundColor(AppColors.textPrimary)
-                    Text(expense.dateDisplay)
-                        .font(AppTypography.caption).foregroundColor(AppColors.textTertiary)
-                }
             }
+            .buttonStyle(.plain)
             .padding(.vertical, AppSpacing.xxs)
+            .swipeActions(edge: .trailing) { swipeDeleteButton(expense) }
+            .swipeActions(edge: .leading) {
+                Button { editingExpense = expense } label: { Label("Düzenle", systemImage: "pencil") }.tint(AppColors.accentPrimary)
+            }
         }
     }
 
     // MARK: - Service Section
     private var serviceSection: some View {
         ForEach(allServiceRecords) { record in
-            HStack(spacing: AppSpacing.sm) {
-                Image(systemName: "wrench.and.screwdriver")
-                    .foregroundColor(AppColors.warning).frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(record.serviceType.displayName)
-                        .font(AppTypography.secondary).foregroundColor(AppColors.textPrimary)
-                    if let vendor = record.vendorName, !vendor.isEmpty {
-                        Text(vendor).font(AppTypography.caption).foregroundColor(AppColors.textTertiary)
+            Button {
+                editingService = record
+            } label: {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "wrench.and.screwdriver")
+                        .foregroundColor(AppColors.warning).frame(width: 24)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(record.serviceType.displayName)
+                            .font(AppTypography.secondary).foregroundColor(AppColors.textPrimary)
+                        if let vendor = record.vendorName, !vendor.isEmpty {
+                            Text(vendor).font(AppTypography.caption).foregroundColor(AppColors.textTertiary)
+                        }
                     }
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    if let totalDisplay = record.totalCostDisplay {
-                        Text(totalDisplay).font(AppTypography.bodyMedium).foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        if let totalDisplay = record.totalCostDisplay {
+                            Text(totalDisplay).font(AppTypography.bodyMedium).foregroundColor(AppColors.textPrimary)
+                        }
+                        Text(record.date.formatted(date: .numeric, time: .omitted))
+                            .font(AppTypography.caption).foregroundColor(AppColors.textTertiary)
                     }
-                    Text(record.date.formatted(date: .numeric, time: .omitted))
-                        .font(AppTypography.caption).foregroundColor(AppColors.textTertiary)
                 }
             }
+            .buttonStyle(.plain)
             .padding(.vertical, AppSpacing.xxs)
+            .swipeActions(edge: .trailing) { swipeDeleteButton(record) }
+            .swipeActions(edge: .leading) {
+                Button { editingService = record } label: { Label("Düzenle", systemImage: "pencil") }.tint(AppColors.accentPrimary)
+            }
         }
     }
 
@@ -283,6 +311,7 @@ struct HistoryView: View {
             }
             .buttonStyle(.plain)
             .padding(.vertical, AppSpacing.xxs)
+            .swipeActions(edge: .trailing) { swipeDeleteButton(doc) }
         }
     }
 
@@ -324,6 +353,7 @@ struct HistoryView: View {
                     .font(AppTypography.caption).foregroundColor(AppColors.textTertiary)
             }
             .padding(.vertical, AppSpacing.xxs)
+            .swipeActions(edge: .trailing) { swipeDeleteButton(report) }
         }
     }
 
@@ -357,6 +387,33 @@ struct HistoryView: View {
     // MARK: - Vehicle helper
     private func vehicleFor(id: UUID) -> Vehicle? {
         vehicles.first { $0.id == id }
+    }
+
+    // MARK: - Delete
+    private func confirmDelete(_ item: Any) {
+        itemToDelete = item
+        showDeleteConfirmation = true
+    }
+
+    private func performDelete() {
+        guard let item = itemToDelete else { return }
+        if let expense = item as? Expense {
+            modelContext.delete(expense)
+        } else if let service = item as? ServiceRecord {
+            modelContext.delete(service)
+        } else if let doc = item as? VehicleDocument {
+            try? DocumentStorageService.shared.deleteFile(doc.localFileName)
+            modelContext.delete(doc)
+        } else if let inspection = item as? InspectionReport {
+            modelContext.delete(inspection)
+        }
+        try? modelContext.save()
+        itemToDelete = nil
+    }
+
+    // MARK: - Row helper
+    private func swipeDeleteButton<T>(_ item: T) -> some View {
+        Button(role: .destructive) { confirmDelete(item) } label: { Label("Sil", systemImage: "trash") }
     }
 }
 

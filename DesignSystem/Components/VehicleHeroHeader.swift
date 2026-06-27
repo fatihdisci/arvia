@@ -42,7 +42,7 @@ struct VehicleHeroHeader: View {
             )
 
             // Araç / motosiklet simgesi
-            Image(systemName: vehicle.vehicleType == .motorcycle ? "bicycle" : "car.fill")
+            Image(systemName: vehicle.vehicleType.heroSymbol)
                 .font(.system(size: 56, weight: .light))
                 .foregroundColor(.white.opacity(0.7))
         }

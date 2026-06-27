@@ -11,7 +11,7 @@ enum VehicleType: String, Codable, CaseIterable {
     var heroSymbol: String {
         switch self {
         case .car: return "car.fill"
-        case .motorcycle: return "bicycle" // SF Symbols'ta motosiklet yok, fallback
+        case .motorcycle: return "gauge.with.needle" // Motosiklet için hız göstergesi — SF Symbol'de motosiklet simgesi yok
         }
     }
 

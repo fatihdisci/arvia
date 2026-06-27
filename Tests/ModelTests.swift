@@ -364,7 +364,7 @@ final class VehicleModelTests: XCTestCase {
         XCTAssertEqual(motorcycle.vehicleTypeRaw, "Motosiklet")
         XCTAssertEqual(motorcycle.motorcycleType, .naked)
         XCTAssertEqual(motorcycle.engineCC, 689)
-        XCTAssertEqual(motorcycle.vehicleType.heroSymbol, "bicycle")
+        XCTAssertEqual(motorcycle.vehicleType.heroSymbol, "gauge.with.needle")
         XCTAssertEqual(motorcycle.vehicleType.vehicleNoun, "motosiklet")
     }
 

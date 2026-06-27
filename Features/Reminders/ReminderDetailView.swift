@@ -15,6 +15,11 @@ struct ReminderDetailView: View {
     @State private var showEditSheet = false
     @State private var showDeleteConfirmation = false
     @State private var showCompletionOptions = false
+    @State private var showSnoozeSheet = false
+    @State private var snoozeDays = 7
+    @State private var showServiceRecordSheet = false
+    @State private var showExpenseSheet = false
+    @State private var showDocumentSheet = false
 
     enum CompletionAction {
         case justComplete
@@ -59,7 +64,16 @@ struct ReminderDetailView: View {
             }
         }
         .sheet(isPresented: $showEditSheet) {
-            ReminderFormView()
+            ReminderFormView(existingReminder: reminder)
+        }
+        .sheet(isPresented: $showServiceRecordSheet) {
+            ServiceRecordFormView(preselectedVehicleId: reminder.vehicleId)
+        }
+        .sheet(isPresented: $showExpenseSheet) {
+            ExpenseFormView(preselectedVehicleId: reminder.vehicleId)
+        }
+        .sheet(isPresented: $showDocumentSheet) {
+            DocumentFormView(preselectedVehicleId: reminder.vehicleId)
         }
         .confirmationDialog("Yapılacak Silinsin mi?", isPresented: $showDeleteConfirmation) {
             Button("Sil", role: .destructive) { deleteReminder() }
@@ -77,6 +91,48 @@ struct ReminderDetailView: View {
             Button("Vazgeç", role: .cancel) {}
         } message: {
             Text("Tamamlanan işlemi Geçmiş'e ekleyerek aracının dosyasını daha eksiksiz tutabilirsin.")
+        }
+        .sheet(isPresented: $showSnoozeSheet) {
+            snoozeSheet
+        }
+    }
+
+    // MARK: - Snooze Sheet
+    private var snoozeSheet: some View {
+        NavigationStack {
+            VStack(spacing: AppSpacing.lg) {
+                Text("Kaç gün ertelemek istersin?")
+                    .font(AppTypography.sectionTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .padding(.top, AppSpacing.xl)
+
+                Picker("Gün", selection: $snoozeDays) {
+                    ForEach([1, 3, 7, 14, 30], id: \.self) { days in
+                        Text("\(days) gün").tag(days)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(height: 150)
+
+                Text("Yeni tarih: \(Calendar.current.date(byAdding: .day, value: snoozeDays, to: Date())?.formatted(date: .long, time: .omitted) ?? "")")
+                    .font(AppTypography.secondary)
+                    .foregroundColor(AppColors.textSecondary)
+
+                Button {
+                    snoozeReminder()
+                    showSnoozeSheet = false
+                } label: {
+                    Text("Ertele")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.primary)
+                .padding(.horizontal, AppSpacing.xxl)
+
+                Button("Vazgeç") { showSnoozeSheet = false }
+                    .foregroundColor(AppColors.textSecondary)
+                    .padding(.bottom, AppSpacing.xl)
+            }
+            .presentationDetents([.medium])
         }
     }
 
@@ -155,7 +211,7 @@ struct ReminderDetailView: View {
     // MARK: - Vehicle Card
     private func vehicleCardView(_ v: Vehicle) -> some View {
         HStack(spacing: AppSpacing.sm) {
-            Image(systemName: v.vehicleType == .motorcycle ? "bicycle" : "car")
+            Image(systemName: v.vehicleType.heroSymbol)
                 .foregroundColor(AppColors.vehicle)
             VStack(alignment: .leading, spacing: 2) {
                 Text(v.plate.isEmpty ? v.fullName : v.plate)
@@ -191,6 +247,20 @@ struct ReminderDetailView: View {
                 }
                 .buttonStyle(.primary)
                 .padding(.horizontal, AppSpacing.screenMarginH)
+
+                Button {
+                    showSnoozeSheet = true
+                } label: {
+                    HStack {
+                        Image(systemName: "clock.badge")
+                        Text("Ertele")
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.secondary)
+                .padding(.horizontal, AppSpacing.screenMarginH)
+                .accessibilityLabel("Ertele")
             }
 
             HStack(spacing: AppSpacing.md) {
@@ -212,6 +282,18 @@ struct ReminderDetailView: View {
             }
             .padding(.horizontal, AppSpacing.screenMarginH)
         }
+    }
+
+    // MARK: - Snooze
+    private func snoozeReminder() {
+        let newDate = Calendar.current.date(byAdding: .day, value: snoozeDays, to: Date()) ?? Date()
+        reminder.dueDate = newDate
+        NotificationService.shared.cancelReminder(reminder)
+        try? modelContext.save()
+        Task { await NotificationService.shared.scheduleReminder(reminder) }
+        let impact = UINotificationFeedbackGenerator()
+        impact.notificationOccurred(.success)
+        dismiss()
     }
 
     // MARK: - Helpers
@@ -252,8 +334,16 @@ struct ReminderDetailView: View {
 
     private func completeAndRecord(_ action: CompletionAction) {
         completeReminder(reminder)
-        onCompleteWithRecord?(reminder, action)
-        dismiss()
+        switch action {
+        case .createServiceRecord:
+            showServiceRecordSheet = true
+        case .addExpense:
+            showExpenseSheet = true
+        case .addDocument:
+            showDocumentSheet = true
+        case .justComplete:
+            break
+        }
     }
 
     private func completeReminder(_ reminder: Reminder) {

@@ -2,13 +2,16 @@ import SwiftUI
 import SwiftData
 
 // MARK: - Reminder Form View
-// Hatırlatıcı ekleme sheet'i. Şablon seçimi, tarih/km, tekrar, öncelik, araç bağlantısı.
+// Hatırlatıcı ekleme/düzenleme sheet'i. Şablon seçimi, tarih/km, tekrar, öncelik, araç bağlantısı.
 
 struct ReminderFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
+
+    let existingReminder: Reminder?
+    private var isEditing: Bool { existingReminder != nil }
 
     // Şablon
     @State private var selectedTemplate: ReminderType = .custom
@@ -34,10 +37,30 @@ struct ReminderFormView: View {
 
     @State private var validationErrors: [String] = []
 
-    init(preselectedVehicleId: UUID? = nil) {
-        if let vid = preselectedVehicleId {
+    init(existingReminder: Reminder? = nil, preselectedVehicleId: UUID? = nil) {
+        self.existingReminder = existingReminder
+        if let r = existingReminder {
+            _selectedTemplate = State(initialValue: r.type)
+            _customTitle = State(initialValue: r.type == .custom ? r.title : "")
+            _dueDate = State(initialValue: r.dueDate ?? Calendar.current.date(byAdding: .month, value: 6, to: Date()) ?? Date())
+            _hasDueDate = State(initialValue: r.dueDate != nil)
+            _dueOdometerText = State(initialValue: r.dueOdometer.map { String($0) } ?? "")
+            _hasDueOdometer = State(initialValue: r.dueOdometer != nil)
+            _repeatRule = State(initialValue: ReminderRepeatRule(rawValue: r.repeatRuleRaw ?? "none") ?? .none)
+            _priority = State(initialValue: r.priority)
+            _selectedVehicleId = State(initialValue: r.vehicleId)
+            _notes = State(initialValue: r.notes)
+        } else if let vid = preselectedVehicleId {
             _selectedVehicleId = State(initialValue: vid)
         }
+    }
+
+    /// Seçili araca göre filtrelenmiş şablon listesi.
+    private var availableTemplates: [ReminderType] {
+        guard let vid = selectedVehicleId, let vehicle = vehicles.first(where: { $0.id == vid }) else {
+            return ReminderType.templates(for: nil)
+        }
+        return ReminderType.templates(for: vehicle.vehicleType)
     }
 
     // ReminderRepeatRule enum'u shared olarak ReminderRepeatEngine.swift içinde tanımlı.
@@ -64,7 +87,7 @@ struct ReminderFormView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Color.appBackground)
-            .navigationTitle("Hatırlatıcı Ekle")
+            .navigationTitle(isEditing ? "Hatırlatıcı Düzenle" : "Hatırlatıcı Ekle")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -72,7 +95,7 @@ struct ReminderFormView: View {
                         .foregroundColor(AppColors.textSecondary)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Ekle", action: saveReminder)
+                    Button(isEditing ? "Kaydet" : "Ekle", action: saveReminder)
                         .font(AppTypography.bodyMedium)
                         .foregroundColor(AppColors.accentPrimary)
                 }
@@ -89,7 +112,7 @@ struct ReminderFormView: View {
     private var templateSection: some View {
         Section {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 72))], spacing: AppSpacing.xs) {
-                ForEach(ReminderType.allCases, id: \.self) { type in
+                ForEach(availableTemplates + [ReminderType.custom], id: \.self) { type in
                     templateButton(type)
                 }
             }
@@ -280,26 +303,52 @@ struct ReminderFormView: View {
 
         let dueOdometer = hasDueOdometer ? Int(dueOdometerText.trimmingCharacters(in: .whitespaces)) : nil
 
-        let reminder = Reminder(
-            vehicleId: vehicleId,
-            type: selectedTemplate,
-            title: displayTitle,
-            dueDate: hasDueDate ? dueDate : nil,
-            dueOdometer: dueOdometer,
-            repeatRule: repeatRule == .none ? nil : repeatRule.rawValue,
-            priority: priority,
-            status: .active,
-            notes: notes
-        )
-        modelContext.insert(reminder)
-        try? modelContext.save()
+        if let existing = existingReminder {
+            // Edit mode: mevcut kaydı güncelle
+            existing.typeRaw = selectedTemplate.rawValue
+            existing.title = displayTitle
+            existing.dueDate = hasDueDate ? dueDate : nil
+            existing.dueOdometer = dueOdometer
+            existing.repeatRuleRaw = repeatRule == .none ? nil : repeatRule.rawValue
+            existing.priorityRaw = priority.rawValue
+            existing.vehicleId = vehicleId
+            existing.notes = notes
 
-        // Bildirim planla
-        Task {
-            await NotificationService.shared.scheduleReminder(reminder)
+            do {
+                try modelContext.save()
+                let impact = UINotificationFeedbackGenerator()
+                impact.notificationOccurred(.success)
+                // Eski bildirimi iptal edip yenisini planla
+                NotificationService.shared.cancelReminder(existing)
+                Task { await NotificationService.shared.scheduleReminder(existing) }
+                dismiss()
+            } catch {
+                validationErrors = ["Kaydedilemedi: \(error.localizedDescription)"]
+            }
+        } else {
+            // Insert mode: yeni kayıt oluştur
+            let reminder = Reminder(
+                vehicleId: vehicleId,
+                type: selectedTemplate,
+                title: displayTitle,
+                dueDate: hasDueDate ? dueDate : nil,
+                dueOdometer: dueOdometer,
+                repeatRule: repeatRule == .none ? nil : repeatRule.rawValue,
+                priority: priority,
+                status: .active,
+                notes: notes
+            )
+            modelContext.insert(reminder)
+            do {
+                try modelContext.save()
+                let impact = UINotificationFeedbackGenerator()
+                impact.notificationOccurred(.success)
+                Task { await NotificationService.shared.scheduleReminder(reminder) }
+                dismiss()
+            } catch {
+                validationErrors = ["Kaydedilemedi: \(error.localizedDescription)"]
+            }
         }
-
-        dismiss()
     }
 }
 

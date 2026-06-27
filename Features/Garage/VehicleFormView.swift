@@ -114,7 +114,7 @@ struct VehicleFormView: View {
             Picker(selection: $vehicleType) {
                 ForEach(VehicleType.allCases, id: \.self) { type in
                     HStack(spacing: AppSpacing.xs) {
-                        Image(systemName: type == .car ? "car.fill" : "bicycle")
+                        Image(systemName: type.heroSymbol)
                             .font(.body)
                         Text(type.displayName)
                     }
@@ -147,7 +147,7 @@ struct VehicleFormView: View {
                     Text(type.displayName).tag(type as MotorcycleType?)
                 }
             } label: {
-                Label("Motosiklet Tipi", systemImage: "bicycle")
+                Label("Motosiklet Tipi", systemImage: "gauge.with.needle")
                     .font(AppTypography.body)
                     .foregroundColor(AppColors.textPrimary)
             }
