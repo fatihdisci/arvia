@@ -18,24 +18,18 @@ struct PostCard: View {
             // Author Row
             authorRow
 
+            // Separator
+            Divider()
+                .foregroundColor(AppColors.divider)
+
+            // Post meta — type chip + vehicle label
+            postMetaRow
+
             // Title
             Text(post.title)
                 .font(AppTypography.cardTitle)
                 .foregroundColor(AppColors.textPrimary)
                 .lineLimit(2)
-
-            // Vehicle label (no plate)
-            if let vehicle = post.vehicleLabel {
-                Text(vehicle)
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textSecondary)
-                    .padding(.horizontal, AppSpacing.xs)
-                    .padding(.vertical, 2)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppRadius.small)
-                            .fill(AppColors.surfaceSecondary)
-                    )
-            }
 
             // Body preview
             Text(post.body)
@@ -49,10 +43,10 @@ struct PostCard: View {
                     HStack(spacing: AppSpacing.xxs) {
                         ForEach(post.tags.prefix(5), id: \.self) { tag in
                             Text(tag)
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(AppColors.textTertiary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.textSecondary)
+                                .padding(.horizontal, AppSpacing.xs)
+                                .padding(.vertical, 4)
                                 .background(
                                     Capsule()
                                         .fill(AppColors.surfaceSecondary)
@@ -70,14 +64,7 @@ struct PostCard: View {
             RoundedRectangle(cornerRadius: AppRadius.card)
                 .fill(Color.appSurface)
         )
-        .overlay(
-            // Pinned/official indicator
-            post.isPinned ?
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.accentPrimary.opacity(0.4), lineWidth: 1)
-            : nil
-        )
-        .shadow(color: .black.opacity(0.04), radius: 4, y: 2)
+        .cardShadow()
         .contentShape(Rectangle())
         .contextMenu {
             Button {
@@ -148,39 +135,82 @@ struct PostCard: View {
                     Text(post.relativeTime)
                         .font(AppTypography.caption)
                         .foregroundColor(AppColors.textTertiary)
+
+                    // Pinned badge
+                    if post.isPinned {
+                        Text("·")
+                            .foregroundColor(AppColors.textTertiary)
+                        Image(systemName: "pin.fill")
+                            .font(.system(size: 8))
+                            .foregroundColor(AppColors.accentPrimary)
+                        Text("Sabitlendi")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.accentPrimary)
+                    }
                 }
             }
 
             Spacer()
+        }
+    }
 
-            // Post type chip
-            Text(post.postType.displayName)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(AppColors.textSecondary)
+    // MARK: - Post Meta Row (type chip + vehicle)
+
+    @ViewBuilder
+    private var postMetaRow: some View {
+        let typeLabel = post.postType.displayName
+
+        HStack(spacing: AppSpacing.xs) {
+                // Post type chip
+                HStack(spacing: 4) {
+                    Image(systemName: post.postType.sfSymbol)
+                        .font(AppTypography.captionMedium)
+                    Text(typeLabel)
+                        .font(AppTypography.captionMedium)
+                }
+                .foregroundColor(AppColors.accentPrimary)
                 .padding(.horizontal, AppSpacing.xs)
-                .padding(.vertical, 2)
+                .padding(.vertical, 4)
                 .background(
                     Capsule()
-                        .fill(AppColors.surfaceSecondary)
+                        .fill(AppColors.accentPrimary.opacity(0.12))
                 )
+
+                // Vehicle label (if present)
+                if let vehicle = post.vehicleLabel {
+                    HStack(spacing: 4) {
+                        Image(systemName: "car.fill")
+                            .font(.system(size: 10))
+                        Text(vehicle)
+                            .font(AppTypography.captionMedium)
+                    }
+                    .foregroundColor(AppColors.textSecondary)
+                    .padding(.horizontal, AppSpacing.xs)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(AppColors.surfaceSecondary)
+                    )
+                }
         }
     }
 
     // MARK: - Stats Row
 
     private var statsRow: some View {
-        HStack(spacing: AppSpacing.md) {
+        HStack(spacing: AppSpacing.lg) {
             // Likes
             Button {
                 onLike?()
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: post.isLikedByCurrentUser ? "heart.fill" : "heart")
-                        .font(.caption)
+                        .font(.subheadline)
+                        .contentTransition(.symbolEffect(.replace))
                     Text("\(post.likeCount)")
-                        .font(AppTypography.caption)
+                        .font(AppTypography.secondaryMedium)
                 }
-                .foregroundColor(post.isLikedByCurrentUser ? AppColors.critical : AppColors.textTertiary)
+                .foregroundColor(post.isLikedByCurrentUser ? AppColors.critical : AppColors.textSecondary)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("\(post.likeCount) beğeni")
@@ -189,12 +219,14 @@ struct PostCard: View {
             // Comments
             HStack(spacing: 4) {
                 Image(systemName: "bubble.right")
-                    .font(.caption)
+                    .font(.subheadline)
                 Text("\(post.commentCount)")
-                    .font(AppTypography.caption)
+                    .font(AppTypography.secondaryMedium)
             }
-            .foregroundColor(AppColors.textTertiary)
+            .foregroundColor(AppColors.textSecondary)
             .accessibilityLabel("\(post.commentCount) yorum")
+
+            Spacer()
 
             // Saves
             Button {
@@ -202,16 +234,18 @@ struct PostCard: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: post.isSavedByCurrentUser ? "bookmark.fill" : "bookmark")
-                        .font(.caption)
+                        .font(.subheadline)
+                        .contentTransition(.symbolEffect(.replace))
                     Text("\(post.saveCount)")
-                        .font(AppTypography.caption)
+                        .font(AppTypography.secondaryMedium)
                 }
-                .foregroundColor(post.isSavedByCurrentUser ? AppColors.accentPrimary : AppColors.textTertiary)
+                .foregroundColor(post.isSavedByCurrentUser ? AppColors.accentPrimary : AppColors.textSecondary)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("\(post.saveCount) kaydeden")
             .accessibilityHint(post.isSavedByCurrentUser ? "Kaydı kaldırmak için iki kere dokun" : "Kaydetmek için iki kere dokun")
         }
+        .padding(.top, AppSpacing.xxs)
     }
 
     // MARK: - Accessibility

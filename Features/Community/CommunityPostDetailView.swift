@@ -49,7 +49,9 @@ struct CommunityPostDetailView: View {
                 } else {
                     ScrollView {
                         contentView(post)
+                            .padding(.vertical, AppSpacing.sm)
                     }
+                    .scrollDismissesKeyboard(.immediately)
                 }
             } else {
                 // post nil + no error → not found
@@ -85,21 +87,36 @@ struct CommunityPostDetailView: View {
             // Author header
             authorHeader(post)
 
-            // Post type + tags
+            // Post type + vehicle
             HStack(spacing: AppSpacing.xs) {
-                Image(systemName: post.postType.sfSymbol)
-                    .font(.caption)
-                    .foregroundColor(AppColors.accentPrimary)
-                Text(post.postType.displayName)
-                    .font(AppTypography.captionMedium)
-                    .foregroundColor(AppColors.accentPrimary)
+                HStack(spacing: 4) {
+                    Image(systemName: post.postType.sfSymbol)
+                        .font(AppTypography.captionMedium)
+                    Text(post.postType.displayName)
+                        .font(AppTypography.captionMedium)
+                }
+                .foregroundColor(AppColors.accentPrimary)
+                .padding(.horizontal, AppSpacing.xs)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(AppColors.accentPrimary.opacity(0.12))
+                )
 
                 if let vehicle = post.vehicleLabel {
-                    Text("·")
-                        .foregroundColor(AppColors.textTertiary)
-                    Text(vehicle)
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                    HStack(spacing: 4) {
+                        Image(systemName: "car.fill")
+                            .font(.system(size: 10))
+                        Text(vehicle)
+                            .font(AppTypography.captionMedium)
+                    }
+                    .foregroundColor(AppColors.textSecondary)
+                    .padding(.horizontal, AppSpacing.xs)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(AppColors.surfaceSecondary)
+                    )
                 }
             }
 
@@ -110,17 +127,19 @@ struct CommunityPostDetailView: View {
 
             // Tags
             if !post.tags.isEmpty {
-                HStack(spacing: AppSpacing.xxs) {
-                    ForEach(post.tags, id: \.self) { tag in
-                        Text(tag)
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(AppColors.textTertiary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(
-                                Capsule()
-                                    .fill(AppColors.surfaceSecondary)
-                            )
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: AppSpacing.xxs) {
+                        ForEach(post.tags, id: \.self) { tag in
+                            Text(tag)
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.textSecondary)
+                                .padding(.horizontal, AppSpacing.xs)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule()
+                                        .fill(AppColors.surfaceSecondary)
+                                )
+                        }
                     }
                 }
             }
@@ -141,6 +160,12 @@ struct CommunityPostDetailView: View {
             commentsSection(post)
         }
         .padding(AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .fill(Color.appSurface)
+        )
+        .cardShadow()
+        .padding(.horizontal, AppSpacing.screenMarginH)
     }
 
     // MARK: - Author Header
@@ -194,8 +219,10 @@ struct CommunityPostDetailView: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: post.isLikedByCurrentUser ? "heart.fill" : "heart")
+                        .font(.subheadline)
+                        .contentTransition(.symbolEffect(.replace))
                     Text("\(post.likeCount)")
-                        .font(AppTypography.caption)
+                        .font(AppTypography.secondaryMedium)
                 }
                 .foregroundColor(post.isLikedByCurrentUser ? AppColors.critical : AppColors.textSecondary)
             }
@@ -206,8 +233,10 @@ struct CommunityPostDetailView: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: post.isSavedByCurrentUser ? "bookmark.fill" : "bookmark")
+                        .font(.subheadline)
+                        .contentTransition(.symbolEffect(.replace))
                     Text("\(post.saveCount)")
-                        .font(AppTypography.caption)
+                        .font(AppTypography.secondaryMedium)
                 }
                 .foregroundColor(post.isSavedByCurrentUser ? AppColors.accentPrimary : AppColors.textSecondary)
             }
@@ -220,7 +249,7 @@ struct CommunityPostDetailView: View {
                 showReportSheet = true
             } label: {
                 Image(systemName: "flag")
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundColor(AppColors.textTertiary)
             }
             .buttonStyle(.plain)
@@ -231,70 +260,113 @@ struct CommunityPostDetailView: View {
     // MARK: - Comments Section
 
     private func commentsSection(_ post: CommunityPost) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("Yorumlar")
-                .font(AppTypography.sectionTitle)
-                .foregroundColor(AppColors.textPrimary)
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            // Section header with count
+            HStack(spacing: AppSpacing.xs) {
+                Text("Yorumlar")
+                    .font(AppTypography.sectionTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                Text("(\(comments.count))")
+                    .font(AppTypography.secondary)
+                    .foregroundColor(AppColors.textSecondary)
+            }
 
             // Comment composer
             if paywallService.canWriteComment() {
                 HStack(spacing: AppSpacing.sm) {
-                    TextField("Yorum yaz...", text: $commentText)
-                        .font(AppTypography.secondary)
-                        .foregroundColor(AppColors.textPrimary)
-                        .padding(AppSpacing.sm)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppRadius.medium)
-                                .fill(AppColors.surfaceSecondary)
-                        )
-                        .disabled(isSubmittingComment)
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.callout)
+                        .foregroundColor(AppColors.textTertiary)
 
-                    Button {
-                        Task { await submitComment() }
-                    } label: {
-                        if isSubmittingComment {
-                            ProgressView()
-                                .tint(AppColors.accentPrimary)
-                        } else {
-                            Image(systemName: "paperplane.fill")
-                                .foregroundColor(
-                                    commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                    ? AppColors.textTertiary : AppColors.accentPrimary
-                                )
+                    HStack(spacing: AppSpacing.sm) {
+                        TextField("Yorum yaz...", text: $commentText, axis: .vertical)
+                            .font(AppTypography.secondary)
+                            .foregroundColor(AppColors.textPrimary)
+                            .lineLimit(1...4)
+                            .disabled(isSubmittingComment)
+
+                        Button {
+                            Task { await submitComment() }
+                        } label: {
+                            if isSubmittingComment {
+                                ProgressView()
+                                    .tint(AppColors.accentPrimary)
+                                    .frame(width: 36, height: 36)
+                            } else {
+                                Image(systemName: "paperplane.fill")
+                                    .font(.body)
+                                    .foregroundColor(.white)
+                                    .frame(width: 36, height: 36)
+                                    .background(
+                                        Circle()
+                                            .fill(
+                                                commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                                ? AppColors.accentPrimary.opacity(0.3)
+                                                : AppColors.accentPrimary
+                                            )
+                                    )
+                            }
                         }
+                        .disabled(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSubmittingComment)
                     }
-                    .disabled(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSubmittingComment)
+                    .padding(AppSpacing.sm)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppRadius.medium)
+                            .fill(Color.appSurface)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppRadius.medium)
+                            .stroke(AppColors.border, lineWidth: 0.5)
+                    )
                 }
             } else {
                 // Free user upsell
-                VStack(spacing: AppSpacing.xs) {
-                    HStack(spacing: AppSpacing.xs) {
-                        Image(systemName: "crown")
-                            .font(.caption)
-                            .foregroundColor(AppColors.warning)
-                        Text("Toplulukta paylaşım yapmak Pro üyeler içindir")
+                HStack(spacing: AppSpacing.md) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                        HStack(spacing: AppSpacing.xs) {
+                            Image(systemName: "crown.fill")
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.warning)
+                            Text("Pro üyeler paylaşım yapabilir")
+                                .font(AppTypography.secondaryMedium)
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+                        Text("Toplulukta yorum yapmak ve gönderi paylaşmak için Pro üyeliğe geç.")
                             .font(AppTypography.caption)
                             .foregroundColor(AppColors.textSecondary)
                     }
 
+                    Spacer()
+
                     Button("Pro'ya Geç") {
                         showPaywall = true
                     }
-                    .buttonStyle(.secondary)
+                    .buttonStyle(.primary)
+                    .controlSize(.small)
+                    .fixedSize()
                 }
                 .padding(AppSpacing.md)
                 .background(
                     RoundedRectangle(cornerRadius: AppRadius.medium)
-                        .fill(AppColors.surfaceSecondary)
+                        .fill(AppColors.warningBackground)
                 )
             }
 
             // Comments list
             if comments.isEmpty {
-                Text("Henüz yorum yapılmadı. İlk yorumu sen yap.")
-                    .font(AppTypography.secondary)
-                    .foregroundColor(AppColors.textTertiary)
-                    .padding(.vertical, AppSpacing.md)
+                VStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "bubble.left.and.bubble.right")
+                        .font(.system(size: 32, weight: .light))
+                        .foregroundColor(AppColors.textTertiary)
+                    Text("Henüz yorum yapılmadı.")
+                        .font(AppTypography.secondary)
+                        .foregroundColor(AppColors.textSecondary)
+                    Text("İlk yorumu sen yaparak tartışmayı başlat.")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.xl)
             } else {
                 ForEach(comments) { comment in
                     CommentRow(
@@ -311,7 +383,6 @@ struct CommunityPostDetailView: View {
                         },
                         isOwnComment: communityAuth.profile?.id == comment.authorId
                     )
-                    Divider()
                 }
             }
         }
