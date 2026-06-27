@@ -111,6 +111,7 @@
 		12DF06932F1449458A48C053 /* Expense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Expense.swift; sourceTree = "<group>"; };
 		172F0844A2F37F667AD8C5F9 /* CommunityEmptyStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityEmptyStates.swift; sourceTree = "<group>"; };
 		184A535D307090C964A75727 /* CommunityFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityFeedView.swift; sourceTree = "<group>"; };
+		18F7B1E47658C83D66A35FD1 /* Configuration/Supabase-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Configuration/Supabase-Info.plist"; sourceTree = SOURCE_ROOT; };
 		1A93D2896D854B1181EF1689 /* AppShadows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShadows.swift; sourceTree = "<group>"; };
 		1C9A3136160348AFBE76B0C3 /* DocumentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsView.swift; sourceTree = "<group>"; };
 		1DD7C32E74DE46BBB9E3AC91 /* ExpenseFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseFormView.swift; sourceTree = "<group>"; };
@@ -125,6 +126,7 @@
 		3BA28B86F91D4BBDA07DADAF /* InspectionReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionReport.swift; sourceTree = "<group>"; };
 		3C0199BF34D747E7823A11B7 /* ReminderFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderFormView.swift; sourceTree = "<group>"; };
 		3DB6C7ACE6A34B8593EB6519 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		3DFEAF872FEFF45700295F98 /* Ruhsatim.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Ruhsatim.entitlements; sourceTree = "<group>"; };
 		3FA9FF5C0567498ABB33199F /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		4211CAC644864893A910F6F2 /* CommunityCreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityCreatePostView.swift; sourceTree = "<group>"; };
 		458CAAD1C9EE4663B24E011A /* VehicleFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleFormView.swift; sourceTree = "<group>"; };
@@ -153,7 +155,7 @@
 		90533F411C469C215397BF9A /* CommunityModerationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityModerationView.swift; sourceTree = "<group>"; };
 		921F32F152B20505593AD8E1 /* Supabase.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Supabase.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A3A76F4FA6D84C19DABB119 /* CommunityEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityEnums.swift; sourceTree = "<group>"; };
-		9F81980CF1CDCF05F6B2A19A /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Configuration/Config.xcconfig; sourceTree = SOURCE_ROOT; };
+		9F81980CF1CDCF05F6B2A19A /* Configuration/Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Configuration/Config.xcconfig; sourceTree = SOURCE_ROOT; };
 		A2AE0C3029E54EBAAD6EBFF8 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
 		A3B8BC17A37049A0A62C69FE /* Ruhsatim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ruhsatim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A514505F7D9B40E78B4F5270 /* RuhsatimTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RuhsatimTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -186,7 +188,6 @@
 		F2E23CA3F1604CC3A42758D6 /* DocumentListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentListView.swift; sourceTree = "<group>"; };
 		F36BED4AAE2741B7962E8682 /* PDFExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExportService.swift; sourceTree = "<group>"; };
 		FF3B5437AE1506219424594F /* ReportReasonSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportReasonSheet.swift; sourceTree = "<group>"; };
-		18F7B1E47658C83D66A35FD1 /* Supabase-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Configuration/Supabase-Info.plist; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -267,7 +268,7 @@
 			isa = PBXGroup;
 			children = (
 				921F32F152B20505593AD8E1 /* Supabase.framework */,
-				9F81980CF1CDCF05F6B2A19A /* Config.xcconfig */,
+				9F81980CF1CDCF05F6B2A19A /* Configuration/Config.xcconfig */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -480,13 +481,14 @@
 		F1CF43DAFD4241B9B1F4DB70 = {
 			isa = PBXGroup;
 			children = (
+				3DFEAF872FEFF45700295F98 /* Ruhsatim.entitlements */,
 				833A388FBCFD457788AF2E57 /* App */,
 				FD32BD7AF4184951B300EE5C /* DesignSystem */,
 				D518D23EAA7F4A46B948F363 /* Features */,
 				543B85B6A6FB427199354DDB /* Models */,
 				EE9C55D3F077466882452649 /* Services */,
-								18F7B1E47658C83D66A35FD1 /* Supabase-Info.plist */,
-8C0A5405E8DB451CB3666CFD /* Resources */,
+				18F7B1E47658C83D66A35FD1 /* Configuration/Supabase-Info.plist */,
+				8C0A5405E8DB451CB3666CFD /* Resources */,
 				FF765E8DA84A464EA4C8BABF /* Tests */,
 				4E15B7A2088A4B77AFD21461 /* Products */,
 				3DFEAF852FEFEC2300295F98 /* Recovered References */,
@@ -716,7 +718,7 @@
 /* Begin XCBuildConfiguration section */
 		5E928D8125F84F8D998C06C3 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Config.xcconfig */;
+			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Configuration/Config.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -733,7 +735,7 @@
 		};
 		9232584F78CD45619C1589C0 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Config.xcconfig */;
+			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Configuration/Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -785,16 +787,17 @@
 		};
 		AB07BDFF8ECC4EBD896BDB52 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Config.xcconfig */;
+			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Configuration/Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Ruhsatim.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 8XPP7Z37GF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Configuration/Supabase-Info.plist;
+				INFOPLIST_FILE = "Configuration/Supabase-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Garajım";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -816,16 +819,17 @@
 		};
 		BEF17ABE5F27419E80C82D9C /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Config.xcconfig */;
+			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Configuration/Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Ruhsatim.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 8XPP7Z37GF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Configuration/Supabase-Info.plist;
+				INFOPLIST_FILE = "Configuration/Supabase-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Garajım";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -847,7 +851,7 @@
 		};
 		DE688E4D84A04B7E83CFC701 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Config.xcconfig */;
+			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Configuration/Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -904,7 +908,7 @@
 		};
 		EB3FA666E4F645528F844E2A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Config.xcconfig */;
+			baseConfigurationReference = 9F81980CF1CDCF05F6B2A19A /* Configuration/Config.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
