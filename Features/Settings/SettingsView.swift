@@ -19,8 +19,6 @@ struct SettingsView: View {
     @State private var deleteAccountError: String?
     @State private var isExporting = false
     @State private var exportMessage: String?
-    @State private var demoSeedMessage: String?
-
     // Privacy & Terms URL'leri — GitHub Pages canlı URL'leri
     private let privacyURL = URL(string: "https://fatihdisci.github.io/ruhsatim/privacy.html")!
     private let termsURL = URL(string: "https://fatihdisci.github.io/ruhsatim/terms.html")!
@@ -367,21 +365,6 @@ struct SettingsView: View {
     private var developerSection: some View {
         Section {
             Button {
-                seedDemoData()
-            } label: {
-                Label("Demo Verileri Yükle", systemImage: "laptopcomputer")
-                    .foregroundColor(AppColors.accentPrimary)
-            }
-
-            Button(role: .destructive) {
-                deleteAllDemoData()
-            } label: {
-                Label("Tüm Verileri Temizle", systemImage: "trash")
-            }
-
-            Divider()
-
-            Button {
                 paywallService.enableProForDev()
             } label: {
                 Label("Dev: Pro’yu Aç", systemImage: "crown.fill")
@@ -394,45 +377,14 @@ struct SettingsView: View {
                 Label("Dev: Free’ye Dön", systemImage: "arrow.uturn.backward")
                     .foregroundColor(AppColors.textSecondary)
             }
-
-            if let message = demoSeedMessage {
-                Text(message)
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textSecondary)
-            }
         } header: {
             Text("Geliştirici")
         } footer: {
-            Text("Bu bölüm sadece DEBUG build'de görünür. Release/TestFlight build'de yer almaz.")
+            Text("Bu bölüm sadece DEBUG build’de görünür. Release/TestFlight build’de yer almaz.")
         }
         .listRowBackground(Color.appSurface)
     }
     #endif
-
-    private func seedDemoData() {
-        #if DEBUG
-        let count = DemoDataSeeder.seed(context: modelContext)
-        if count > 0 {
-            demoSeedMessage = "✅ \(count) demo araç eklendi. Veriler yüklendi."
-        } else {
-            demoSeedMessage = "⚠️ Demo verileri zaten mevcut. Tekrar eklenmedi."
-        }
-        // Otomatik silinsin
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            demoSeedMessage = nil
-        }
-        #endif
-    }
-
-    private func deleteAllDemoData() {
-        #if DEBUG
-        DemoDataSeeder.deleteAll(context: modelContext)
-        demoSeedMessage = "🗑️ Tüm veriler silindi."
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            demoSeedMessage = nil
-        }
-        #endif
-    }
 
     // MARK: - Actions
     private func openSystemNotificationSettings() {

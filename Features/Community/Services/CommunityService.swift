@@ -40,7 +40,7 @@ final class CommunityService {
             .value
 
         // Profilleri toplu çek, post'lara işle
-        let enriched = try await enrichPosts(posts)
+        let enriched = await enrichPosts(posts)
 
         var result = enriched
         if let type = type {
@@ -73,7 +73,7 @@ final class CommunityService {
             .value
 
         guard let post = posts.first else { return nil }
-        return try await enrichPosts([post]).first
+        return await enrichPosts([post]).first
     }
 
     /// Gönderiye ait yorumları getir, yazar profilleriyle zenginleştir.
@@ -92,30 +92,30 @@ final class CommunityService {
             .execute()
             .value
 
-        return try await enrichComments(comments)
+        return await enrichComments(comments)
     }
 
     // MARK: - Profile Enrichment
 
-    /// Toplu profil çek: verilen userId listesine göre profiles tablosundan getir.
-    private func fetchProfiles(userIds: [UUID]) async throws -> [UUID: CommunityProfile] {
+    /// Toplu profil çek (hatalara dayanıklı — boş döner, throw etmez).
+    private func fetchProfiles(userIds: [UUID]) async -> [UUID: CommunityProfile] {
         guard let client = client, !userIds.isEmpty else { return [:] }
 
         let idStrings = userIds.map { $0.uuidString }
-        let profiles: [CommunityProfile] = try await client
+        guard let profiles: [CommunityProfile] = try? await client
             .from("profiles")
             .select()
             .in("id", values: idStrings)
             .execute()
-            .value
+            .value else { return [:] }
 
         return Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
     }
 
-    /// Post'lara yazar profillerini işle.
-    private func enrichPosts(_ posts: [CommunityPost]) async throws -> [CommunityPost] {
+    /// Post'lara yazar profillerini işle (profiller yoksa boş bırakır).
+    private func enrichPosts(_ posts: [CommunityPost]) async -> [CommunityPost] {
         let authorIds = Array(Set(posts.map(\.authorId)))
-        let profiles = try await fetchProfiles(userIds: authorIds)
+        let profiles = await fetchProfiles(userIds: authorIds)
 
         return posts.map { post in
             var enriched = post
@@ -130,10 +130,10 @@ final class CommunityService {
         }
     }
 
-    /// Yorumlara yazar profillerini işle.
-    private func enrichComments(_ comments: [CommunityComment]) async throws -> [CommunityComment] {
+    /// Yorumlara yazar profillerini işle (profiller yoksa boş bırakır).
+    private func enrichComments(_ comments: [CommunityComment]) async -> [CommunityComment] {
         let authorIds = Array(Set(comments.map(\.authorId)))
-        let profiles = try await fetchProfiles(userIds: authorIds)
+        let profiles = await fetchProfiles(userIds: authorIds)
 
         return comments.map { comment in
             var enriched = comment

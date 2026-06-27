@@ -6,11 +6,11 @@ import UIKit
 // Sadece DEBUG build'de derlenir. Release/TestFlight build'de görünmez.
 // İdempotent: aynı demo verilerini tekrar tekrar çoğaltmaz.
 // Mevcut kullanıcı verilerini silmez.
+// 1 otomobil + 1 motosiklet, gerçekçi Türkiye verileri.
 
 #if DEBUG
 enum DemoDataSeeder {
-    /// Demo araçların nickname'leri üzerinden daha önce seed edilip edilmediğini kontrol eder.
-    private static let demoNicknames: Set<String> = ["Aile Aracı", "Şehir İçi", "Şirket Aracı"]
+    private static let demoNicknames: Set<String> = ["Aile Aracı", "Hafta Sonu Motoru"]
 
     /// Daha önce demo verisi eklenmiş mi?
     static func isAlreadySeeded(context: ModelContext) -> Bool {
@@ -19,9 +19,7 @@ enum DemoDataSeeder {
         return demoNicknames.isSubset(of: existingNicknames)
     }
 
-    /// Tüm demo verilerini oluşturur. İdempotent.
-    /// - Parameter context: SwiftData ModelContext
-    /// - Returns: Eklenen araç sayısı (zaten seed edilmişse 0)
+    /// Demo verilerini oluşturur. İdempotent.
     @discardableResult
     static func seed(context: ModelContext) -> Int {
         guard !isAlreadySeeded(context: context) else {
@@ -31,382 +29,290 @@ enum DemoDataSeeder {
         let calendar = Calendar.current
         let now = Date()
 
-        // MARK: - Araç 1: Aile Aracı (VW Golf)
-        let vehicle1 = Vehicle(
+        // MARK: - Araç 1: Otomobil — Toyota Corolla 1.8 Hybrid
+        let car = Vehicle(
             nickname: "Aile Aracı",
-            plate: "35 RHT 035",
-            brand: "Volkswagen",
-            model: "Golf",
-            year: 2018,
-            fuelType: .diesel,
-            transmissionType: .automatic,
-            currentOdometer: 84200,
-            purchaseDate: calendar.date(byAdding: .year, value: -4, to: now),
-            purchaseOdometer: 0,
-            purchasePrice: 195_000,
-            usageType: .personal,
-            notes: "Düzenli bakımlı, aile kullanımı."
-        )
-        context.insert(vehicle1)
-
-        // MARK: - Araç 2: Şehir İçi (Toyota Corolla)
-        let vehicle2 = Vehicle(
-            nickname: "Şehir İçi",
             plate: "34 RSM 034",
             brand: "Toyota",
             model: "Corolla",
-            year: 2021,
+            year: 2022,
+            vehicleType: .car,
             fuelType: .hybrid,
             transmissionType: .automatic,
             currentOdometer: 46200,
-            purchaseDate: calendar.date(byAdding: .year, value: -3, to: now),
+            purchaseDate: calendar.date(byAdding: .year, value: -2, to: now),
             purchaseOdometer: 0,
-            purchasePrice: 580_000,
+            purchasePrice: 850_000,
             usageType: .personal,
-            notes: ""
+            notes: "Sıfır alındı. Düzenli yetkili servis bakımlı. Şehir içi 4.5L/100km."
         )
-        context.insert(vehicle2)
+        context.insert(car)
 
-        // MARK: - Araç 3: Şirket Aracı (Ford Transit Courier)
-        let vehicle3 = Vehicle(
-            nickname: "Şirket Aracı",
-            plate: "06 RSR 006",
-            brand: "Ford",
-            model: "Transit Courier",
-            year: 2020,
-            fuelType: .diesel,
+        // MARK: - Araç 2: Motosiklet — Yamaha MT-07
+        let moto = Vehicle(
+            nickname: "Hafta Sonu Motoru",
+            plate: "35 MTC 007",
+            brand: "Yamaha",
+            model: "MT-07",
+            year: 2024,
+            vehicleType: .motorcycle,
+            motorcycleType: .naked,
+            engineCC: 689,
+            fuelType: .gasoline,
             transmissionType: .manual,
-            currentOdometer: 123500,
-            purchaseDate: calendar.date(byAdding: .year, value: -5, to: now),
-            purchaseOdometer: 15000,
-            purchasePrice: 320_000,
-            usageType: .company,
-            notes: "Filo aracı, düzenli bakım kaydı tutuluyor."
+            currentOdometer: 5200,
+            purchaseDate: calendar.date(byAdding: .month, value: -8, to: now),
+            purchaseOdometer: 0,
+            purchasePrice: 420_000,
+            usageType: .personal,
+            notes: "Sıfır alındı. Garanti devam ediyor. İlk bakım 1000 km'de yapıldı."
         )
-        context.insert(vehicle3)
+        context.insert(moto)
 
-        let allVehicles = [vehicle1, vehicle2, vehicle3]
+        let allVehicles = [car, moto]
 
-        // MARK: - Hatırlatıcılar
+        // MARK: - Hatırlatıcılar (her araç için)
         for vehicle in allVehicles {
-            // Muayene: 25 gün sonra
+            // Muayene
             context.insert(Reminder(
                 vehicleId: vehicle.id,
                 type: .inspection,
                 title: "Periyodik Muayene",
-                dueDate: calendar.date(byAdding: .day, value: 25, to: now),
+                dueDate: calendar.date(byAdding: .day, value: vehicle.vehicleType == .motorcycle ? 180 : 90, to: now),
                 priority: .warning
             ))
 
-            // Trafik sigortası: 12 gün sonra
+            // Trafik sigortası
             context.insert(Reminder(
                 vehicleId: vehicle.id,
                 type: .trafficInsurance,
                 title: "Trafik Sigortası Yenileme",
-                dueDate: calendar.date(byAdding: .day, value: 12, to: now),
+                dueDate: calendar.date(byAdding: .day, value: 45, to: now),
                 priority: .critical
             ))
 
-            // Kasko: 3 ay sonra
-            context.insert(Reminder(
-                vehicleId: vehicle.id,
-                type: .casco,
-                title: "Kasko Yenileme",
-                dueDate: calendar.date(byAdding: .month, value: 3, to: now),
-                priority: .warning
-            ))
-
-            // MTV 1. taksit
+            // MTV
             var mtvComponents = calendar.dateComponents([.year], from: now)
-            mtvComponents.month = 1
-            mtvComponents.day = 15
+            mtvComponents.month = 1; mtvComponents.day = 15
             if let mtvDate = calendar.date(from: mtvComponents) {
-                let nextMTV = mtvDate < now
-                    ? calendar.date(byAdding: .year, value: 1, to: mtvDate)!
-                    : mtvDate
+                let next = mtvDate < now ? calendar.date(byAdding: .year, value: 1, to: mtvDate)! : mtvDate
                 context.insert(Reminder(
-                    vehicleId: vehicle.id,
-                    type: .mtvFirst,
-                    title: "MTV 1. Taksit",
-                    dueDate: nextMTV,
-                    priority: .info
+                    vehicleId: vehicle.id, type: .mtvFirst,
+                    title: "MTV 1. Taksit", dueDate: next, priority: .info
                 ))
             }
 
-            // Periyodik bakım
+            // Periyodik bakım (km bazlı)
             context.insert(Reminder(
                 vehicleId: vehicle.id,
                 type: .periodicService,
                 title: "Periyodik Bakım",
-                dueOdometer: vehicle.currentOdometer + 1500,
+                dueOdometer: vehicle.currentOdometer + (vehicle.vehicleType == .motorcycle ? 5000 : 10000),
                 priority: .info
             ))
         }
 
-        // Gecikmiş hatırlatıcı (sadece araç 1 için)
+        // Otomobil özel hatırlatıcılar
         context.insert(Reminder(
-            vehicleId: vehicle1.id,
-            type: .oilChange,
-            title: "Yağ Değişimi",
-            dueDate: calendar.date(byAdding: .day, value: -10, to: now),
-            priority: .critical,
-            status: .active
+            vehicleId: car.id, type: .oilChange,
+            title: "Yağ & Filtre Değişimi",
+            dueOdometer: 50000, priority: .warning
+        ))
+        context.insert(Reminder(
+            vehicleId: car.id, type: .timingBelt,
+            title: "Triger Kayışı Kontrolü",
+            dueOdometer: 90000, priority: .info
         ))
 
-        // Lastik değişimi (araç 2 için, Kasım ayında)
-        var tireComponents = calendar.dateComponents([.year], from: now)
-        tireComponents.month = 11
-        tireComponents.day = 1
-        if let tireDate = calendar.date(from: tireComponents) {
-            context.insert(Reminder(
-                vehicleId: vehicle2.id,
-                type: .tire,
-                title: "Kış Lastiği Takılması",
-                dueDate: tireDate,
-                priority: .warning
+        // Motosiklet özel hatırlatıcılar
+        context.insert(Reminder(
+            vehicleId: moto.id, type: .chainMaintenance,
+            title: "Zincir Temizlik & Gerdirme",
+            dueOdometer: 6000, priority: .warning
+        ))
+        context.insert(Reminder(
+            vehicleId: moto.id, type: .sparkPlug,
+            title: "Buji Değişimi",
+            dueOdometer: 12000, priority: .info
+        ))
+
+        // Gecikmiş hatırlatıcı (otomobil)
+        context.insert(Reminder(
+            vehicleId: car.id, type: .tire,
+            title: "Lastik Rotasyonu",
+            dueDate: calendar.date(byAdding: .day, value: -10, to: now),
+            priority: .critical
+        ))
+
+        // MARK: - Masraf Kayıtları
+        let carExpenses: [(ExpenseCategory, Double, String?, Int)] = [
+            (.fuel, 1650, "Shell", 0), (.fuel, 1420, "BP", 1), (.fuel, 1880, "Opet", 2),
+            (.fuel, 1340, "Shell", 3), (.fuel, 1560, "Petrol Ofisi", 4),
+            (.fuel, 1720, "BP", 5), (.fuel, 1480, "Shell", 6),
+            (.insurance, 8500, "Allianz", 2), (.tax, 4350, "Gelir İdaresi", 1),
+            (.service, 6800, "Toyota Plaza", 3), (.parking, 180, "İspark", 0),
+            (.toll, 350, "HGS", 0), (.wash, 200, nil, 5),
+            (.tire, 18500, "Bridgestone", 4), (.part, 1200, "Oto Yedek", 3),
+            (.repair, 4500, "Özel Servis", 6),
+        ]
+        for (cat, amount, vendor, monthsAgo) in carExpenses {
+            guard let date = calendar.date(byAdding: .month, value: -monthsAgo, to: now) else { continue }
+            context.insert(Expense(
+                vehicleId: car.id, category: cat, amount: amount, date: date,
+                odometer: max(0, car.currentOdometer - Int.random(in: 500...4000)),
+                vendorName: vendor
             ))
         }
 
-        // MARK: - Masraf Kayıtları
-        let expenseTemplates: [(category: ExpenseCategory, amounts: ClosedRange<Double>, vendors: [String], monthsAgo: ClosedRange<Int>)] = [
-            (.fuel, 900...2500, ["Shell", "BP", "Petrol Ofisi", "Opet"], 0...11),
-            (.service, 3500...9000, ["Yetkili Servis", "Bosch Car Service", "Özel Servis"], 1...11),
-            (.insurance, 8000...18000, ["Allianz", "Aksigorta", "Anadolu Sigorta"], 2...11),
-            (.casco, 12000...30000, ["Allianz", "Aksigorta"], 5...10),
-            (.tax, 1500...8000, ["Gelir İdaresi"], 0...11),
-            (.tire, 12000...25000, ["Lastik Dünyası", "Bridgestone", "Michelin"], 3...10),
-            (.battery, 2500...5500, ["İnci Akü", "Mutlu Akü"], 4...9),
-            (.parking, 50...300, ["İspark", "Otopark"], 0...11),
-            (.toll, 100...800, ["HGS/OGS"], 0...11),
-            (.wash, 100...350, ["Oto Yıkama"], 0...11),
-            (.repair, 1500...8000, ["Özel Servis", "Sanayi"], 2...10),
-            (.part, 500...4000, ["Parçacı", "Oto Yedek"], 3...9),
+        let motoExpenses: [(ExpenseCategory, Double, String?, Int)] = [
+            (.fuel, 280, "Shell", 0), (.fuel, 310, "BP", 1), (.fuel, 260, "Opet", 2),
+            (.fuel, 290, "Shell", 3), (.fuel, 340, "BP", 4),
+            (.insurance, 3200, "Allianz", 1), (.tax, 780, "Gelir İdaresi", 0),
+            (.service, 2500, "Yamaha Yetkili Servis", 2),
+            (.chainSprocket, 1800, "Motopark", 3),
+            (.equipment, 4500, "Eldiven Dünyası", 4),
+            (.accessory, 2200, "Revit Store", 2),
         ]
-
-        for vehicle in allVehicles {
-            // Her araç için 15-25 arası masraf
-            let expenseCount = 18 + Int.random(in: 0...7)
-            var expenseDates: Set<String> = []
-
-            for _ in 0..<expenseCount {
-                guard let template = expenseTemplates.randomElement() else { continue }
-
-                let monthsAgo = Int.random(in: template.monthsAgo)
-                guard let date = calendar.date(byAdding: .month, value: -monthsAgo, to: now) else { continue }
-                // Aynı ayda aynı kategoriden en fazla 3 masraf
-                let dateKey = "\(monthsAgo)-\(template.category.rawValue)"
-                let count = expenseDates.filter { $0 == dateKey }.count
-                if count >= 3 { continue }
-                expenseDates.insert(dateKey)
-
-                // Günü ay içinde rastgele dağıt
-                let dayOffset = Int.random(in: 1...25)
-                let expenseDate = calendar.date(byAdding: .day, value: -dayOffset, to: date) ?? date
-
-                let amount = Double.random(in: Double(template.amounts.lowerBound)...Double(template.amounts.upperBound))
-                let vendor = template.vendors.randomElement()
-
-                context.insert(Expense(
-                    vehicleId: vehicle.id,
-                    category: template.category,
-                    amount: amount,
-                    date: expenseDate,
-                    odometer: max(0, vehicle.currentOdometer - Int.random(in: 100...5000)),
-                    vendorName: vendor,
-                    note: ""
-                ))
-            }
+        for (cat, amount, vendor, monthsAgo) in motoExpenses {
+            guard let date = calendar.date(byAdding: .month, value: -monthsAgo, to: now) else { continue }
+            context.insert(Expense(
+                vehicleId: moto.id, category: cat, amount: amount, date: date,
+                odometer: max(0, moto.currentOdometer - Int.random(in: 100...1000)),
+                vendorName: vendor
+            ))
         }
 
         // MARK: - Bakım Kayıtları
-        let serviceTemplates: [(type: ServiceType, vendors: [String], monthsAgo: Int, laborRange: ClosedRange<Double>, partsRange: ClosedRange<Double>)] = [
-            (.periodic, ["Yetkili Servis", "Bosch Car Service"], 2, 1500...3000, 2000...5000),
-            (.oil, ["Özel Servis", "Yetkili Servis"], 1, 500...1000, 800...2000),
-            (.brake, ["Fren Servisi", "Yetkili Servis"], 5, 1200...2500, 1500...4000),
-            (.tire, ["Lastik Dünyası", "Bridgestone"], 8, 400...800, 8000...20000),
-            (.battery, ["İnci Akü"], 10, 200...500, 2000...4500),
-            (.airConditioning, ["Klima Servisi", "Yetkili Servis"], 6, 800...1800, 500...1500),
-        ]
+        // Otomobil
+        let carService1 = ServiceRecord(
+            vehicleId: car.id, serviceType: .periodic, date: calendar.date(byAdding: .month, value: -15, to: now) ?? now,
+            odometer: 30000, vendorName: "Toyota Plaza", laborCost: 1800, partsCost: 3200, totalCost: 5000
+        )
+        context.insert(carService1)
+        context.insert(PartChange(serviceRecordId: carService1.id, partType: .oil, brand: "Castrol", model: "Edge 0W-20"))
+        context.insert(PartChange(serviceRecordId: carService1.id, partType: .oilFilter, brand: "Toyota"))
+        context.insert(PartChange(serviceRecordId: carService1.id, partType: .airFilter, brand: "Toyota"))
 
-        let partTemplates: [(type: PartType, brands: [String])] = [
-            (.oil, ["Castrol", "Shell", "Mobil"]),
-            (.oilFilter, ["Bosch", "Mann", "Mahle"]),
-            (.airFilter, ["Bosch", "Mann"]),
-            (.pollenFilter, ["Bosch", "Mann"]),
-            (.brakePad, ["Bosch", "TRW", "Textar"]),
-            (.battery, ["İnci", "Mutlu", "Varta"]),
-            (.tire, ["Bridgestone", "Michelin", "Goodyear", "Pirelli"]),
-        ]
+        let carService2 = ServiceRecord(
+            vehicleId: car.id, serviceType: .periodic, date: calendar.date(byAdding: .month, value: -3, to: now) ?? now,
+            odometer: 43000, vendorName: "Toyota Plaza", laborCost: 2200, partsCost: 4600, totalCost: 6800
+        )
+        context.insert(carService2)
+        context.insert(PartChange(serviceRecordId: carService2.id, partType: .oil, brand: "Castrol", model: "Edge 0W-20"))
+        context.insert(PartChange(serviceRecordId: carService2.id, partType: .oilFilter, brand: "Toyota"))
+        context.insert(PartChange(serviceRecordId: carService2.id, partType: .pollenFilter, brand: "Bosch"))
 
-        // Her araç için farklı bakım kayıtları
+        // Motosiklet
+        let motoService1 = ServiceRecord(
+            vehicleId: moto.id, serviceType: .oil, date: calendar.date(byAdding: .month, value: -6, to: now) ?? now,
+            odometer: 1000, vendorName: "Yamaha Yetkili Servis", laborCost: 400, partsCost: 800, totalCost: 1200
+        )
+        context.insert(motoService1)
+        context.insert(PartChange(serviceRecordId: motoService1.id, partType: .oil, brand: "Yamalube", model: "10W-40"))
+        context.insert(PartChange(serviceRecordId: motoService1.id, partType: .oilFilter, brand: "Yamaha"))
+
+        let motoService2 = ServiceRecord(
+            vehicleId: moto.id, serviceType: .periodic, date: calendar.date(byAdding: .month, value: -2, to: now) ?? now,
+            odometer: 4000, vendorName: "Yamaha Yetkili Servis", laborCost: 600, partsCost: 1900, totalCost: 2500
+        )
+        context.insert(motoService2)
+        context.insert(PartChange(serviceRecordId: motoService2.id, partType: .oil, brand: "Yamalube", model: "10W-40"))
+        context.insert(PartChange(serviceRecordId: motoService2.id, partType: .oilFilter, brand: "Yamaha"))
+
+        // MARK: - Belgeler
         for vehicle in allVehicles {
-            let serviceCount = 4 + Int.random(in: 0...3)
-            let selectedTemplates = serviceTemplates.shuffled().prefix(serviceCount)
-
-            for template in selectedTemplates {
-                guard let serviceDate = calendar.date(byAdding: .month, value: -template.monthsAgo, to: now) else { continue }
-                let dayOffset = Int.random(in: 1...20)
-                let finalDate = calendar.date(byAdding: .day, value: -dayOffset, to: serviceDate) ?? serviceDate
-
-                let laborCost = Double.random(in: template.laborRange)
-                let partsCost = Double.random(in: template.partsRange)
-                let totalCost = laborCost + partsCost
-
-                let service = ServiceRecord(
-                    vehicleId: vehicle.id,
-                    serviceType: template.type,
-                    date: finalDate,
-                    odometer: max(0, vehicle.currentOdometer - Int.random(in: 1000...15000)),
-                    vendorName: template.vendors.randomElement(),
-                    laborCost: laborCost,
-                    partsCost: partsCost,
-                    totalCost: totalCost,
-                    notes: ""
-                )
-                context.insert(service)
-
-                // Değişen parçalar
-                let partCount = 1 + Int.random(in: 0...2)
-                let selectedParts = partTemplates.shuffled().prefix(partCount)
-                for partTemplate in selectedParts {
-                    context.insert(PartChange(
-                        serviceRecordId: service.id,
-                        partType: partTemplate.type,
-                        brand: partTemplate.brands.randomElement(),
-                        model: nil
-                    ))
-                }
-            }
+            let doc = VehicleDocument(
+                vehicleId: vehicle.id,
+                type: .registration,
+                title: "Ruhsat",
+                localFileName: "demo_ruhsat_\(vehicle.nickname.prefix(4)).txt",
+                originalFileName: "ruhsat.txt",
+                issueDate: vehicle.purchaseDate,
+                includeInSaleFile: true
+            )
+            doc.fileData = "Demo ruhsat belgesi — \(vehicle.fullName) (\(vehicle.plate))".data(using: .utf8)
+            context.insert(doc)
         }
 
-        // MARK: - Belgeler (placeholder)
-        let documentTemplates: [(type: DocumentType, title: String, includeInSale: Bool)] = [
-            (.registration, "Ruhsat", true),
-            (.insurancePolicy, "Trafik Sigortası Poliçesi", true),
-            (.cascoPolicy, "Kasko Poliçesi", true),
-            (.inspectionReport, "Muayene Raporu", false),
-            (.expertReport, "Ekspertiz Raporu", true),
-            (.serviceInvoice, "Servis Faturası", false),
-            (.partInvoice, "Parça Faturası", false),
-            (.vehiclePhoto, "Araç Fotoğrafı", false),
-        ]
+        // Otomobil özel belgeler
+        let insuranceDoc1 = VehicleDocument(
+            vehicleId: car.id, type: .insurancePolicy, title: "Trafik Sigortası",
+            localFileName: "demo_sigorta_car.txt", originalFileName: "sigorta.pdf",
+            issueDate: calendar.date(byAdding: .month, value: -10, to: now),
+            expiryDate: calendar.date(byAdding: .month, value: 2, to: now),
+            vendorName: "Allianz", includeInSaleFile: true
+        )
+        insuranceDoc1.fileData = "Demo trafik sigortası — Toyota Corolla".data(using: .utf8)
+        context.insert(insuranceDoc1)
 
-        for vehicle in allVehicles {
-            for template in documentTemplates {
-                let issueDate = calendar.date(byAdding: .month, value: -Int.random(in: 1...12), to: now)
-                let expiryDate: Date? = {
-                    switch template.type {
-                    case .insurancePolicy, .cascoPolicy:
-                        return calendar.date(byAdding: .year, value: 1, to: issueDate ?? now)
-                    case .inspectionReport:
-                        return calendar.date(byAdding: .year, value: 2, to: issueDate ?? now)
-                    default: return nil
-                    }
-                }()
+        let serviceInvDoc = VehicleDocument(
+            vehicleId: car.id, type: .serviceInvoice, title: "Periyodik Bakım Faturası",
+            localFileName: "demo_servis_car.txt", originalFileName: "fatura.pdf",
+            issueDate: calendar.date(byAdding: .month, value: -3, to: now), includeInSaleFile: true
+        )
+        serviceInvDoc.fileData = "Demo servis faturası — 43.000 km periyodik bakım".data(using: .utf8)
+        context.insert(serviceInvDoc)
 
-                let doc = VehicleDocument(
-                    vehicleId: vehicle.id,
-                    type: template.type,
-                    title: template.title,
-                    localFileName: "demo_\(vehicle.id.uuidString.prefix(6))_\(template.type.rawValue).txt",
-                    originalFileName: "\(template.title).txt",
-                    issueDate: issueDate,
-                    expiryDate: expiryDate,
-                    vendorName: template.type == .expertReport ? "Örnek Ekspertiz Merkezi" : nil,
-                    includeInSaleFile: template.includeInSale
-                )
+        // Motosiklet özel belgeler
+        let insDoc2 = VehicleDocument(
+            vehicleId: moto.id, type: .insurancePolicy, title: "Trafik Sigortası",
+            localFileName: "demo_sigorta_moto.txt", originalFileName: "sigorta.pdf",
+            issueDate: calendar.date(byAdding: .month, value: -7, to: now),
+            expiryDate: calendar.date(byAdding: .month, value: 5, to: now),
+            vendorName: "Allianz", includeInSaleFile: true
+        )
+        insDoc2.fileData = "Demo trafik sigortası — Yamaha MT-07".data(using: .utf8)
+        context.insert(insDoc2)
 
-                // Küçük placeholder text dosyası
-                let placeholderText = "Bu bir demo \(template.title.lowercased()) belgesidir.\nAraç: \(vehicle.plate) — \(vehicle.fullName)\nOluşturulma: \(Date().formatted())"
-                doc.fileData = placeholderText.data(using: .utf8)
-                doc.fileSizeBytes = doc.fileData?.count
+        let helmetDoc = VehicleDocument(
+            vehicleId: moto.id, type: .helmetGearWarranty, title: "Kask Garanti Belgesi",
+            localFileName: "demo_kask.txt", originalFileName: "garanti.pdf",
+            issueDate: moto.purchaseDate, vendorName: "LS2 Helmets", includeInSaleFile: false
+        )
+        helmetDoc.fileData = "Demo kask garanti — LS2 FF-800".data(using: .utf8)
+        context.insert(helmetDoc)
 
-                context.insert(doc)
-            }
-        }
-
-        // MARK: - Ekspertiz Raporu (araç 1)
-        let inspectionDate = calendar.date(byAdding: .month, value: -6, to: now) ?? now
+        // MARK: - Ekspertiz Raporu (otomobil)
         let inspection = InspectionReport(
-            vehicleId: vehicle1.id,
-            providerName: "Örnek Ekspertiz Merkezi",
-            branchName: "İzmir Bornova",
-            reportDate: inspectionDate,
-            odometer: 79000,
-            summary: "Kullanıcı tarafından eklenen örnek ekspertiz raporu. Rapor içeriği uygulama tarafından doğrulanmaz.",
+            vehicleId: car.id, providerName: "Oto Ekspertiz Merkezi",
+            branchName: "İstanbul Kadıköy",
+            reportDate: calendar.date(byAdding: .month, value: -6, to: now) ?? now,
+            odometer: 39000,
+            summary: "Araç genel durumu iyi. Motor ve şanzıman sorunsuz. Kaportada lokal boya mevcut. Alt takım temiz.",
             verificationStatus: .manual
         )
         context.insert(inspection)
 
-        // MARK: - Ekspertiz Raporu (araç 2)
-        let inspection2Date = calendar.date(byAdding: .month, value: -3, to: now) ?? now
-        let inspection2 = InspectionReport(
-            vehicleId: vehicle2.id,
-            providerName: "Oto Ekspertiz Merkezi",
-            branchName: "İstanbul Kadıköy",
-            reportDate: inspection2Date,
-            odometer: 44000,
-            summary: "Araç genel durumu iyi. Motor ve şanzıman sorunsuz. Kaportada lokal boya mevcut.",
-            verificationStatus: .manual
-        )
-        context.insert(inspection2)
-
-        // MARK: - Satış Dosyası (araç 1)
-        let saleFile = SaleFile(
-            vehicleId: vehicle1.id,
-            title: "\(vehicle1.fullName) — Satış Dosyası",
+        // MARK: - Satış Dosyası (otomobil)
+        context.insert(SaleFile(
+            vehicleId: car.id,
+            title: "\(car.fullName) — Satış Dosyası",
             includedSections: [.summary, .serviceHistory, .expenses, .inspectionReports, .documents, .disclaimer],
-            selectedDocumentIds: [],
             selectedInspectionReportIds: [inspection.id]
-        )
-        context.insert(saleFile)
+        ))
 
-        // MARK: - Save
+        // MARK: - Save & haptic
         try? context.save()
-
-        // Haptic feedback
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
-
-        return 3
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        return 2
     }
 
-    /// Tüm verileri siler. Sadece DEBUG.
+    /// Tüm verileri siler.
     static func deleteAll(context: ModelContext) {
-        if let sales = try? context.fetch(FetchDescriptor<SaleFile>()) {
-            for s in sales { context.delete(s) }
-        }
-        if let inspections = try? context.fetch(FetchDescriptor<InspectionReport>()) {
-            for i in inspections { context.delete(i) }
-        }
-        if let parts = try? context.fetch(FetchDescriptor<PartChange>()) {
-            for p in parts { context.delete(p) }
-        }
-        if let services = try? context.fetch(FetchDescriptor<ServiceRecord>()) {
-            for s in services { context.delete(s) }
-        }
-        if let expenses = try? context.fetch(FetchDescriptor<Expense>()) {
-            for e in expenses { context.delete(e) }
-        }
-        if let reminders = try? context.fetch(FetchDescriptor<Reminder>()) {
-            for r in reminders { context.delete(r) }
-        }
-        if let docs = try? context.fetch(FetchDescriptor<VehicleDocument>()) {
-            for d in docs { context.delete(d) }
-        }
-        if let vehicles = try? context.fetch(FetchDescriptor<Vehicle>()) {
-            for v in vehicles { context.delete(v) }
-        }
+        if let sales = try? context.fetch(FetchDescriptor<SaleFile>()) { for s in sales { context.delete(s) } }
+        if let inspections = try? context.fetch(FetchDescriptor<InspectionReport>()) { for i in inspections { context.delete(i) } }
+        if let parts = try? context.fetch(FetchDescriptor<PartChange>()) { for p in parts { context.delete(p) } }
+        if let services = try? context.fetch(FetchDescriptor<ServiceRecord>()) { for s in services { context.delete(s) } }
+        if let expenses = try? context.fetch(FetchDescriptor<Expense>()) { for e in expenses { context.delete(e) } }
+        if let reminders = try? context.fetch(FetchDescriptor<Reminder>()) { for r in reminders { context.delete(r) } }
+        if let docs = try? context.fetch(FetchDescriptor<VehicleDocument>()) { for d in docs { context.delete(d) } }
+        if let vehicles = try? context.fetch(FetchDescriptor<Vehicle>()) { for v in vehicles { context.delete(v) } }
 
-        // Belgeleri diskten temizle
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("VehicleDocuments")
         try? FileManager.default.removeItem(at: docDir)
-
         try? context.save()
-
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.warning)
+        UINotificationFeedbackGenerator().notificationOccurred(.warning)
     }
 }
 #endif
