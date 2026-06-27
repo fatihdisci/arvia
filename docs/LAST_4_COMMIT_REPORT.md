@@ -176,34 +176,121 @@ Bu 4 commit, Garajım uygulamasının Design Polish Phase 1–2, motosiklet dest
 - [x] HistoryView (5 filtreli birleşik geçmiş)
 - [x] Hesap silme akışı (SwiftData + belge + Supabase anonimleştirme)
 
-### Devam Eden / Sonraki
+## Kalan Riskler, Eksikler ve Öneriler
 
-- [ ] Onboarding akışı (4 ekranlı first-run)
-- [ ] Dosyanı tamamla checklist (Garaj'da onboarding sonrası)
-- [ ] Contextual tips sistemi
-- [ ] ReminderDetailView edit: mevcut veriyi ReminderFormView'a taşıma
-- [ ] `VehicleDossierApp/` alt dizinindeki eski kopyaların temizlenmesi
-- [ ] PrivacyInfo.xcprivacy'de Supabase domain'i
-- [ ] RevenueCat webhook → Supabase Edge Function → profiles.is_pro sync
+### Kritik (TestFlight öncesi mutlaka yap)
+
+| # | İş | Açıklama | Efor |
+|---|-----|----------|------|
+| 1 | **ReminderDetailView edit** | Düzenleme sheet'i `ReminderFormView()` ile açılıyor ama mevcut veriyi taşımıyor. `existingReminder` parametresi eklenmeli. | 30dk |
+| 2 | **HistoryView → delete** | Masraf/bakım/belge satırlarında silme aksiyonu yok. Swipe-to-delete eklenmeli. | 30dk |
+| 3 | **HistoryView → detail tap** | Masraf/bakım satırlarına tıklanınca düzenleme/detay açılmalı. | 45dk |
+| 4 | **Supabase SQL çalıştırma** | `SUPABASE_FINAL_DEPLOY.sql` manuel çalıştırılmalı (commit otomatik değiştirmez). | 5dk |
+| 5 | **VehicleDossierApp/ temizliği** | Eski kopyalar `VehicleDossierApp/` altında. Pbxproj'da referans yok, karışıklık yaratıyor. | 15dk |
+
+### Yüksek (ilk TestFlight'ta olmalı)
+
+| # | İş | Açıklama | Efor |
+|---|-----|----------|------|
+| 6 | **Onboarding akışı** | 3-4 ekranlı first-run. "Aracının dijital dosyası" mantığını öğretmeli. BrandIntroView sonrasına eklenebilir. | 2-3sa |
+| 7 | **Dosyanı tamamla checklist** | İlk araç sonrası Garaj'da interaktif checklist kartı. Item'lar ilgili formlara yönlendirmeli. | 1-2sa |
+| 8 | **ReminderFormView filtre** | `templates(for:)` hazır ama form kullanmıyor. Motosiklet→zincir/buji, otomobil→triger/HGS. | 30dk |
+| 9 | **ExpenseFormView filtre** | `categories(for:)` hazır ama form kullanmıyor. | 30dk |
+| 10 | **VehicleEditView vehicleType UI** | State var ama Picker yok. Kullanıcı araç türünü düzenleyemiyor. | 30dk |
+
+### Orta (V1.1)
+
+| # | İş | Açıklama | Efor |
+|---|-----|----------|------|
+| 11 | **Contextual tips** | Bağlama göre inline info kartları. UserDefaults "görüldü" takibi. Kapatılabilir. | 2-3sa |
+| 12 | **AppBrand geçişi** | Tüm hardcoded "Garajım" → `AppBrand.appName`. Kademeli. | 1sa |
+| 13 | **Motosiklet icon** | `bicycle` ideal değil. Custom asset veya alternatif SF Symbol. | 1sa |
+| 14 | **Form success feedback** | Masraf/bakım kaydında haptik + animasyon. Şu an sadece belge formunda var. | 45dk |
+| 15 | **Premium row tasarımı** | Geçmiş/Expense listelerinde varsayılan List yerine özel row. | 1-2sa |
+
+### Düşük (V1.2+)
+
+| # | İş |
+|---|-----|
+| 16 | RevenueCat webhook → Supabase Edge Function → `profiles.is_pro` sync |
+| 17 | APNs push notification (topluluk beğeni/yorum) |
+| 18 | PrivacyInfo Supabase domain listesi |
+| 19 | Araç Yaşam Çizgisi event genişletme animasyonu |
+| 20 | CSV/PDF export |
+| 21 | Belgeler sekmesi geri dönüşü (feedback'e göre) |
+| 22 | GarageView ikincil araç kompakt hero card |
+
+### Önerilen Yol Haritası
+
+- **Faz A — TestFlight Blocker (1-2 gün):** #1-5
+- **Faz B — TestFlight V1 (3-5 gün):** #6-10
+- **Faz C — V1.1 (1-2 hafta):** #11-15
+- **Faz D — V1.2+ (1 ay+):** #16-22
 
 ---
 
-## Manuel Yapılması Gerekenler (Supabase)
+## Manuel Yapılması Gerekenler
 
-1. Supabase Dashboard → SQL Editor → `docs/SUPABASE_FINAL_DEPLOY.sql` çalıştır
-2. Apple Sign-In provider ayarlarını doğrula (Service ID, callback URL, p8 key)
-3. Admin kullanıcısı oluştur: `UPDATE profiles SET role='admin', is_verified=true, is_pro=true WHERE id='<UUID>';`
+### Supabase (manuel — commit otomatik yapmaz)
+1. SQL Editor → `docs/SUPABASE_FINAL_DEPLOY.sql` **tamamını** yapıştır → Run
+2. Authentication → Apple provider: Service ID, callback URL, p8 key doğrula
+3. Admin oluştur: `UPDATE profiles SET role='admin', is_verified=true, is_pro=true WHERE id='<UUID>';`
+
+### Xcode (manuel)
+4. Signing & Capabilities → Sign in with Apple aktif mi?
+5. Build Settings → `INFOPLIST_KEY_SUPABASE_URL/ANON_KEY` değerlerini kontrol et
+6. `Config.xcconfig` production değerleri (gitignored — commitlenmez!)
+
+### App Store Connect (manuel)
+7. App Privacy labels → PrivacyInfo.xcprivacy ile tutarlı mı?
+8. TestFlight Internal Testing grubu kur
+9. App Review: UGC moderasyon, hesap silme, paywall restore, gizlilik linkleri hazır
 
 ---
 
-## Manuel Test Checklist
+## Genişletilmiş Manuel Test Checklist
 
-- [ ] Tab isimleri: Garaj / Yapılacaklar / Geçmiş / Raporlar / Topluluk
-- [ ] Yapılacaklar → satıra TAP → detay açılıyor → düzenle/sil/tamamla çalışıyor
-- [ ] Bakım türü iş tamamlanınca "Bakım Kaydı Oluştur" seçeneği çıkıyor
-- [ ] Geçmiş → filtre çipleri (Tümü/Masraflar/Bakımlar/Belgeler/Ekspertiz)
-- [ ] QuickActionRail: Masraf/Bakım/Belge/Hatırlatıcı/Satış
-- [ ] Belge ekle → tür değişimi başlığı güncelliyor → özel başlık korunuyor
-- [ ] Araç ekle → araç türü seçici → motosiklet alanları
-- [ ] Dark mode + Dynamic Type + VoiceOver
-- [ ] Hesap silme → veri temizliği → topluluk profil anonimleşmesi
+### Araç
+- [ ] Otomobil ekle (tüm alanlar)
+- [ ] Motosiklet ekle (tip + motor hacmi)
+- [ ] Araç düzenle / arşivle / sil
+
+### Yapılacaklar
+- [ ] Tab: "Yapılacaklar" + `checklist` ikonu
+- [ ] Boş durum: "Yaklaşan iş yok" + "Yapılacak Ekle"
+- [ ] Satıra TAP → ReminderDetailView (durum, detay, araç, aksiyonlar)
+- [ ] Düzenle / Sil (confirmation) / Tamamlandı İşaretle
+- [ ] Bakım işi tamamlanınca "Bakım Kaydı Oluştur" seçeneği
+- [ ] Swipe actions (Tamamla / Sil)
+
+### Geçmiş
+- [ ] Tab: "Geçmiş" + `clock.arrow.circlepath` ikonu
+- [ ] Filtreler: Tümü / Masraflar / Bakımlar / Belgeler / Ekspertiz
+- [ ] Her filtre boş durumda doğru mesaj + CTA
+- [ ] "+" menüsü → 4 kayıt türü ekleme
+- [ ] Belge → tıkla → QuickLook
+
+### Garaj
+- [ ] Hero kart (ikon vehicleType'a göre)
+- [ ] QuickActionRail: Masraf / Bakım / Belge / Hatırlatıcı / Satış
+- [ ] Dosya Tamlığı kartı
+- [ ] Son İşlemler / İkincil araçlar
+
+### Raporlar / Satış / Paywall / Topluluk
+- [ ] Hero metrik + OwnershipInsightCards
+- [ ] Satış dosyası PDF + paylaşım
+- [ ] Paywall gate'ler (araç/belge/satış) + restore
+- [ ] Topluluk: giriş, gönderi, yorum, beğeni, şikayet, moderasyon
+
+### Erişilebilirlik
+- [ ] Dark mode — tüm yeni ekranlar okunaklı
+- [ ] Dynamic Type — büyük metin boyutları
+- [ ] VoiceOver — icon-only butonlarda label
+- [ ] Reduce Motion — animasyonlar atlanıyor
+- [ ] Tap target min 44pt
+
+### Hesap Silme
+- [ ] Ayarlar → Hesabı ve Verileri Sil → onay
+- [ ] SwiftData + belge dosyaları + bildirimler temizleniyor
+- [ ] Topluluk profili anonimleşiyor (deleted_user_XXXX)
+- [ ] Supabase sign out + Pro state sıfırlanıyor
