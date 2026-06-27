@@ -123,10 +123,10 @@ struct ReminderListView: View {
     // MARK: - Empty State
     private var emptyState: some View {
         EmptyStateView(
-            icon: "bell.badge",
-            title: "İlk hatırlatıcını ekle",
-            description: "Muayene, sigorta ve bakım tarihlerini kaçırmamak için hatırlatıcı oluştur.",
-            actionTitle: "Hatırlatıcı Ekle",
+            icon: "checklist",
+            title: "Yaklaşan iş yok",
+            description: "Muayene, sigorta, bakım ve MTV gibi tarihleri ekleyerek aracını düzenli takip edebilirsin.",
+            actionTitle: "Yapılacak Ekle",
             action: { showAddReminder = true }
         )
     }
@@ -189,22 +189,32 @@ struct ReminderListView: View {
     ) -> some View {
         Section {
             ForEach(reminders) { reminder in
-                ReminderRow(reminder: reminder, vehicle: vehicleFor(reminder))
-                    .swipeActions(edge: .trailing) {
-                        Button {
-                            completeReminder(reminder)
-                        } label: {
-                            Label("Tamamla", systemImage: "checkmark")
+                NavigationLink {
+                    ReminderDetailView(
+                        reminder: reminder,
+                        vehicle: vehicleFor(reminder),
+                        onCompleteWithRecord: { completedReminder, action in
+                            // Tamamlandıktan sonra Geçmiş'e yönlendirme caller tarafından yönetilir
                         }
-                        .tint(AppColors.success)
+                    )
+                } label: {
+                    ReminderRow(reminder: reminder, vehicle: vehicleFor(reminder))
+                }
+                .swipeActions(edge: .trailing) {
+                    Button {
+                        completeReminder(reminder)
+                    } label: {
+                        Label("Tamamla", systemImage: "checkmark")
                     }
-                    .swipeActions(edge: .leading) {
-                        Button(role: .destructive) {
-                            deleteReminder(reminder)
-                        } label: {
-                            Label("Sil", systemImage: "trash")
-                        }
+                    .tint(AppColors.success)
+                }
+                .swipeActions(edge: .leading) {
+                    Button(role: .destructive) {
+                        deleteReminder(reminder)
+                    } label: {
+                        Label("Sil", systemImage: "trash")
                     }
+                }
             }
         } header: {
             HStack(spacing: AppSpacing.xxs) {

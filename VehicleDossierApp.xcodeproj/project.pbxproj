@@ -26,6 +26,9 @@
 		DOSICMPLDOSICMPLDOSICMPL /* DossierCompletenessCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DOSICMPRDOSICMPRDOSICMPR /* DossierCompletenessCard.swift */; };
 		OWNSINSGOWNSINSGOWNSINSG /* OwnershipInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = OWNSINSROWNSINSROWNSINSR /* OwnershipInsightCard.swift */; };
 		BRNDNTRVBRNDNTRVBRNDNTRV /* BrandIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BRNDNTRRBRNDNTRRBRNDNTRR /* BrandIntroView.swift */; };
+		F2A0D17DBF97281937D9318F /* TodosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4A47D3ECE9D5555483AAB3 /* TodosView.swift */; };
+		5074FE1D88DDA200D84D9582 /* ReminderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB7348B6E78A0AF27914E839 /* ReminderDetailView.swift */; };
+		37A0D11463B068D81D89D0A0 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D61F0BD9EE0EB3BFD65CEA /* HistoryView.swift */; };
 		28E816DC9F0D40E5BA7DCA19 /* DocumentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C9A3136160348AFBE76B0C3 /* DocumentsView.swift */; };
 		2DB927F9BFC27F98C25211F7 /* Supabase.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 921F32F152B20505593AD8E1 /* Supabase.framework */; };
 		301518BA95E44FD5A134BF8C /* MockDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7A9414480D45CD943E3DAC /* MockDataProvider.swift */; };
@@ -146,6 +149,9 @@
 		DOSICMPRDOSICMPRDOSICMPR /* DossierCompletenessCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DossierCompletenessCard.swift; sourceTree = "<group>"; };
 		OWNSINSROWNSINSROWNSINSR /* OwnershipInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnershipInsightCard.swift; sourceTree = "<group>"; };
 		BRNDNTRRBRNDNTRRBRNDNTRR /* BrandIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandIntroView.swift; sourceTree = "<group>"; };
+		7B4A47D3ECE9D5555483AAB3 /* TodosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosView.swift; sourceTree = "<group>"; };
+		AB7348B6E78A0AF27914E839 /* ReminderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderDetailView.swift; sourceTree = "<group>"; };
+		38D61F0BD9EE0EB3BFD65CEA /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		5B6942877FED47F5943E58C1 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
 		60619A1D363143F3840752AB /* RetentionNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetentionNotificationService.swift; sourceTree = "<group>"; };
 		6145ECA81043106F6EF7D91A /* CommunityRulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityRulesView.swift; sourceTree = "<group>"; };
@@ -260,6 +266,8 @@
 				3C0199BF34D747E7823A11B7 /* ReminderFormView.swift */,
 				889C5EF099CC4E348BEFDA1C /* ReminderListView.swift */,
 				C4A5CB0F3A1E4948922C78CC /* RemindersView.swift */,
+				7B4A47D3ECE9D5555483AAB3 /* TodosView.swift */,
+				AB7348B6E78A0AF27914E839 /* ReminderDetailView.swift */,
 			);
 			path = Reminders;
 			sourceTree = "<group>";
@@ -338,6 +346,7 @@
 			isa = PBXGroup;
 			children = (
 				A62F298D91FC44A895A9B49D /* RecordsView.swift */,
+				38D61F0BD9EE0EB3BFD65CEA /* HistoryView.swift */,
 			);
 			path = Records;
 			sourceTree = "<group>";
@@ -655,7 +664,10 @@
 				C9CEF06186644426ABAE5496 /* RemindersView.swift in Sources */,
 				3697DEB15F04490FB93586F9 /* ReminderListView.swift in Sources */,
 				0E788B0A99B34A0B96BEC5EB /* ReminderFormView.swift in Sources */,
+				F2A0D17DBF97281937D9318F /* TodosView.swift in Sources */,
+				5074FE1D88DDA200D84D9582 /* ReminderDetailView.swift in Sources */,
 				6482D10BC5FE4D459BA00E4E /* RecordsView.swift in Sources */,
+				37A0D11463B068D81D89D0A0 /* HistoryView.swift in Sources */,
 				49035E1F1A3D4F9BBB52C851 /* ExpenseFormView.swift in Sources */,
 				13D008DDDF18442092EBE56A /* ExpenseListView.swift in Sources */,
 				40E961163B1745D5B6187997 /* ServiceRecordFormView.swift in Sources */,

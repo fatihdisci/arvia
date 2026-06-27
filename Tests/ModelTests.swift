@@ -332,8 +332,8 @@ final class VehicleModelTests: XCTestCase {
     }
 
     func testReminderTypeAllCases() {
-        // Ortak: 12 + Otomobil: 2 (timingBelt, hgs) + Motosiklet: 8 + Genel: 1 (custom) = 23
-        XCTAssertEqual(ReminderType.allCases.count, 23)
+        // Ortak: 11 + Otomobil: 2 (timingBelt, hgs) + Motosiklet: 8 + Genel: 1 (custom) = 22
+        XCTAssertEqual(ReminderType.allCases.count, 22)
         XCTAssertEqual(ReminderType.inspection.displayName, "Muayene")
         XCTAssertEqual(ReminderType.trafficInsurance.defaultIcon, "shield")
     }
