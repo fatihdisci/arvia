@@ -87,10 +87,13 @@ Bu uygulama:
 - Kullanıcı verileri cihaz üzerinde saklanır. Üçüncü taraflarla paylaşılmaz.
 
 ## Privacy Policy URL
-https://fatihdisci.github.io/ruhsatim/privacy.html
+https://fatihdisci.github.io/arvia/privacy.html
 
 ## Terms of Service URL
-https://fatihdisci.github.io/ruhsatim/terms.html
+https://fatihdisci.github.io/arvia/terms.html
+
+## Support URL
+https://fatihdisci.github.io/arvia/support.html
 
 ## Support Email
 behavest@proton.me

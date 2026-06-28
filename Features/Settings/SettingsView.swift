@@ -20,8 +20,8 @@ struct SettingsView: View {
     @State private var isExporting = false
     @State private var exportMessage: String?
     // Privacy & Terms URL'leri — GitHub Pages canlı URL'leri
-    private let privacyURL = URL(string: "https://fatihdisci.github.io/ruhsatim/privacy.html")!
-    private let termsURL = URL(string: "https://fatihdisci.github.io/ruhsatim/terms.html")!
+    private let privacyURL = URL(string: "https://fatihdisci.github.io/arvia/privacy.html")!
+    private let termsURL = URL(string: "https://fatihdisci.github.io/arvia/terms.html")!
     private let supportEmail = "behavest@proton.me"
 
     var body: some View {

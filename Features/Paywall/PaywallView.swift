@@ -101,8 +101,8 @@ struct PaywallView: View {
         }.sorted { $0.sortOrder < $1.sortOrder }
     }
 
-    private let privacyURL = URL(string: "https://fatihdisci.github.io/ruhsatim/privacy.html")!
-    private let termsURL = URL(string: "https://fatihdisci.github.io/ruhsatim/terms.html")!
+    private let privacyURL = URL(string: "https://fatihdisci.github.io/arvia/privacy.html")!
+    private let termsURL = URL(string: "https://fatihdisci.github.io/arvia/terms.html")!
 
     var body: some View {
         NavigationStack {
