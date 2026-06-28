@@ -16,11 +16,13 @@ final class PaywallService: ObservableObject {
     @Published var purchaseError: String?
 
     // Ürün ID'leri — App Store Connect'te tanımlanmalı
-    private let productIDs = [
+    static let proProductIDs = [
         "com.ruhsatim.pro.monthly",
         "com.ruhsatim.pro.yearly",
         "com.ruhsatim.pro.lifetime",
     ]
+
+    private let productIDs = PaywallService.proProductIDs
 
     // Dev mode: App Store Connect olmadan test için
     private let devModeKey = "paywall_dev_is_pro"
@@ -70,13 +72,17 @@ final class PaywallService: ObservableObject {
     }
 
     func enableProForDev() {
+        #if DEBUG
         UserDefaults.standard.set(true, forKey: devModeKey)
         isPro = true
+        #endif
     }
 
     func disableProForDev() {
+        #if DEBUG
         UserDefaults.standard.set(false, forKey: devModeKey)
         isPro = false
+        #endif
     }
 
     // MARK: - Product Loading
@@ -184,11 +190,19 @@ final class PaywallService: ObservableObject {
         return currentCount < 5
     }
 
+    func canSaveNewDocument(currentCount: Int) -> Bool {
+        canAddDocument(currentCount: currentCount)
+    }
+
     func canCreateSaleFile() -> Bool {
         isPro
     }
 
     func canAccessAdvancedReports() -> Bool {
+        isPro
+    }
+
+    func canCreateInspectionReport() -> Bool {
         isPro
     }
 

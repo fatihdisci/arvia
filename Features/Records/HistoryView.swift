@@ -8,6 +8,7 @@ import QuickLook
 
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var paywallService: PaywallService
 
     @Query(sort: \Expense.date, order: .reverse) private var allExpenses: [Expense]
     @Query(sort: \ServiceRecord.date, order: .reverse) private var allServiceRecords: [ServiceRecord]
@@ -29,6 +30,8 @@ struct HistoryView: View {
     @State private var editingService: ServiceRecord?
     @State private var showDeleteConfirmation = false
     @State private var itemToDelete: Any? = nil
+    @State private var showPaywall = false
+    @State private var paywallFeature: PaywallView.PaywallFeature = .documentLimit
 
     enum HistoryFilter: String, CaseIterable {
         case all = "Tümü"
@@ -81,10 +84,10 @@ struct HistoryView: View {
                         Button { showAddService = true } label: {
                             Label("Bakım Ekle", systemImage: "wrench.and.screwdriver")
                         }
-                        Button { showAddDocument = true } label: {
+                        Button { handleAddDocument() } label: {
                             Label("Belge Ekle", systemImage: "doc.text")
                         }
-                        Button { showAddInspection = true } label: {
+                        Button { handleAddInspection() } label: {
                             Label("Ekspertiz Ekle", systemImage: "magnifyingglass")
                         }
                     } label: {
@@ -99,6 +102,7 @@ struct HistoryView: View {
             .sheet(isPresented: $showAddService) { ServiceRecordFormView() }
             .sheet(isPresented: $showAddDocument) { DocumentFormView() }
             .sheet(isPresented: $showAddInspection) { InspectionReportFormView() }
+            .sheet(isPresented: $showPaywall) { PaywallView(feature: paywallFeature) }
             .sheet(item: $editingExpense) { expense in ExpenseFormView(existingExpense: expense) }
             .sheet(item: $editingService) { service in ServiceRecordFormView(existingRecord: service) }
             .confirmationDialog("Kayıt Silinsin mi?", isPresented: $showDeleteConfirmation, actions: {
@@ -226,7 +230,7 @@ struct HistoryView: View {
                     title: "Henüz belge yok",
                     description: "Poliçe, muayene, ekspertiz ve faturaları aracının dosyasında saklayabilirsin.",
                     actionTitle: "Belge Ekle",
-                    action: { showAddDocument = true }
+                    action: { handleAddDocument() }
                 )
             case .inspections:
                 EmptyStateView(
@@ -234,7 +238,7 @@ struct HistoryView: View {
                     title: "Henüz ekspertiz kaydı yok",
                     description: "Ekspertiz raporlarını manuel ekleyerek satış dosyana dahil edebilirsin.",
                     actionTitle: "Ekspertiz Ekle",
-                    action: { showAddInspection = true }
+                    action: { handleAddInspection() }
                 )
             }
         }
@@ -491,6 +495,25 @@ struct HistoryView: View {
         }
         try? modelContext.save()
         itemToDelete = nil
+    }
+
+    // MARK: - Gate helpers
+    private func handleAddDocument() {
+        if paywallService.canAddDocument(currentCount: allDocuments.count) {
+            showAddDocument = true
+        } else {
+            paywallFeature = .documentLimit
+            showPaywall = true
+        }
+    }
+
+    private func handleAddInspection() {
+        if paywallService.canCreateInspectionReport() {
+            showAddInspection = true
+        } else {
+            paywallFeature = .inspectionArchive
+            showPaywall = true
+        }
     }
 
     // MARK: - Row helper

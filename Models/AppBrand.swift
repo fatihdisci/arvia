@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - App Brand Constants
-// Merkezi marka/branding sabitleri. Tüm hardcoded "Garajım" metinleri
+// Merkezi marka/branding sabitleri. Tüm kullanıcıya görünen marka metinleri
 // bu dosya üzerinden referanslanır. App adı değişirse tek yerden güncellenir.
 
 enum AppBrand {

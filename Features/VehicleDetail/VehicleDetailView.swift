@@ -28,6 +28,7 @@ struct VehicleDetailView: View {
     @State private var showAddDocument = false
     @State private var showDocumentPreview = false
     @State private var showPaywall = false
+    @State private var paywallFeature: PaywallView.PaywallFeature = .documentLimit
     @State private var previewDocumentURL: URL?
 
     // Filtered data
@@ -112,7 +113,7 @@ struct VehicleDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button {
-                        showSaleFile = true
+                        handleSaleFileTap()
                     } label: {
                         Label("Satış Dosyası", systemImage: "doc.richtext")
                     }
@@ -159,7 +160,7 @@ struct VehicleDetailView: View {
             DocumentFormView(preselectedVehicleId: vehicle.id)
         }
         .sheet(isPresented: $showPaywall) {
-            PaywallView(feature: .documentLimit)
+            PaywallView(feature: paywallFeature)
         }
         .quickLookPreview($previewDocumentURL)
         .confirmationDialog("Aracı Arşivle", isPresented: $showArchiveConfirmation) {
@@ -253,6 +254,7 @@ struct VehicleDetailView: View {
                     if paywallService.canAddDocument(currentCount: allDocuments.count) {
                         showAddDocument = true
                     } else {
+                        paywallFeature = .documentLimit
                         showPaywall = true
                     }
                 }
@@ -263,6 +265,7 @@ struct VehicleDetailView: View {
                     if paywallService.canAddDocument(currentCount: allDocuments.count) {
                         showAddDocument = true
                     } else {
+                        paywallFeature = .documentLimit
                         showPaywall = true
                     }
                 } label: {
@@ -452,7 +455,7 @@ struct VehicleDetailView: View {
             } else {
                 // Ekspertiz yok — ekleme çağrısı
                 Button {
-                    showAddInspection = true
+                    handleAddInspection()
                 } label: {
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: "magnifyingglass")
@@ -487,7 +490,7 @@ struct VehicleDetailView: View {
     /// Güvenli dil: Mekanik/hukuki garanti ima etmez.
     private var saleFilePreviewCard: some View {
         Button {
-            showSaleFile = true
+            handleSaleFileTap()
         } label: {
             HStack(spacing: AppSpacing.md) {
                 ZStack {
@@ -808,6 +811,25 @@ struct VehicleDetailView: View {
         if score >= 80 { return "Aracının dosyası oldukça tam." }
         if score >= 50 { return "Birkaç bilgi daha ekleyebilirsin." }
         return "Dosyanı tamamlamak için bilgi ekle."
+    }
+
+    // MARK: - Gate Helpers
+    private func handleAddInspection() {
+        if paywallService.canCreateInspectionReport() {
+            showAddInspection = true
+        } else {
+            paywallFeature = .inspectionArchive
+            showPaywall = true
+        }
+    }
+
+    private func handleSaleFileTap() {
+        if paywallService.canCreateSaleFile() {
+            showSaleFile = true
+        } else {
+            paywallFeature = .saleFile
+            showPaywall = true
+        }
     }
 
     // MARK: - Archive / Delete

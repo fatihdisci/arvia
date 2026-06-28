@@ -8,6 +8,7 @@ import SwiftData
 struct InspectionReportFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var paywallService: PaywallService
 
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
     @Query private var allDocuments: [VehicleDocument]
@@ -25,6 +26,7 @@ struct InspectionReportFormView: View {
     @State private var includeInSaleFile = true
 
     @State private var validationErrors: [String] = []
+    @State private var showPaywall = false
 
     init(existingReport: InspectionReport? = nil) {
         self.existingReport = existingReport
@@ -76,6 +78,9 @@ struct InspectionReportFormView: View {
                 if !isEditing, vehicles.count == 1 {
                     selectedVehicleId = vehicles.first?.id
                 }
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView(feature: .inspectionArchive)
             }
         }
     }
@@ -153,10 +158,19 @@ struct InspectionReportFormView: View {
     // MVP'de tüm raporlar .manual statüsünde oluşturulur.
     private var saleFileToggleSection: some View {
         Section {
-            Toggle(isOn: $includeInSaleFile) {
-                Label("Satış dosyasına dahil et", systemImage: "doc.richtext")
+            if paywallService.canCreateInspectionReport() {
+                Toggle(isOn: $includeInSaleFile) {
+                    Label("Satış dosyasına dahil et", systemImage: "doc.richtext")
+                }
+                .tint(AppColors.accentPrimary)
+            } else {
+                Button {
+                    showPaywall = true
+                } label: {
+                    Label("Satış dosyasına dahil etme Arvia Pro ile kullanılabilir", systemImage: "lock.fill")
+                        .foregroundColor(AppColors.textSecondary)
+                }
             }
-            .tint(AppColors.accentPrimary)
         } header: {
             Text("Durum")
         }
@@ -210,6 +224,11 @@ struct InspectionReportFormView: View {
     // MARK: - Save
     private func save() {
         var errors: [String] = []
+        guard paywallService.canCreateInspectionReport() else {
+            validationErrors = ["Ekspertiz raporu arşivi Arvia Pro ile kullanılabilir."]
+            showPaywall = true
+            return
+        }
         if providerName.trimmingCharacters(in: .whitespaces).isEmpty {
             errors.append("Firma adı zorunludur.")
         }

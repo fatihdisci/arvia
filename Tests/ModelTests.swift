@@ -695,14 +695,33 @@ final class PaywallLimitTests: XCTestCase {
         XCTAssertTrue(service.canAddDocument(currentCount: 100))
     }
 
-    func testSaleFileAndAdvancedReportsAreProOnly() {
+    func testSaleFileAdvancedReportsAndInspectionAreProOnly() {
         let free = PaywallService(isProForTesting: false)
         XCTAssertFalse(free.canCreateSaleFile())
         XCTAssertFalse(free.canAccessAdvancedReports())
+        XCTAssertFalse(free.canCreateInspectionReport())
 
         let pro = PaywallService(isProForTesting: true)
         XCTAssertTrue(pro.canCreateSaleFile())
         XCTAssertTrue(pro.canAccessAdvancedReports())
+        XCTAssertTrue(pro.canCreateInspectionReport())
+    }
+
+    func testDocumentSaveGuardUsesCentralLimit() {
+        let free = PaywallService(isProForTesting: false)
+        XCTAssertTrue(free.canSaveNewDocument(currentCount: 4))
+        XCTAssertFalse(free.canSaveNewDocument(currentCount: 5))
+
+        let pro = PaywallService(isProForTesting: true)
+        XCTAssertTrue(pro.canSaveNewDocument(currentCount: 500))
+    }
+
+    func testProProductIDsRemainRuhsatimForAppStoreConnectCompatibility() {
+        XCTAssertEqual(PaywallService.proProductIDs, [
+            "com.ruhsatim.pro.monthly",
+            "com.ruhsatim.pro.yearly",
+            "com.ruhsatim.pro.lifetime",
+        ])
     }
 }
 

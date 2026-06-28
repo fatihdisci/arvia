@@ -22,6 +22,7 @@ struct SettingsView: View {
     // Privacy & Terms URL'leri — GitHub Pages canlı URL'leri
     private let privacyURL = URL(string: "https://fatihdisci.github.io/arvia/privacy.html")!
     private let termsURL = URL(string: "https://fatihdisci.github.io/arvia/terms.html")!
+    private let supportURL = URL(string: "https://fatihdisci.github.io/arvia/support.html")!
     private let eulaURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
     private let supportEmail = "behavest@proton.me"
 
@@ -306,7 +307,20 @@ struct SettingsView: View {
 
             Link(destination: eulaURL) {
                 HStack {
-                    Label("Apple EULA", systemImage: "doc.text.magnifyingglass")
+            Link(destination: eulaURL) {
+                HStack {
+                    Label("Apple Standart EULA", systemImage: "checkmark.seal")
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                    Image(systemName: "arrow.up.forward")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+
+            Link(destination: supportURL) {
+                HStack {
+                    Label("Destek", systemImage: "questionmark.circle")
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
                     Image(systemName: "arrow.up.forward")
@@ -529,7 +543,7 @@ struct SettingsView: View {
                 if let jsonData = try? JSONSerialization.data(withJSONObject: export, options: .prettyPrinted) {
 
                     let tempURL = FileManager.default.temporaryDirectory
-                        .appendingPathComponent("ruhsatim-export-\(Date().ISO8601Format().prefix(10)).json")
+                        .appendingPathComponent("arvia-export-\(Date().ISO8601Format().prefix(10)).json")
                     try? jsonData.write(to: tempURL)
 
                     DispatchQueue.main.async {

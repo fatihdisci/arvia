@@ -36,6 +36,7 @@ struct PaywallView: View {
         case documentLimit
         case saleFile
         case advancedReports
+        case inspectionArchive
         case communityWrite
 
         var title: String {
@@ -44,6 +45,7 @@ struct PaywallView: View {
             case .documentLimit: return "Belge Limitini Kaldır"
             case .saleFile: return "Satış Dosyası Oluştur"
             case .advancedReports: return "Gelişmiş Raporlar"
+            case .inspectionArchive: return "Ekspertiz Arşivi"
             case .communityWrite: return "Toplulukta Paylaşım Yap"
             }
         }
@@ -58,6 +60,8 @@ struct PaywallView: View {
                 return "Aracının eksiksiz satış dosyasını PDF olarak oluştur ve paylaş."
             case .advancedReports:
                 return "Yıllık trend, araç karşılaştırma ve detaylı maliyet analizi."
+            case .inspectionArchive:
+                return "Ekspertiz raporlarını arşivle ve satış dosyana dahil et."
             case .communityWrite:
                 return "Toplulukta gönderi oluştur ve yorum yaparak diğer araç sahipleriyle etkileşime geç."
             }
@@ -80,12 +84,16 @@ struct PaywallView: View {
 
     private var pricingOptions: [PricingOption] {
         if paywallService.products.isEmpty {
+            #if DEBUG
             // Dev mode fallback — ürün ID'lerine göre sıralı
             return [
                 PricingOption(id: "com.ruhsatim.pro.monthly", title: "Aylık", price: "₺79,99", period: "/ay", badge: nil, sortOrder: 0),
                 PricingOption(id: "com.ruhsatim.pro.yearly", title: "Yıllık", price: "₺599,99", period: "/yıl", badge: "En Avantajlı", sortOrder: 1),
                 PricingOption(id: "com.ruhsatim.pro.lifetime", title: "Ömür Boyu", price: "₺1.499,99", period: "", badge: "Tek Seferlik", sortOrder: 2),
             ]
+            #else
+            return []
+            #endif
         }
         return paywallService.products.map { product in
             PricingOption(
@@ -269,8 +277,24 @@ struct PaywallView: View {
             SectionHeader(title: "Plan Seç")
 
             VStack(spacing: AppSpacing.sm) {
-                ForEach(pricingOptions) { option in
-                    pricingOption(option, isSelected: selectedProductId == option.id)
+                if pricingOptions.isEmpty {
+                    VStack(spacing: AppSpacing.xs) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .foregroundColor(AppColors.warning)
+                        Text("Fiyat bilgisi yüklenemedi.")
+                            .font(AppTypography.bodyMedium)
+                            .foregroundColor(AppColors.textPrimary)
+                        Text("Lütfen tekrar dene.")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(AppSpacing.md)
+                    .background(RoundedRectangle(cornerRadius: AppRadius.medium).fill(Color.appSurface))
+                } else {
+                    ForEach(pricingOptions) { option in
+                        pricingOption(option, isSelected: selectedProductId == option.id)
+                    }
                 }
             }
         }
@@ -352,7 +376,7 @@ struct PaywallView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.primary)
-        .disabled(isPurchasing || isRestoring)
+        .disabled(isPurchasing || isRestoring || pricingOptions.isEmpty)
         .padding(.horizontal, AppSpacing.screenMarginH)
     }
 
@@ -397,7 +421,7 @@ struct PaywallView: View {
                     .foregroundColor(AppColors.textTertiary)
 
                 Link(destination: eulaURL) {
-                    Text("EULA")
+                    Text("Apple EULA")
                         .font(AppTypography.caption)
                         .foregroundColor(AppColors.textSecondary)
                 }
@@ -432,7 +456,8 @@ struct PaywallView: View {
             return
         }
 
-        guard let product = paywallService.products.first(where: { $0.id == selectedProductId }) else {
+        guard !pricingOptions.isEmpty,
+              let product = paywallService.products.first(where: { $0.id == selectedProductId }) else {
             paywallService.purchaseError = "Ürün bulunamadı."
             return
         }

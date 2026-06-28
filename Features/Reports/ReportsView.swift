@@ -8,6 +8,7 @@ import Charts
 // Tasarım kuralı: Sakin, okunaklı, anlatısal (narrative).
 
 struct ReportsView: View {
+    @EnvironmentObject private var paywallService: PaywallService
     @Query(sort: \Expense.date, order: .reverse) private var allExpenses: [Expense]
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
 
@@ -16,6 +17,8 @@ struct ReportsView: View {
     @State private var showSaleFile = false
     @State private var saleFileVehicle: Vehicle?
     @State private var showVehiclePicker = false
+    @State private var showPaywall = false
+    @State private var paywallFeature: PaywallView.PaywallFeature = .advancedReports
 
     private let currentYear = Calendar.current.component(.year, from: Date())
 
@@ -128,10 +131,13 @@ struct ReportsView: View {
             .sheet(item: $saleFileVehicle) { vehicle in
                 SaleFileView(vehicle: vehicle)
             }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView(feature: paywallFeature)
+            }
             .confirmationDialog("Satış dosyası hangi araç için?", isPresented: $showVehiclePicker) {
                 ForEach(vehicles) { v in
                     Button(v.plate.isEmpty ? v.fullName : "\(v.plate) · \(v.fullName)") {
-                        saleFileVehicle = v
+                        openSaleFile(for: v)
                     }
                 }
                 Button("Vazgeç", role: .cancel) {}
@@ -154,16 +160,14 @@ struct ReportsView: View {
                 )
 
                 // Ownership insight cards
-                insightCardsGrid
-
-                // Monthly chart
-                monthlyChart
-
-                // Category breakdown
-                categorySection
-
-                // Top expenses
-                topExpensesSection
+                if paywallService.canAccessAdvancedReports() {
+                    insightCardsGrid
+                    monthlyChart
+                    categorySection
+                    topExpensesSection
+                } else {
+                    lockedAdvancedReports
+                }
 
                 // Sale file CTA
                 saleFileCTA
@@ -205,6 +209,36 @@ struct ReportsView: View {
         let years = allExpenses.map { Calendar.current.component(.year, from: $0.date) }
         guard let minYear = years.min(), let maxYear = years.max() else { return [currentYear] }
         return Array(minYear...maxYear).reversed()
+    }
+
+    // MARK: - Locked Advanced Reports
+    private var lockedAdvancedReports: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            SectionHeader(title: "Gelişmiş Raporlar")
+            VStack(spacing: AppSpacing.sm) {
+                Image(systemName: "lock.fill")
+                    .font(.title2)
+                    .foregroundColor(AppColors.warning)
+                Text("Gelişmiş raporlar Arvia Pro ile kullanılabilir.")
+                    .font(AppTypography.bodyMedium)
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                Text("Aylık grafikler, kategori dağılımı, en yüksek masraflar ve trend içgörüleri Pro’da açılır.")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                Button("Pro’ya Geç") {
+                    paywallFeature = .advancedReports
+                    showPaywall = true
+                }
+                .buttonStyle(.primary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(AppSpacing.lg)
+            .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+            .subtleShadow()
+        }
+        .padding(.horizontal, AppSpacing.screenMarginH)
     }
 
     // MARK: - Insight Cards Grid
@@ -432,7 +466,7 @@ struct ReportsView: View {
     private var saleFileCTA: some View {
         Button {
             if vehicles.count == 1, let only = vehicles.first {
-                saleFileVehicle = only
+                openSaleFile(for: only)
             } else {
                 showVehiclePicker = true
             }
@@ -480,6 +514,15 @@ struct ReportsView: View {
         formatter.currencyCode = "TRY"
         formatter.locale = Locale(identifier: "tr_TR")
         return formatter.string(from: NSNumber(value: value)) ?? "₺0,00"
+    }
+
+    private func openSaleFile(for vehicle: Vehicle) {
+        if paywallService.canCreateSaleFile() {
+            saleFileVehicle = vehicle
+        } else {
+            paywallFeature = .saleFile
+            showPaywall = true
+        }
     }
 }
 

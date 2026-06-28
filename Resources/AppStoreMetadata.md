@@ -86,6 +86,7 @@ Bu uygulama:
 - Ekspertiz raporları kullanıcı tarafından manuel olarak eklenir. Uygulama rapor doğruluğunu garanti etmez.
 - Satış dosyası kullanıcı kayıtlarından oluşturulur; mekanik veya hukuki garanti anlamına gelmez.
 - Abonelik Apple In-App Purchase üzerinden yönetilir. Restore purchases butonu mevcuttur.
+- IAP Product ID'leri App Store Connect'teki kayıtlarla birebir eşleşmelidir: `com.ruhsatim.pro.monthly`, `com.ruhsatim.pro.yearly`, `com.ruhsatim.pro.lifetime`.
 - Kullanıcı verileri cihaz üzerinde saklanır. Üçüncü taraflarla paylaşılmaz.
 
 ## Privacy Policy URL
@@ -96,6 +97,8 @@ https://fatihdisci.github.io/arvia/terms.html
 
 ## Support URL
 https://fatihdisci.github.io/arvia/support.html
+## EULA
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 
 ## Support Email
 behavest@proton.me
