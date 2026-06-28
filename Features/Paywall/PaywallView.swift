@@ -103,6 +103,7 @@ struct PaywallView: View {
 
     private let privacyURL = URL(string: "https://fatihdisci.github.io/arvia/privacy.html")!
     private let termsURL = URL(string: "https://fatihdisci.github.io/arvia/terms.html")!
+    private let eulaURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
 
     var body: some View {
         NavigationStack {
@@ -374,7 +375,7 @@ struct PaywallView: View {
             .disabled(isPurchasing || isRestoring)
 
             // Yasal linkler
-            HStack(spacing: AppSpacing.lg) {
+            HStack(spacing: AppSpacing.sm) {
                 Link(destination: privacyURL) {
                     Text("Gizlilik Politikası")
                         .font(AppTypography.caption)
@@ -387,6 +388,16 @@ struct PaywallView: View {
 
                 Link(destination: termsURL) {
                     Text("Kullanım Koşulları")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+
+                Text("•")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textTertiary)
+
+                Link(destination: eulaURL) {
+                    Text("EULA")
                         .font(AppTypography.caption)
                         .foregroundColor(AppColors.textSecondary)
                 }
@@ -405,7 +416,7 @@ struct PaywallView: View {
             .font(AppTypography.caption)
             .foregroundColor(AppColors.textSecondary)
 
-            Text("Satın alımlar Apple hesabın üzerinden yönetilir. Kullanmadığın süre için ücret iadesi Apple politikalarına tabidir.")
+            Text("Bu otomatik yenilenen aboneliktir. Satın alma onayından sonra ödeme Apple Hesabına yansıtılır. Cari dönem bitmeden en az 24 saat kala iptal etmezsen abonelik otomatik olarak yenilenir. Satın alımlar Apple hesabın üzerinden yönetilir. Kullanmadığın süre için ücret iadesi Apple politikalarına tabidir.")
                 .font(AppTypography.caption)
                 .foregroundColor(AppColors.textTertiary)
                 .multilineTextAlignment(.center)

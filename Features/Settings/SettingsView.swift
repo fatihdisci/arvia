@@ -22,6 +22,7 @@ struct SettingsView: View {
     // Privacy & Terms URL'leri — GitHub Pages canlı URL'leri
     private let privacyURL = URL(string: "https://fatihdisci.github.io/arvia/privacy.html")!
     private let termsURL = URL(string: "https://fatihdisci.github.io/arvia/terms.html")!
+    private let eulaURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
     private let supportEmail = "behavest@proton.me"
 
     var body: some View {
@@ -295,6 +296,17 @@ struct SettingsView: View {
             Link(destination: termsURL) {
                 HStack {
                     Label("Kullanım Koşulları", systemImage: "doc.text")
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                    Image(systemName: "arrow.up.forward")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+
+            Link(destination: eulaURL) {
+                HStack {
+                    Label("Apple EULA", systemImage: "doc.text.magnifyingglass")
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
                     Image(systemName: "arrow.up.forward")

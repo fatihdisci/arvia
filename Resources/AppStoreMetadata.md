@@ -1,44 +1,46 @@
-# App Store Metadata — Garajım
+# App Store Metadata — Arvia
 
 ## App Name
-Garajım — Araç Dijital Dosyası
+Arvia
 
 ## Subtitle
-Araç bakım, masraf ve belge takibi
+Vehicle ownership management
 
 ## Promotional Text (170 char)
 Muayene, sigorta, kasko, MTV, bakım, masraf ve belgeler tek yerde. Aracının dijital dosyasını oluştur, satarken güvenle paylaş.
 
 ## Description
 
-**Aracının dijital yaşam dosyası.**
+**Your vehicle's digital file.**
 
-Garajım, aracına ait her şeyi düzenli tutman için tasarlanmış premium bir iOS uygulamasıdır. Masraf defterinden fazlası — aracının eksiksiz geçmişi.
+Arvia is a vehicle ownership management app that helps you track maintenance, expenses, documents, inspection reports, and reminders — all on your device.
 
-**Neler Yapabilirsin?**
+**Features**
 
-- Aracının tüm bakım ve masraf kayıtlarını tut
-- Muayene, sigorta, MTV ve bakım tarihlerini kaçırma — hatırlatıcı kur
-- Ruhsat, poliçe, fatura ve ekspertiz raporu gibi belgelerini güvenle sakla
-- Aracının yıllık maliyetini ve km başı masrafını gör
-- Aracını satarken eksiksiz bir **Satış Dosyası PDF**'i oluştur ve paylaş
+- Track all your vehicle information, maintenance records, and expenses
+- Set reminders for inspection, insurance, MTV, and service dates
+- Store documents securely (registration, insurance, invoices, inspection reports)
+- View annual costs and cost per kilometer
+- Generate a comprehensive Sale File PDF when selling your vehicle
 
-**Satış Dosyası**
+**Arvia Pro**
 
-Aracının bakım geçmişini, masraf özetini, ekspertiz raporunu ve belgelerini tek bir PDF'te topla. Alıcıya güven ver, aracının değerini belgele.
+- Unlimited vehicles and documents
+- Sale File PDF generation
+- Advanced reports and analytics
+- Inspection report archive
 
-**Pro ile Gelenler**
+**Privacy & Security**
 
-- Sınırsız araç ve belge
-- Satış dosyası PDF oluşturma ve paylaşma
-- Gelişmiş raporlar ve analiz
-- Ekspertiz raporu arşivi
+Your data stays on your device. Documents are only shared when you initiate sharing. No third-party analytics, no tracking, no data collection.
 
-**Güvenlik ve Gizlilik**
+Arvia is not an official government app. Reminders are informational only based on dates you enter.
 
-Verilerin cihazında saklanır. Belgelerin yalnızca sen paylaşırsan paylaşılır. Üçüncü taraflarla veri paylaşımı yok.
+---
 
-Garajım bir resmi kurum uygulaması değildir. Hatırlatıcılar bilgilendirme amaçlıdır.
+Privacy Policy: https://fatihdisci.github.io/arvia/privacy.html
+Terms of Use: https://fatihdisci.github.io/arvia/terms.html
+Standard Apple Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 
 ## Keywords (100 char limit)
 araç,bakım,muayene,mtv,sigorta,kasko,masraf,yakıt,oto,araba,ruhsat,ekspertiz,lastik,akü,belge
