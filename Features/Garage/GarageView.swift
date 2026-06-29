@@ -407,30 +407,15 @@ struct GarageView: View {
                 showAddService = true
             },
             .init(icon: "doc.text.viewfinder", label: "Belge", color: AppColors.document) {
-                if paywallService.canAddDocument(currentCount: allDocumentsCount) {
-                    showAddDocument = true
-                } else {
-                    paywallFeature = .documentLimit
-                    showPaywall = true
-                }
+                showAddDocument = true
             },
             .init(icon: "bell.badge", label: "Hatırlatıcı", color: AppColors.vehicle) {
                 showAddReminder = true
             },
             .init(icon: "doc.richtext", label: "Satış", color: AppColors.success) {
-                if paywallService.canCreateSaleFile() {
-                    showSaleFile = true
-                } else {
-                    paywallFeature = .saleFile
-                    showPaywall = true
-                }
+                showSaleFile = true
             },
         ])
-    }
-
-    /// Tüm dökümanları sayar (paywall limit kontrolü için).
-    private var allDocumentsCount: Int {
-        (try? modelContext.fetch(FetchDescriptor<VehicleDocument>()))?.count ?? 0
     }
 
     // MARK: - Recent Activity

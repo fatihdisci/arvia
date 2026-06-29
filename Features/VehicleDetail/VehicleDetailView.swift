@@ -10,7 +10,6 @@ import QuickLook
 struct VehicleDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var paywallService: PaywallService
     @EnvironmentObject private var navigationRouter: AppNavigationRouter
 
     let vehicle: Vehicle
@@ -28,8 +27,6 @@ struct VehicleDetailView: View {
     @State private var showSaleFile = false
     @State private var showAddDocument = false
     @State private var showDocumentPreview = false
-    @State private var showPaywall = false
-    @State private var paywallFeature: PaywallView.PaywallFeature = .documentLimit
     @State private var previewDocumentURL: URL?
 
     // Filtered data
@@ -164,9 +161,6 @@ struct VehicleDetailView: View {
         }
         .sheet(isPresented: $showAddDocument) {
             DocumentFormView(preselectedVehicleId: vehicle.id)
-        }
-        .sheet(isPresented: $showPaywall) {
-            PaywallView(feature: paywallFeature)
         }
         .quickLookPreview($previewDocumentURL)
         .confirmationDialog("Aracı Arşivle", isPresented: $showArchiveConfirmation) {
@@ -314,23 +308,13 @@ struct VehicleDetailView: View {
                 title: "Belgeler",
                 actionTitle: documents.isEmpty ? nil : "Ekle",
                 action: {
-                    if paywallService.canAddDocument(currentCount: allDocuments.count) {
-                        showAddDocument = true
-                    } else {
-                        paywallFeature = .documentLimit
-                        showPaywall = true
-                    }
+                    showAddDocument = true
                 }
             )
 
             if documents.isEmpty {
                 Button {
-                    if paywallService.canAddDocument(currentCount: allDocuments.count) {
-                        showAddDocument = true
-                    } else {
-                        paywallFeature = .documentLimit
-                        showPaywall = true
-                    }
+                    showAddDocument = true
                 } label: {
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: "doc.text")
@@ -879,21 +863,11 @@ struct VehicleDetailView: View {
 
     // MARK: - Gate Helpers
     private func handleAddInspection() {
-        if paywallService.canCreateInspectionReport() {
-            showAddInspection = true
-        } else {
-            paywallFeature = .inspectionArchive
-            showPaywall = true
-        }
+        showAddInspection = true
     }
 
     private func handleSaleFileTap() {
-        if paywallService.canCreateSaleFile() {
-            showSaleFile = true
-        } else {
-            paywallFeature = .saleFile
-            showPaywall = true
-        }
+        showSaleFile = true
     }
 
     // MARK: - Archive / Delete

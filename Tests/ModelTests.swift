@@ -684,22 +684,23 @@ final class PaywallLimitTests: XCTestCase {
         XCTAssertTrue(service.canAddVehicle(currentCount: 99))
     }
 
-    func testFreeDocumentLimit() {
+    func testFreeDocumentsAreUnlimitedForMVP() {
         let service = PaywallService(isProForTesting: false)
         XCTAssertTrue(service.canAddDocument(currentCount: 4))
-        XCTAssertFalse(service.canAddDocument(currentCount: 5))
+        XCTAssertTrue(service.canAddDocument(currentCount: 5))
+        XCTAssertTrue(service.canAddDocument(currentCount: 500))
     }
 
-    func testProDocumentLimit() {
+    func testProDocumentsRemainUnlimited() {
         let service = PaywallService(isProForTesting: true)
         XCTAssertTrue(service.canAddDocument(currentCount: 100))
     }
 
-    func testSaleFileAdvancedReportsAndInspectionAreProOnly() {
+    func testCurrentSingleVehicleMVPFeaturesAreFree() {
         let free = PaywallService(isProForTesting: false)
-        XCTAssertFalse(free.canCreateSaleFile())
-        XCTAssertFalse(free.canAccessAdvancedReports())
-        XCTAssertFalse(free.canCreateInspectionReport())
+        XCTAssertTrue(free.canCreateSaleFile())
+        XCTAssertTrue(free.canAccessAdvancedReports())
+        XCTAssertTrue(free.canCreateInspectionReport())
 
         let pro = PaywallService(isProForTesting: true)
         XCTAssertTrue(pro.canCreateSaleFile())
@@ -707,10 +708,11 @@ final class PaywallLimitTests: XCTestCase {
         XCTAssertTrue(pro.canCreateInspectionReport())
     }
 
-    func testDocumentSaveGuardUsesCentralLimit() {
+    func testDocumentSaveGuardIsUnlimitedForMVP() {
         let free = PaywallService(isProForTesting: false)
         XCTAssertTrue(free.canSaveNewDocument(currentCount: 4))
-        XCTAssertFalse(free.canSaveNewDocument(currentCount: 5))
+        XCTAssertTrue(free.canSaveNewDocument(currentCount: 5))
+        XCTAssertTrue(free.canSaveNewDocument(currentCount: 500))
 
         let pro = PaywallService(isProForTesting: true)
         XCTAssertTrue(pro.canSaveNewDocument(currentCount: 500))
@@ -724,16 +726,13 @@ final class PaywallLimitTests: XCTestCase {
         ])
     }
 
-    // Belge limiti global 5 olmalı; araç-başı değil.
-    func testDocumentLimitIsGlobalNotPerVehicle() {
+    // Belge limiti MVP'de kaldırıldı; limit araç sayısında kalmalı.
+    func testDocumentLimitRemovedForFreeMVP() {
         let free = PaywallService(isProForTesting: false)
-        // Global 5 belge varken 6. kaydedilemez
-        XCTAssertFalse(free.canAddDocument(currentCount: 5))
-        XCTAssertFalse(free.canSaveNewDocument(currentCount: 5))
-
-        // 0–4 belge varken eklenebilir (global count)
-        XCTAssertTrue(free.canAddDocument(currentCount: 4))
-        XCTAssertTrue(free.canSaveNewDocument(currentCount: 4))
+        XCTAssertTrue(free.canAddDocument(currentCount: 5))
+        XCTAssertTrue(free.canSaveNewDocument(currentCount: 5))
+        XCTAssertTrue(free.canAddDocument(currentCount: 5_000))
+        XCTAssertTrue(free.canSaveNewDocument(currentCount: 5_000))
     }
 
     // Pro kullanıcı belge limitine takılmaz

@@ -9,10 +9,8 @@ import UniformTypeIdentifiers
 struct DocumentFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var paywallService: PaywallService
 
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
-    @Query(sort: \VehicleDocument.createdAt, order: .reverse) private var allDocuments: [VehicleDocument]
 
     let existingDocument: VehicleDocument?
 
@@ -35,7 +33,6 @@ struct DocumentFormView: View {
 
     @State private var validationErrors: [String] = []
     @State private var isImporting = false
-    @State private var showPaywall = false
 
     /// Başlık kullanıcı tarafından elle düzenlendiyse true.
     /// Tip değişiminde başlığı otomatik güncellemeyi durdurur.
@@ -114,9 +111,6 @@ struct DocumentFormView: View {
                 allowsMultipleSelection: false
             ) { result in
                 handleFileImport(result)
-            }
-            .sheet(isPresented: $showPaywall) {
-                PaywallView(feature: .documentLimit)
             }
         }
     }
@@ -375,12 +369,6 @@ struct DocumentFormView: View {
             errors.append("Bir dosya seçmelisin.")
         }
         if !errors.isEmpty { validationErrors = errors; return }
-
-        if !isEditing, !paywallService.canSaveNewDocument(currentCount: allDocuments.count) {
-            validationErrors = ["Free planda en fazla 5 belge ekleyebilirsin. Sınırsız belge için Arvia Pro'ya geç."]
-            showPaywall = true
-            return
-        }
 
         let doc: VehicleDocument
         if let existing = existingDocument {

@@ -7,7 +7,6 @@ import QuickLook
 
 struct DocumentListView: View {
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var paywallService: PaywallService
 
     @Query(sort: \VehicleDocument.createdAt, order: .reverse) private var allDocuments: [VehicleDocument]
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
@@ -19,7 +18,6 @@ struct DocumentListView: View {
     @State private var showPreview = false
     @State private var showMissingFileAlert = false
     @State private var didBackfillCloudData = false
-    @State private var showPaywall = false
 
     private var filteredDocuments: [VehicleDocument] {
         if let vid = selectedVehicleFilter {
@@ -51,7 +49,6 @@ struct DocumentListView: View {
             }
         }
         .sheet(isPresented: $showAddDocument) { DocumentFormView() }
-        .sheet(isPresented: $showPaywall) { PaywallView(feature: .documentLimit) }
         .sheet(item: $editingDocument) { doc in DocumentFormView(existingDocument: doc) }
         .quickLookPreview($previewURL)
         .alert("Dosya bu cihazda yok", isPresented: $showMissingFileAlert) {
@@ -190,11 +187,7 @@ struct DocumentListView: View {
 
     // MARK: - Preview
     private func handleAddDocument() {
-        if paywallService.canAddDocument(currentCount: allDocuments.count) {
-            showAddDocument = true
-        } else {
-            showPaywall = true
-        }
+        showAddDocument = true
     }
 
     // MARK: - Preview

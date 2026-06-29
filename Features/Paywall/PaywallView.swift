@@ -33,34 +33,13 @@ struct PaywallView: View {
 
     enum PaywallFeature {
         case secondVehicle
-        case documentLimit
-        case saleFile
-        case advancedReports
-        case inspectionArchive
 
         var title: String {
-            switch self {
-            case .secondVehicle: return "İkinci Aracını da Ekle"
-            case .documentLimit: return "Belge Limitini Kaldır"
-            case .saleFile: return "Satış Dosyası Oluştur"
-            case .advancedReports: return "Gelişmiş Raporlar"
-            case .inspectionArchive: return "Ekspertiz Arşivi"
-            }
+            "Birden fazla aracı tek garajda yönet"
         }
 
         var description: String {
-            switch self {
-            case .secondVehicle:
-                return "Birden fazla aracın varsa hepsini tek yerden takip et."
-            case .documentLimit:
-                return "Poliçe, fatura ve ekspertiz raporlarını sınırsız sakla."
-            case .saleFile:
-                return "Aracının eksiksiz satış dosyasını PDF olarak oluştur ve paylaş."
-            case .advancedReports:
-                return "Yıllık trend, araç karşılaştırma ve detaylı maliyet analizi."
-            case .inspectionArchive:
-                return "Ekspertiz raporlarını arşivle ve satış dosyana dahil et."
-            }
+            "Arvia tek araç için ücretsiz ve reklamsızdır. Arvia Pro ile ailedeki veya işletmendeki tüm araçların bakım, belge, masraf ve hatırlatıcılarını ayrı ayrı takip edebilirsin."
         }
     }
 
@@ -439,6 +418,14 @@ struct PaywallView: View {
     // MARK: - Trust (ilk ekranda, yasal linklerin hemen altında)
     private var trustSection: some View {
         VStack(spacing: AppSpacing.xs) {
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.caption2)
+                Text("Tek araç kullanımı ücretsiz ve reklamsızdır.")
+            }
+            .font(AppTypography.caption)
+            .foregroundColor(AppColors.success)
+
             HStack(spacing: 4) {
                 Image(systemName: "lock.fill")
                     .font(.caption2)

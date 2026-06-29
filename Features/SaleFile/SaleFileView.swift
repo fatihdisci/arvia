@@ -8,7 +8,6 @@ import QuickLook
 struct SaleFileView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var paywallService: PaywallService
 
     let vehicle: Vehicle
 
@@ -25,7 +24,6 @@ struct SaleFileView: View {
     @State private var generatedPDFURL: URL?
     @State private var isGenerating = false
     @State private var showPreview = false
-    @State private var showPaywall = false
 
     private var vehicleDocuments: [VehicleDocument] {
         allDocuments.filter { $0.vehicleId == vehicle.id }
@@ -55,9 +53,6 @@ struct SaleFileView: View {
                     selectedDocumentIds = Set(preselectedIds)
                 }
             }
-            .sheet(isPresented: $showPaywall) {
-                PaywallView(feature: .saleFile)
-            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Kapat") { dismiss() }
@@ -70,48 +65,18 @@ struct SaleFileView: View {
     // MARK: - Content
     @ViewBuilder
     private var content: some View {
-        if paywallService.canCreateSaleFile() {
-            ScrollView {
-                VStack(spacing: AppSpacing.lg) {
-                    coverPreview
-                    sectionsPicker
-                    if !vehicleDocuments.isEmpty { documentsPicker }
-                    if !vehicleInspections.isEmpty { inspectionInfo }
-                    disclaimerInfo
-                    generateButton
-                    if let url = generatedPDFURL { pdfPreviewSection(url: url) }
-                }
-                .padding(.vertical, AppSpacing.md)
+        ScrollView {
+            VStack(spacing: AppSpacing.lg) {
+                coverPreview
+                sectionsPicker
+                if !vehicleDocuments.isEmpty { documentsPicker }
+                if !vehicleInspections.isEmpty { inspectionInfo }
+                disclaimerInfo
+                generateButton
+                if let url = generatedPDFURL { pdfPreviewSection(url: url) }
             }
-        } else {
-            lockedSaleFileState
+            .padding(.vertical, AppSpacing.md)
         }
-    }
-
-    private var lockedSaleFileState: some View {
-        VStack(spacing: AppSpacing.lg) {
-            coverPreview
-            VStack(spacing: AppSpacing.sm) {
-                Image(systemName: "lock.fill")
-                    .font(.title2)
-                    .foregroundColor(AppColors.warning)
-                Text("Satış dosyası PDF’i Arvia Pro ile oluşturulur.")
-                    .font(AppTypography.bodyMedium)
-                    .foregroundColor(AppColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                Text("Bakım geçmişi, masraf özeti, belgeler ve ekspertiz kayıtlarıyla paylaşılabilir PDF hazırlamak için Pro’ya geç.")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-                Button("Pro’ya Geç") { showPaywall = true }
-                    .buttonStyle(.primary)
-            }
-            .padding(AppSpacing.lg)
-            .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
-            .padding(.horizontal, AppSpacing.screenMarginH)
-            Spacer()
-        }
-        .padding(.vertical, AppSpacing.md)
     }
 
     // MARK: - Cover Preview
@@ -336,11 +301,7 @@ struct SaleFileView: View {
     // MARK: - Generate Button
     private var generateButton: some View {
         Button {
-            if paywallService.isPro || paywallService.canCreateSaleFile() {
-                generatePDF()
-            } else {
-                showPaywall = true
-            }
+            generatePDF()
         } label: {
             HStack {
                 if isGenerating {

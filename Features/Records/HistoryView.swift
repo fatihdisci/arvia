@@ -8,7 +8,6 @@ import QuickLook
 
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var paywallService: PaywallService
 
     @Query(sort: \Expense.date, order: .reverse) private var allExpenses: [Expense]
     @Query(sort: \ServiceRecord.date, order: .reverse) private var allServiceRecords: [ServiceRecord]
@@ -30,8 +29,6 @@ struct HistoryView: View {
     @State private var editingService: ServiceRecord?
     @State private var showDeleteConfirmation = false
     @State private var itemToDelete: Any? = nil
-    @State private var showPaywall = false
-    @State private var paywallFeature: PaywallView.PaywallFeature = .documentLimit
 
     enum HistoryFilter: String, CaseIterable {
         case all = "Tümü"
@@ -102,7 +99,6 @@ struct HistoryView: View {
             .sheet(isPresented: $showAddService) { ServiceRecordFormView() }
             .sheet(isPresented: $showAddDocument) { DocumentFormView() }
             .sheet(isPresented: $showAddInspection) { InspectionReportFormView() }
-            .sheet(isPresented: $showPaywall) { PaywallView(feature: paywallFeature) }
             .sheet(item: $editingExpense) { expense in ExpenseFormView(existingExpense: expense) }
             .sheet(item: $editingService) { service in ServiceRecordFormView(existingRecord: service) }
             .confirmationDialog("Kayıt Silinsin mi?", isPresented: $showDeleteConfirmation, actions: {
@@ -497,23 +493,13 @@ struct HistoryView: View {
         itemToDelete = nil
     }
 
-    // MARK: - Gate helpers
+    // MARK: - Add helpers
     private func handleAddDocument() {
-        if paywallService.canAddDocument(currentCount: allDocuments.count) {
-            showAddDocument = true
-        } else {
-            paywallFeature = .documentLimit
-            showPaywall = true
-        }
+        showAddDocument = true
     }
 
     private func handleAddInspection() {
-        if paywallService.canCreateInspectionReport() {
-            showAddInspection = true
-        } else {
-            paywallFeature = .inspectionArchive
-            showPaywall = true
-        }
+        showAddInspection = true
     }
 
     // MARK: - Row helper

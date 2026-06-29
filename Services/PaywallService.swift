@@ -4,6 +4,7 @@ import SwiftUI
 
 // MARK: - Paywall Service
 // StoreKit 2 tabanlı abonelik yönetimi.
+// MVP politikası: Arvia tek araç için ücretsiz ve reklamsızdır; Pro yalnızca ikinci ve sonraki araçlar içindir.
 // App Store Connect yapılandırması olmadan dev mode'da UserDefaults ile çalışır.
 
 @MainActor
@@ -14,6 +15,14 @@ final class PaywallService: ObservableObject {
     @Published var products: [Product] = []
     @Published var isLoading = false
     @Published var purchaseError: String?
+
+    enum FreeLimits {
+        static let maxVehicles = 1
+        static let documentLimit: Int? = nil
+        static let saleFileRequiresPro = false
+        static let advancedReportsRequiresPro = false
+        static let inspectionReportsRequirePro = false
+    }
 
     // Ürün ID'leri — App Store Connect'te tanımlanmalı
     static let proProductIDs = [
@@ -179,15 +188,16 @@ final class PaywallService: ObservableObject {
         await transaction.finish()
     }
 
-    // MARK: - Limit Checks (kolaylık fonksiyonları)
+    // MARK: - Limit Checks (MVP policy)
     func canAddVehicle(currentCount: Int) -> Bool {
         if isPro { return true }
-        return currentCount < 1
+        return currentCount < FreeLimits.maxVehicles
     }
 
     func canAddDocument(currentCount: Int) -> Bool {
+        guard let documentLimit = FreeLimits.documentLimit else { return true }
         if isPro { return true }
-        return currentCount < 5
+        return currentCount < documentLimit
     }
 
     func canSaveNewDocument(currentCount: Int) -> Bool {
@@ -195,33 +205,34 @@ final class PaywallService: ObservableObject {
     }
 
     func canCreateSaleFile() -> Bool {
-        isPro
+        !FreeLimits.saleFileRequiresPro || isPro
     }
 
     func canAccessAdvancedReports() -> Bool {
-        isPro
+        !FreeLimits.advancedReportsRequiresPro || isPro
     }
 
     func canCreateInspectionReport() -> Bool {
-        isPro
+        !FreeLimits.inspectionReportsRequirePro || isPro
     }
 
     // Forum yazma artık Pro gerektirmez — auth yeterli.
-    // Bu metodlar kaldırıldı; community gate'ler doğrudan CommunityAuthService üzerinden yapılıyor.
+    // Community gate'ler doğrudan CommunityAuthService üzerinden yapılır.
 
     // MARK: - Feature display
     static let freeFeatures: [(icon: String, title: String)] = [
         ("car", "1 araç"),
-        ("doc.text", "5 belge"),
-        ("bell", "Temel hatırlatıcılar"),
+        ("doc.text", "Sınırsız belge"),
+        ("bell", "Sınırsız hatırlatıcı"),
         ("wrench.and.screwdriver", "Masraf ve bakım kayıtları"),
+        ("chart.bar", "Raporlar ve satış dosyası"),
     ]
 
     static let proFeatures: [(icon: String, title: String)] = [
         ("car.2", "Sınırsız araç"),
-        ("folder", "Sınırsız belge"),
-        ("doc.richtext", "Satış dosyası PDF"),
-        ("chart.bar", "Gelişmiş raporlar"),
-        ("magnifyingglass", "Ekspertiz raporlarını satış dosyasına ekleme"),
+        ("wrench.and.screwdriver", "Araç bazlı bakım ve masraf geçmişi"),
+        ("folder", "Araç bazlı belge kasası"),
+        ("rectangle.grid.2x2", "Çoklu araç garajı"),
+        ("bell.badge", "Tüm araçlar için hatırlatıcılar"),
     ]
 }

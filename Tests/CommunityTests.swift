@@ -207,15 +207,16 @@ final class CommunityAuthGateTests: XCTestCase {
     // Guest auth kontrolü CommunityAuthService üzerinden yapılır.
     // Bu testler auth-gate modelinin doğru çalıştığını doğrular.
 
-    func testProGateStillAppliesToNonForumFeatures() {
+    func testOnlyMultipleVehiclesRemainProGatedForMVP() {
         let free = PaywallService(isProForTesting: false)
-        // Pro gate'ler forum dışı özelliklerde korunuyor
-        XCTAssertFalse(free.canCreateSaleFile())
-        XCTAssertFalse(free.canAccessAdvancedReports())
-        XCTAssertFalse(free.canCreateInspectionReport())
-        // Araç/belge limitleri korunuyor
+        // Tek araç MVP özellikleri free olmalı
+        XCTAssertTrue(free.canCreateSaleFile())
+        XCTAssertTrue(free.canAccessAdvancedReports())
+        XCTAssertTrue(free.canCreateInspectionReport())
+        XCTAssertTrue(free.canAddDocument(currentCount: 5))
+        XCTAssertTrue(free.canAddDocument(currentCount: 500))
+        // Pro gate yalnızca ikinci ve sonraki araçlarda kalır
         XCTAssertFalse(free.canAddVehicle(currentCount: 1))
-        XCTAssertFalse(free.canAddDocument(currentCount: 5))
 
         let pro = PaywallService(isProForTesting: true)
         XCTAssertTrue(pro.canCreateSaleFile())

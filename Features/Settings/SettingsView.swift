@@ -60,7 +60,7 @@ struct SettingsView: View {
                 }
             }
             .sheet(isPresented: $showPaywall) {
-                PaywallView(feature: .advancedReports)
+                PaywallView(feature: .secondVehicle)
             }
             .confirmationDialog("Tüm Verileri Sil", isPresented: $showDeleteAllConfirmation) {
                 Button("Tüm Verileri Sil", role: .destructive) { deleteAllData() }
@@ -82,22 +82,28 @@ struct SettingsView: View {
     // MARK: - Pro Section
     private var proSection: some View {
         Section {
-            HStack {
-                Image(systemName: "crown.fill")
-                    .foregroundColor(paywallService.isPro ? AppColors.warning : AppColors.textTertiary)
-                Text("Pro Durumu")
-                    .font(AppTypography.body)
-                Spacer()
-                Text(paywallService.isPro ? "Pro" : "Ücretsiz")
-                    .font(AppTypography.bodyMedium)
-                    .foregroundColor(paywallService.isPro ? AppColors.warning : AppColors.textSecondary)
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                Image(systemName: paywallService.isPro ? "crown.fill" : "checkmark.seal.fill")
+                    .foregroundColor(paywallService.isPro ? AppColors.warning : AppColors.success)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text(paywallService.isPro ? "Arvia Pro" : "Ücretsiz Plan")
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text(paywallService.isPro
+                         ? "Birden fazla aracı aynı garajda yönetebilirsin."
+                         : "Tek araç için tüm temel özellikler açık. Arvia ücretsiz ve reklamsızdır.")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                }
             }
 
             if !paywallService.isPro {
                 Button {
                     showPaywall = true
                 } label: {
-                    Label("Pro'ya Geç", systemImage: "arrow.up.forward")
+                    Label("Birden fazla araç eklemek için Pro’ya geç", systemImage: "car.2")
                         .foregroundColor(AppColors.accentPrimary)
                 }
             }
@@ -109,7 +115,7 @@ struct SettingsView: View {
                     .foregroundColor(AppColors.accentPrimary)
             }
         } header: {
-            Text("Abonelik")
+            Text("Plan")
         }
         .listRowBackground(Color.appSurface)
     }
