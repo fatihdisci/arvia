@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 import UserNotifications
 
 // MARK: - Retention Notification Service
@@ -94,10 +95,10 @@ final class RetentionNotificationService {
     }
 
     // MARK: - Identifier Prefixes
-    private enum IdPrefix: String {
+    enum IdentifierPrefix: String {
         case kmUpdate = "retention-km"
         case monthlySummary = "retention-summary"
-        case docCompleteness = "retention-doc"
+        case documentCompleteness = "retention-doc"
         case seasonal = "retention-seasonal"
         case saleFile = "retention-salefile"
     }
@@ -107,8 +108,7 @@ final class RetentionNotificationService {
     static let quietHourEnd = 9
 
     /// Bir tarihi sessiz saatler dışına ayarlar. Testable static method.
-    static func adjustedForQuietHours(_ date: Date) -> Date {
-        let calendar = Calendar.current
+    static func adjustedForQuietHours(_ date: Date, calendar: Calendar = .current) -> Date {
         let hour = calendar.component(.hour, from: date)
         if hour >= quietHourStart || hour < quietHourEnd {
             var components = calendar.dateComponents([.year, .month, .day], from: date)
@@ -154,16 +154,15 @@ final class RetentionNotificationService {
         guard let nextDate = kmUpdateFrequency.nextDate(from: Date()) else { return }
         let fireDate = Self.adjustedForQuietHours(nextDate)
 
-        let id = "\(IdPrefix.kmUpdate.rawValue)-\(vehicle.id.uuidString)"
+        let id = "\(IdentifierPrefix.kmUpdate.rawValue)-\(vehicle.id.uuidString)"
         guard !(await isAlreadyScheduled(identifier: id)) else { return }
 
         let content = UNMutableNotificationContent()
         content.title = "Kilometre Güncelleme"
-        content.body = "Aracının güncel kilometresini girmeyi unutma. Düzenli km takibi masraf ve bakım planlamana yardımcı olur."
+        content.body = "Güncel kilometre bilgisini ekleyerek bakım ve masraf takibini düzenli tutabilirsin."
         content.sound = .default
-        content.badge = 1
         content.interruptionLevel = .timeSensitive
-        content.userInfo = ["deepLink": "vehicleDetail", "vehicleId": vehicle.id.uuidString]
+        content.userInfo = ["deepLink": "kmUpdate", "vehicleId": vehicle.id.uuidString]
 
         schedule(id: id, content: content, date: fireDate)
     }
@@ -180,8 +179,11 @@ final class RetentionNotificationService {
         components.day = 2
         components.hour = 10
         components.minute = 0
-        guard let fireDate = Calendar.current.date(from: components),
-              fireDate > Date() else { return }
+        var fireDate = Calendar.current.date(from: components)
+        if let candidate = fireDate, candidate <= Date() {
+            fireDate = Calendar.current.date(byAdding: .month, value: 1, to: candidate)
+        }
+        guard let fireDate else { return }
 
         let adjusted = Self.adjustedForQuietHours(fireDate)
         guard adjusted > Date() else { return }
@@ -191,7 +193,7 @@ final class RetentionNotificationService {
         content.body = "Bu ay araçlarının masraf ve bakım özetini görüntülemek için \(AppBrand.appName) uygulamasına göz at."
         content.sound = .default
         content.interruptionLevel = .active
-        content.userInfo = ["deepLink": "records"]
+        content.userInfo = ["deepLink": "monthlySummary"]
 
         schedule(id: id, content: content, date: adjusted)
     }
@@ -199,7 +201,7 @@ final class RetentionNotificationService {
     func monthlySummaryIdentifier() -> String {
         let month = Calendar.current.component(.month, from: Date())
         let year = Calendar.current.component(.year, from: Date())
-        return "\(IdPrefix.monthlySummary.rawValue)-\(year)-\(month)"
+        return "\(IdentifierPrefix.monthlySummary.rawValue)-\(year)-\(month)"
     }
 
     func wasMonthlySummarySentThisMonth() -> Bool {
@@ -225,22 +227,20 @@ final class RetentionNotificationService {
             let score = fileScores[vehicle.id] ?? 0
             guard score < 70 else { continue }
 
-            let id = "\(IdPrefix.docCompleteness.rawValue)-\(vehicle.id.uuidString)"
-            guard !(await isAlreadyScheduled(identifier: id)),
-                  !isInCooldown(vehicleId: vehicle.id, category: "doc", days: 30) else { continue }
+            let id = "\(IdentifierPrefix.documentCompleteness.rawValue)-\(vehicle.id.uuidString)"
+            guard !(await isAlreadyScheduled(identifier: id)) else { continue }
 
             guard let fireDate = Calendar.current.date(byAdding: .day, value: 2, to: Date()) else { continue }
             let adjusted = Self.adjustedForQuietHours(fireDate)
 
             let content = UNMutableNotificationContent()
             content.title = "Araç Dosyanı Tamamla"
-            content.body = "Aracının dosyası %\(score) tamlık seviyesinde. Eksik bilgileri tamamlayarak satışa hazır hale getirebilirsin."
+            content.body = "Araç dosyanda eksik bilgiler var. Belgeleri ve temel bilgileri tamamlayabilirsin."
             content.sound = .default
             content.interruptionLevel = .active
-            content.userInfo = ["deepLink": "vehicleDetail", "vehicleId": vehicle.id.uuidString]
+            content.userInfo = ["deepLink": "fileCompleteness", "vehicleId": vehicle.id.uuidString]
 
             schedule(id: id, content: content, date: adjusted)
-            markCooldown(vehicleId: vehicle.id, category: "doc")
         }
     }
 
@@ -257,7 +257,7 @@ final class RetentionNotificationService {
         ]
 
         for (key, month, title, body) in seasons {
-            let id = "\(IdPrefix.seasonal.rawValue)-\(key)-\(Calendar.current.component(.year, from: Date()))"
+            let id = "\(IdentifierPrefix.seasonal.rawValue)-\(key)-\(Calendar.current.component(.year, from: Date()))"
             guard !(await isAlreadyScheduled(identifier: id)) else { continue }
 
             var components = DateComponents()
@@ -278,7 +278,7 @@ final class RetentionNotificationService {
             content.body = body
             content.sound = .default
             content.interruptionLevel = .active
-            content.userInfo = ["deepLink": "records"]
+            content.userInfo = ["deepLink": "seasonalMaintenance"]
 
             schedule(id: id, content: content, date: adjusted)
         }
@@ -302,39 +302,59 @@ final class RetentionNotificationService {
 
         for vehicle in vehicles {
             guard vehicle.archivedAt == nil else { continue }
-            let id = "\(IdPrefix.saleFile.rawValue)-\(vehicle.id.uuidString)"
-            guard !(await isAlreadyScheduled(identifier: id)),
-                  !isInCooldown(vehicleId: vehicle.id, category: "salefile", days: 90) else { continue }
+            let id = "\(IdentifierPrefix.saleFile.rawValue)-\(vehicle.id.uuidString)"
+            guard !(await isAlreadyScheduled(identifier: id)) else { continue }
 
             guard let fireDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) else { continue }
             let adjusted = Self.adjustedForQuietHours(fireDate)
 
             let content = UNMutableNotificationContent()
             content.title = "Satış Dosyası Hazırla"
-            content.body = "Aracının satış dosyasını oluşturmak için belgelerini ve bilgilerini tamamla. Potansiyel alıcılara hazır bir dosya sun."
+            content.body = "Satış dosyası için araç bilgilerini ve belgelerini gözden geçirebilirsin."
             content.sound = .default
             content.interruptionLevel = .active
-            content.userInfo = ["deepLink": "vehicleDetail", "vehicleId": vehicle.id.uuidString]
+            content.userInfo = ["deepLink": "saleFile", "vehicleId": vehicle.id.uuidString]
 
             schedule(id: id, content: content, date: adjusted)
-            markCooldown(vehicleId: vehicle.id, category: "salefile")
         }
     }
 
     // MARK: - Cancel
     func cancelRetentionNotifications() {
         let prefixPatterns = [
-            IdPrefix.kmUpdate.rawValue,
-            IdPrefix.monthlySummary.rawValue,
-            IdPrefix.docCompleteness.rawValue,
-            IdPrefix.seasonal.rawValue,
-            IdPrefix.saleFile.rawValue,
+            IdentifierPrefix.kmUpdate.rawValue,
+            IdentifierPrefix.monthlySummary.rawValue,
+            IdentifierPrefix.documentCompleteness.rawValue,
+            IdentifierPrefix.seasonal.rawValue,
+            IdentifierPrefix.saleFile.rawValue,
         ]
         center.getPendingNotificationRequests { [weak self] requests in
             let toRemove = requests.filter { req in
                 prefixPatterns.contains { req.identifier.hasPrefix($0) }
             }.map { $0.identifier }
             self?.center.removePendingNotificationRequests(withIdentifiers: toRemove)
+        }
+    }
+
+
+    func cancelImportantDateNotifications(reminders: [Reminder]) {
+        NotificationService.shared.cancelReminders(reminders)
+    }
+
+    func cancelKmUpdateNotifications() { cancelPendingNotifications(withPrefix: IdentifierPrefix.kmUpdate.rawValue) }
+    func cancelMonthlySummaryNotifications() { cancelPendingNotifications(withPrefix: IdentifierPrefix.monthlySummary.rawValue) }
+    func cancelDocumentCompletenessNotifications() { cancelPendingNotifications(withPrefix: IdentifierPrefix.documentCompleteness.rawValue) }
+    func cancelSeasonalNotifications() { cancelPendingNotifications(withPrefix: IdentifierPrefix.seasonal.rawValue) }
+    func cancelSaleFileNotifications() { cancelPendingNotifications(withPrefix: IdentifierPrefix.saleFile.rawValue) }
+
+    func cancelPendingNotifications(withPrefix prefix: String) {
+        center.getPendingNotificationRequests { [weak self] requests in
+            let toRemove = requests.filter { $0.identifier.hasPrefix(prefix) }.map { $0.identifier }
+            self?.center.removePendingNotificationRequests(withIdentifiers: toRemove)
+        }
+        center.getDeliveredNotifications { [weak self] notifications in
+            let toRemove = notifications.filter { $0.request.identifier.hasPrefix(prefix) }.map { $0.request.identifier }
+            self?.center.removeDeliveredNotifications(withIdentifiers: toRemove)
         }
     }
 
@@ -347,11 +367,11 @@ final class RetentionNotificationService {
     // MARK: - Pending Count
     func pendingRetentionCount(completion: @escaping (Int) -> Void) {
         let prefixPatterns = [
-            IdPrefix.kmUpdate.rawValue,
-            IdPrefix.monthlySummary.rawValue,
-            IdPrefix.docCompleteness.rawValue,
-            IdPrefix.seasonal.rawValue,
-            IdPrefix.saleFile.rawValue,
+            IdentifierPrefix.kmUpdate.rawValue,
+            IdentifierPrefix.monthlySummary.rawValue,
+            IdentifierPrefix.documentCompleteness.rawValue,
+            IdentifierPrefix.seasonal.rawValue,
+            IdentifierPrefix.saleFile.rawValue,
         ]
         center.getPendingNotificationRequests { requests in
             let count = requests.filter { req in
@@ -392,5 +412,66 @@ final class RetentionNotificationService {
                 print("RetentionNotificationService: schedule error for \(id): \(error)")
             }
         }
+    }
+}
+
+// MARK: - Notification Refresh Service
+@MainActor
+enum NotificationRefreshService {
+    static func refreshAll(context: ModelContext) async {
+        let vehicles = (try? context.fetch(FetchDescriptor<Vehicle>())) ?? []
+        let reminders = (try? context.fetch(FetchDescriptor<Reminder>())) ?? []
+        let fileScores = computeFileScores(vehicles: vehicles, reminders: reminders, context: context)
+        let retention = RetentionNotificationService.shared
+
+        if retention.isImportantDatesEnabled {
+            for reminder in reminders {
+                await NotificationService.shared.scheduleReminder(reminder)
+            }
+        } else {
+            retention.cancelImportantDateNotifications(reminders: reminders)
+        }
+
+        await retention.rescheduleAll(vehicles: vehicles, fileScores: fileScores)
+    }
+
+    static func refreshAfterSettingsChange(context: ModelContext) async {
+        await refreshAll(context: context)
+    }
+
+    static func cancelAllForVehicle(_ vehicle: Vehicle, context: ModelContext) {
+        let reminders = ((try? context.fetch(FetchDescriptor<Reminder>())) ?? []).filter { $0.vehicleId == vehicle.id }
+        NotificationService.shared.cancelReminders(reminders)
+        RetentionNotificationService.shared.cancelKmUpdateNotifications()
+        RetentionNotificationService.shared.cancelDocumentCompletenessNotifications()
+        RetentionNotificationService.shared.cancelSaleFileNotifications()
+    }
+
+    private static func computeFileScores(
+        vehicles: [Vehicle],
+        reminders: [Reminder],
+        context: ModelContext
+    ) -> [UUID: Int] {
+        let expenses = (try? context.fetch(FetchDescriptor<Expense>())) ?? []
+        let services = (try? context.fetch(FetchDescriptor<ServiceRecord>())) ?? []
+        var fileScores: [UUID: Int] = [:]
+        for vehicle in vehicles {
+            var score = 0
+            if !vehicle.brand.isEmpty { score += 10 }
+            if !vehicle.model.isEmpty { score += 10 }
+            if vehicle.year != nil { score += 10 }
+            if vehicle.currentOdometer > 0 { score += 10 }
+            if vehicle.transmissionType != nil { score += 10 }
+            if vehicle.purchaseDate != nil { score += 10 }
+            if vehicle.purchasePrice != nil { score += 10 }
+            if vehicle.vehicleType == .motorcycle, vehicle.engineCC != nil { score += 10 }
+            let vehicleReminders = reminders.filter { $0.vehicleId == vehicle.id }
+            if !vehicleReminders.isEmpty { score += 15 }
+            if !vehicleReminders.contains(where: { $0.isOverdue }) { score += 15 }
+            if expenses.contains(where: { $0.vehicleId == vehicle.id }) { score += 5 }
+            if services.contains(where: { $0.vehicleId == vehicle.id }) { score += 5 }
+            fileScores[vehicle.id] = min(score, 100)
+        }
+        return fileScores
     }
 }

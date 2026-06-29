@@ -9,6 +9,7 @@ import SwiftData
 struct GarageView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var paywallService: PaywallService
+    @EnvironmentObject private var navigationRouter: AppNavigationRouter
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
     @Query(filter: #Predicate<Reminder> { $0.statusRaw != "completed" },
            sort: \Reminder.dueDate)
@@ -27,6 +28,7 @@ struct GarageView: View {
     @State private var showSaleFile = false
     @State private var paywallFeature: PaywallView.PaywallFeature = .secondVehicle
     @State private var activeVehicleIndex = 0
+    @State private var navigationPath: [UUID] = []
 
     private var activeVehicles: [Vehicle] {
         vehicles.filter { $0.archivedAt == nil }
@@ -44,7 +46,7 @@ struct GarageView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if vehicles.isEmpty {
                     emptyGarage
@@ -117,6 +119,25 @@ struct GarageView: View {
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView()
+            }
+            .navigationDestination(for: UUID.self) { vehicleId in
+                if let vehicle = vehicles.first(where: { $0.id == vehicleId }) {
+                    VehicleDetailView(vehicle: vehicle)
+                } else {
+                    EmptyStateView(
+                        icon: "car",
+                        title: "Araç bulunamadı",
+                        description: "Bildirimdeki araç silinmiş veya arşivlenmiş olabilir.",
+                        actionTitle: nil,
+                        action: nil
+                    )
+                }
+            }
+            .onChange(of: navigationRouter.pendingNotificationRoute) { _, route in
+                handleNotificationRoute(route)
+            }
+            .onAppear {
+                handleNotificationRoute(navigationRouter.pendingNotificationRoute)
             }
         }
     }
@@ -507,6 +528,16 @@ struct GarageView: View {
     }
 
     // MARK: - Actions
+    private func handleNotificationRoute(_ route: AppNotificationRoute?) {
+        guard case let .vehicle(vehicleId, _)? = route else { return }
+        if let index = activeVehicles.firstIndex(where: { $0.id == vehicleId }) {
+            activeVehicleIndex = index
+        }
+        if navigationPath.last != vehicleId {
+            navigationPath = [vehicleId]
+        }
+    }
+
     private func handleAddVehicle() {
         if paywallService.canAddVehicle(currentCount: activeVehicles.count) {
             showAddVehicle = true

@@ -1154,3 +1154,59 @@ final class ReminderSnoozeTests: XCTestCase {
                        "Yarınki iş: dueDate + 7 olmalı (today + 8)")
     }
 }
+
+// MARK: - Notification Routing and Scheduling Harden Tests
+final class NotificationRoutingAndSchedulingTests: XCTestCase {
+    func testReminderIdentifierGenerationIsStable() {
+        let reminderId = UUID(uuidString: "11111111-2222-3333-4444-555555555555")!
+        XCTAssertEqual(NotificationService.reminderNotificationIdentifiers(for: reminderId), [
+            "reminder-11111111-2222-3333-4444-555555555555-30d",
+            "reminder-11111111-2222-3333-4444-555555555555-7d",
+            "reminder-11111111-2222-3333-4444-555555555555-1d",
+            "reminder-11111111-2222-3333-4444-555555555555-0d",
+        ])
+    }
+
+    func testReminderFireDatesSkipPastOffsetsAndUseQuietHours() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 6, day: 29, hour: 12))!
+        let dueDate = calendar.date(from: DateComponents(year: 2026, month: 7, day: 1, hour: 0))!
+
+        let fireDates = NotificationService.reminderFireDates(dueDate: dueDate, now: now, calendar: calendar)
+
+        XCTAssertEqual(fireDates.map(\.daysBefore), [1, 0])
+        XCTAssertTrue(fireDates.allSatisfy { $0.date > now })
+        XCTAssertEqual(calendar.component(.hour, from: fireDates[0].date), 9)
+    }
+
+    func testNotificationRouteParsingForReminder() {
+        let vehicleId = UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE")!
+        let reminderId = UUID(uuidString: "11111111-2222-3333-4444-555555555555")!
+        let route = AppNotificationRoute(userInfo: [
+            "deepLink": "reminder",
+            "vehicleId": vehicleId.uuidString,
+            "reminderId": reminderId.uuidString,
+        ])
+
+        XCTAssertEqual(route, .reminder(vehicleId: vehicleId, reminderId: reminderId))
+        XCTAssertEqual(route?.targetTab, .todos)
+    }
+
+    func testNotificationRouteParsingForRetentionTypes() {
+        let vehicleId = UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE")!
+        XCTAssertEqual(AppNotificationRoute(userInfo: ["deepLink": "kmUpdate", "vehicleId": vehicleId.uuidString]), .vehicle(vehicleId: vehicleId, focus: .kmUpdate))
+        XCTAssertEqual(AppNotificationRoute(userInfo: ["deepLink": "fileCompleteness", "vehicleId": vehicleId.uuidString]), .vehicle(vehicleId: vehicleId, focus: .fileCompleteness))
+        XCTAssertEqual(AppNotificationRoute(userInfo: ["deepLink": "saleFile", "vehicleId": vehicleId.uuidString]), .vehicle(vehicleId: vehicleId, focus: .saleFile))
+        XCTAssertEqual(AppNotificationRoute(userInfo: ["deepLink": "monthlySummary"]), .reports)
+        XCTAssertEqual(AppNotificationRoute(userInfo: ["deepLink": "seasonalMaintenance"]), .todos(focus: .seasonalMaintenance))
+    }
+
+    func testRetentionIdentifierPrefixesAreCategorySpecific() {
+        XCTAssertEqual(RetentionNotificationService.IdentifierPrefix.kmUpdate.rawValue, "retention-km")
+        XCTAssertEqual(RetentionNotificationService.IdentifierPrefix.monthlySummary.rawValue, "retention-summary")
+        XCTAssertEqual(RetentionNotificationService.IdentifierPrefix.documentCompleteness.rawValue, "retention-doc")
+        XCTAssertEqual(RetentionNotificationService.IdentifierPrefix.seasonal.rawValue, "retention-seasonal")
+        XCTAssertEqual(RetentionNotificationService.IdentifierPrefix.saleFile.rawValue, "retention-salefile")
+    }
+}

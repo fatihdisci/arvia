@@ -10,6 +10,7 @@ struct VehicleDossierApp: App {
     let modelContainer: ModelContainer
     @StateObject private var paywallService = PaywallService.shared
     @StateObject private var communityAuthService = CommunityAuthService.shared
+    @StateObject private var navigationRouter = AppNavigationRouter.shared
 
     init() {
         Self.configureAppearance()
@@ -126,8 +127,11 @@ struct VehicleDossierApp: App {
                 .modelContainer(modelContainer)
                 .environmentObject(paywallService)
                 .environmentObject(communityAuthService)
+                .environmentObject(navigationRouter)
                 .environment(\.locale, Locale(identifier: "tr_TR"))
                 .task {
+                    navigationRouter.configureNotificationDelegate()
+                    NotificationService.shared.clearBadge()
                     await communityAuthService.restoreSession()
                     await scheduleRetentionNotifications()
                 }

@@ -244,6 +244,7 @@ struct ReminderListView: View {
 
         // Bildirimleri iptal et
         NotificationService.shared.cancelReminder(reminder)
+        Task { await NotificationRefreshService.refreshAll(context: modelContext) }
 
         // Tekrarlayan hatırlatıcı ise bir sonraki oluşumu yarat
         if rule != .none, let baseDate = oldDueDate ?? reminder.completedAt {
@@ -262,9 +263,9 @@ struct ReminderListView: View {
                 modelContext.insert(next)
                 try? modelContext.save()
 
-                // Yeni oluşum için bildirim planla
+                // Yeni oluşum ve retention bildirimleri için yenile
                 Task {
-                    await NotificationService.shared.scheduleReminder(next)
+                    await NotificationRefreshService.refreshAll(context: modelContext)
                 }
             }
         }
@@ -274,6 +275,7 @@ struct ReminderListView: View {
         NotificationService.shared.cancelReminder(reminder)
         modelContext.delete(reminder)
         try? modelContext.save()
+        Task { await NotificationRefreshService.refreshAll(context: modelContext) }
     }
 
     // MARK: - Helpers

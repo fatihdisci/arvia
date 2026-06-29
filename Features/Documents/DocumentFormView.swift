@@ -435,6 +435,7 @@ struct DocumentFormView: View {
             // Başarı haptik
             let impact = UINotificationFeedbackGenerator()
             impact.notificationOccurred(.success)
+            Task { await NotificationRefreshService.refreshAll(context: modelContext) }
             dismiss()
         } catch {
             errors.append("Kayıt sırasında bir hata oluştu. Lütfen tekrar dene.")

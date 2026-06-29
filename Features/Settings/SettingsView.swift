@@ -148,6 +148,7 @@ struct SettingsView: View {
             .tint(AppColors.accentPrimary)
             .onChange(of: prefImportantDates) { _, _ in
                 RetentionNotificationService.shared.isImportantDatesEnabled = prefImportantDates
+                Task { await NotificationRefreshService.refreshAfterSettingsChange(context: modelContext) }
             }
 
             // Kilometre Güncelleme
@@ -159,6 +160,7 @@ struct SettingsView: View {
                 .tint(AppColors.accentPrimary)
                 .onChange(of: prefKmUpdate) { _, _ in
                     RetentionNotificationService.shared.isKmUpdateEnabled = prefKmUpdate
+                    Task { await NotificationRefreshService.refreshAfterSettingsChange(context: modelContext) }
                 }
 
                 if prefKmUpdate {
@@ -170,6 +172,7 @@ struct SettingsView: View {
                     .font(AppTypography.secondary)
                     .onChange(of: prefKmFreq) { _, newValue in
                         RetentionNotificationService.shared.kmUpdateFrequency = RetentionNotificationService.KmUpdateFrequency(rawValue: newValue) ?? .quarterly
+                        Task { await NotificationRefreshService.refreshAfterSettingsChange(context: modelContext) }
                     }
                 }
             }
@@ -182,6 +185,7 @@ struct SettingsView: View {
             .tint(AppColors.accentPrimary)
             .onChange(of: prefMonthlySummary) { _, _ in
                 RetentionNotificationService.shared.isMonthlySummaryEnabled = prefMonthlySummary
+                Task { await NotificationRefreshService.refreshAfterSettingsChange(context: modelContext) }
             }
 
             // Dosya Tamlığı
@@ -192,6 +196,7 @@ struct SettingsView: View {
             .tint(AppColors.accentPrimary)
             .onChange(of: prefDocComplete) { _, _ in
                 RetentionNotificationService.shared.isDocumentCompletenessEnabled = prefDocComplete
+                Task { await NotificationRefreshService.refreshAfterSettingsChange(context: modelContext) }
             }
 
             // Mevsimsel Bakım
@@ -202,6 +207,7 @@ struct SettingsView: View {
             .tint(AppColors.accentPrimary)
             .onChange(of: prefSeasonal) { _, _ in
                 RetentionNotificationService.shared.isSeasonalEnabled = prefSeasonal
+                Task { await NotificationRefreshService.refreshAfterSettingsChange(context: modelContext) }
             }
 
             // Satış Dosyası Hatırlatması
@@ -212,6 +218,7 @@ struct SettingsView: View {
             .tint(AppColors.accentPrimary)
             .onChange(of: prefSaleFile) { _, _ in
                 RetentionNotificationService.shared.isSaleFileReminderEnabled = prefSaleFile
+                Task { await NotificationRefreshService.refreshAfterSettingsChange(context: modelContext) }
             }
         } header: {
             Text("Bildirim Tercihleri")

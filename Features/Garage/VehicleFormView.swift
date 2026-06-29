@@ -594,6 +594,7 @@ struct VehicleFormView: View {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
 
+        Task { await NotificationRefreshService.refreshAll(context: modelContext) }
         dismiss()
     }
 

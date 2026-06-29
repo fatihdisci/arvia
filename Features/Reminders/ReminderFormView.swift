@@ -318,9 +318,9 @@ struct ReminderFormView: View {
                 try modelContext.save()
                 let impact = UINotificationFeedbackGenerator()
                 impact.notificationOccurred(.success)
-                // Eski bildirimi iptal edip yenisini planla
+                // Eski bildirimi iptal edip yenisini planla; retention bildirimlerini de yenile
                 NotificationService.shared.cancelReminder(existing)
-                Task { await NotificationService.shared.scheduleReminder(existing) }
+                Task { await NotificationRefreshService.refreshAll(context: modelContext) }
                 dismiss()
             } catch {
                 validationErrors = ["Kaydedilemedi: \(error.localizedDescription)"]
@@ -343,7 +343,7 @@ struct ReminderFormView: View {
                 try modelContext.save()
                 let impact = UINotificationFeedbackGenerator()
                 impact.notificationOccurred(.success)
-                Task { await NotificationService.shared.scheduleReminder(reminder) }
+                Task { await NotificationRefreshService.refreshAll(context: modelContext) }
                 dismiss()
             } catch {
                 validationErrors = ["Kaydedilemedi: \(error.localizedDescription)"]

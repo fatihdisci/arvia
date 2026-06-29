@@ -5,12 +5,16 @@ import SwiftUI
 // Odak: "ne yapmam gerekiyor?"
 
 struct TodosView: View {
+    @EnvironmentObject private var navigationRouter: AppNavigationRouter
     @State private var showAddReminder = false
     @State private var showNotificationPrompt = false
 
     var body: some View {
         NavigationStack {
-            ReminderListView()
+            VStack(spacing: 0) {
+                notificationRouteBanner
+                ReminderListView()
+            }
                 .navigationTitle("Yapılacaklar")
                 .background(Color.appBackground)
                 .toolbar {
@@ -35,6 +39,48 @@ struct TodosView: View {
         .sheet(isPresented: $showNotificationPrompt) {
             notificationPermissionSheet
         }
+    }
+
+    // MARK: - Notification Route Banner
+    @ViewBuilder
+    private var notificationRouteBanner: some View {
+        if let route = navigationRouter.pendingNotificationRoute {
+            switch route {
+            case .reminder:
+                routeBanner(
+                    icon: "bell.badge",
+                    title: "Hatırlatıcı açıldı",
+                    message: "İlgili hatırlatıcı bu sekmede. Listeden tamamlayabilir veya detayına girebilirsin."
+                )
+            case .todos(let focus) where focus == .seasonalMaintenance:
+                routeBanner(
+                    icon: "leaf",
+                    title: "Mevsimsel bakım",
+                    message: "Mevsimsel bakım işlerini bu ekrandan takip edebilirsin."
+                )
+            default:
+                EmptyView()
+            }
+        }
+    }
+
+    private func routeBanner(icon: String, title: String, message: String) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .foregroundColor(AppColors.accentPrimary)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(AppTypography.bodyMedium)
+                    .foregroundColor(AppColors.textPrimary)
+                Text(message)
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+            Spacer()
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.accentPrimary.opacity(0.08))
     }
 
     // MARK: - Notification Permission

@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 // MARK: - App Router
 // Ana tab navigation yapısı.
@@ -33,11 +34,124 @@ enum AppTab: String, CaseIterable {
     }
 }
 
+enum VehicleNotificationFocus: String, Equatable {
+    case kmUpdate
+    case fileCompleteness
+    case saleFile
+}
+
+enum TodoNotificationFocus: String, Equatable {
+    case reminder
+    case seasonalMaintenance
+}
+
+enum AppNotificationRoute: Equatable {
+    case reminder(vehicleId: UUID, reminderId: UUID)
+    case vehicle(vehicleId: UUID, focus: VehicleNotificationFocus)
+    case reports
+    case todos(focus: TodoNotificationFocus)
+
+    init?(userInfo: [AnyHashable: Any]) {
+        guard let deepLink = userInfo["deepLink"] as? String else { return nil }
+        switch deepLink {
+        case "reminder":
+            guard let vehicleString = userInfo["vehicleId"] as? String,
+                  let reminderString = userInfo["reminderId"] as? String,
+                  let vehicleId = UUID(uuidString: vehicleString),
+                  let reminderId = UUID(uuidString: reminderString) else { return nil }
+            self = .reminder(vehicleId: vehicleId, reminderId: reminderId)
+        case "kmUpdate":
+            guard let vehicleId = Self.vehicleId(from: userInfo) else { return nil }
+            self = .vehicle(vehicleId: vehicleId, focus: .kmUpdate)
+        case "fileCompleteness":
+            guard let vehicleId = Self.vehicleId(from: userInfo) else { return nil }
+            self = .vehicle(vehicleId: vehicleId, focus: .fileCompleteness)
+        case "saleFile":
+            guard let vehicleId = Self.vehicleId(from: userInfo) else { return nil }
+            self = .vehicle(vehicleId: vehicleId, focus: .saleFile)
+        case "monthlySummary":
+            self = .reports
+        case "seasonalMaintenance":
+            self = .todos(focus: .seasonalMaintenance)
+        default:
+            return nil
+        }
+    }
+
+    var targetTab: AppTab {
+        switch self {
+        case .reminder, .todos:
+            return .todos
+        case .vehicle:
+            return .garage
+        case .reports:
+            return .reports
+        }
+    }
+
+    var vehicleId: UUID? {
+        switch self {
+        case .reminder(let vehicleId, _): return vehicleId
+        case .vehicle(let vehicleId, _): return vehicleId
+        case .reports, .todos: return nil
+        }
+    }
+
+    private static func vehicleId(from userInfo: [AnyHashable: Any]) -> UUID? {
+        guard let vehicleString = userInfo["vehicleId"] as? String else { return nil }
+        return UUID(uuidString: vehicleString)
+    }
+}
+
+@MainActor
+final class AppNavigationRouter: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
+    static let shared = AppNavigationRouter()
+
+    @Published var selectedTab: AppTab = .garage
+    @Published var pendingNotificationRoute: AppNotificationRoute?
+
+    private override init() {
+        super.init()
+    }
+
+    func configureNotificationDelegate() {
+        UNUserNotificationCenter.current().delegate = self
+    }
+
+    func route(_ route: AppNotificationRoute) {
+        pendingNotificationRoute = route
+        selectedTab = route.targetTab
+        NotificationService.shared.clearBadge()
+    }
+
+    func clearRouteIfHandled(_ route: AppNotificationRoute) {
+        if pendingNotificationRoute == route {
+            pendingNotificationRoute = nil
+        }
+    }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        guard let route = AppNotificationRoute(userInfo: response.notification.request.content.userInfo) else { return }
+        await MainActor.run { self.route(route) }
+    }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        [.banner, .sound, .list]
+    }
+}
+
 struct AppRouter: View {
-    @State private var selectedTab: AppTab = .garage
+    @EnvironmentObject private var navigationRouter: AppNavigationRouter
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $navigationRouter.selectedTab) {
             ForEach(AppTab.allCases, id: \.self) { tab in
                 tabContent(for: tab)
                     .tabItem {
@@ -47,6 +161,11 @@ struct AppRouter: View {
             }
         }
         .tint(AppColors.accentPrimary)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                NotificationService.shared.clearBadge()
+            }
+        }
     }
 
     @ViewBuilder
@@ -68,4 +187,5 @@ struct AppRouter: View {
 
 #Preview("AppRouter") {
     AppRouter()
+        .environmentObject(AppNavigationRouter.shared)
 }

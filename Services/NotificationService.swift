@@ -3,13 +3,20 @@ import UserNotifications
 
 // MARK: - Notification Service
 // Yerel bildirimleri yönetir: izin isteme, schedule, iptal.
-// Bildirimler yalnızca araçla ilgili önemli tarihler içindir — reklam/spam yok.
+// Bildirimler yalnızca kullanıcı tarafından girilen araç hatırlatıcıları içindir — reklam/spam yok.
 
 final class NotificationService {
     static let shared = NotificationService()
 
     private let center = UNUserNotificationCenter.current()
     private var isAuthorized = false
+
+    static let reminderOffsets: [Int] = [30, 7, 1, 0]
+
+    struct ReminderFireDate: Equatable {
+        let daysBefore: Int
+        let date: Date
+    }
 
     private init() {}
 
@@ -50,6 +57,7 @@ final class NotificationService {
         // Önce eski bildirimleri temizle
         cancelReminder(reminder)
 
+        guard RetentionNotificationService.shared.isImportantDatesEnabled else { return }
         guard let dueDate = reminder.dueDate,
               reminder.statusRaw != ReminderStatus.completed.rawValue,
               reminder.statusRaw != ReminderStatus.archived.rawValue
@@ -58,32 +66,25 @@ final class NotificationService {
         let status = await currentAuthorizationStatus()
         guard status == .authorized else { return }
 
-        let offsets: [(Int, String)] = [
-            (30, "30 gün kaldı"),
-            (7, "7 gün kaldı"),
-            (1, "Yarın"),
-            (0, "Bugün"),
-        ]
-
-        for (daysBefore, label) in offsets {
-            guard let triggerDate = Calendar.current.date(byAdding: .day, value: -daysBefore, to: dueDate),
-                  triggerDate > Date()
-            else { continue }
-
+        for fireDate in Self.reminderFireDates(dueDate: dueDate) {
             let content = UNMutableNotificationContent()
-            content.title = reminder.title
-            content.body = "\(label): \(reminder.title) — \(dueDate.formatted(date: .abbreviated, time: .omitted))"
+            content.title = "Hatırlatıcı"
+            content.body = "\(Self.reminderLabel(daysBefore: fireDate.daysBefore)): \(reminder.title) — \(dueDate.formatted(date: .abbreviated, time: .omitted))"
             content.sound = reminder.priority == .critical ? .defaultCritical : .default
-            content.badge = 1
             content.interruptionLevel = reminder.priority == .critical ? .timeSensitive : .active
+            content.userInfo = [
+                "deepLink": "reminder",
+                "vehicleId": reminder.vehicleId.uuidString,
+                "reminderId": reminder.id.uuidString,
+            ]
 
             let dateComponents = Calendar.current.dateComponents(
                 [.year, .month, .day, .hour, .minute],
-                from: triggerDate
+                from: fireDate.date
             )
             let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
 
-            let identifier = notificationIdentifier(for: reminder.id, daysBefore: daysBefore)
+            let identifier = notificationIdentifier(for: reminder.id, daysBefore: fireDate.daysBefore)
             let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
             do {
@@ -96,10 +97,12 @@ final class NotificationService {
 
     /// Hatırlatıcıya ait tüm bildirimleri iptal eder.
     func cancelReminder(_ reminder: Reminder) {
-        var identifiers: [String] = []
-        for daysBefore in [30, 7, 1, 0] {
-            identifiers.append(notificationIdentifier(for: reminder.id, daysBefore: daysBefore))
-        }
+        center.removePendingNotificationRequests(withIdentifiers: Self.reminderNotificationIdentifiers(for: reminder.id))
+        center.removeDeliveredNotifications(withIdentifiers: Self.reminderNotificationIdentifiers(for: reminder.id))
+    }
+
+    func cancelReminders(_ reminders: [Reminder]) {
+        let identifiers = reminders.flatMap { Self.reminderNotificationIdentifiers(for: $0.id) }
         center.removePendingNotificationRequests(withIdentifiers: identifiers)
         center.removeDeliveredNotifications(withIdentifiers: identifiers)
     }
@@ -117,7 +120,37 @@ final class NotificationService {
         }
     }
 
+    func clearBadge() {
+        updateBadge(count: 0)
+    }
+
     // MARK: - Helpers
+    static func reminderNotificationIdentifiers(for reminderId: UUID) -> [String] {
+        reminderOffsets.map { "reminder-\(reminderId.uuidString)-\($0)d" }
+    }
+
+    static func reminderFireDates(
+        dueDate: Date,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> [ReminderFireDate] {
+        reminderOffsets.compactMap { daysBefore in
+            guard let rawDate = calendar.date(byAdding: .day, value: -daysBefore, to: dueDate) else { return nil }
+            let adjusted = RetentionNotificationService.adjustedForQuietHours(rawDate, calendar: calendar)
+            guard adjusted > now else { return nil }
+            return ReminderFireDate(daysBefore: daysBefore, date: adjusted)
+        }
+    }
+
+    static func reminderLabel(daysBefore: Int) -> String {
+        switch daysBefore {
+        case 30: return "30 gün kaldı"
+        case 7: return "7 gün kaldı"
+        case 1: return "Yarın"
+        default: return "Bugün"
+        }
+    }
+
     private func notificationIdentifier(for reminderId: UUID, daysBefore: Int) -> String {
         "reminder-\(reminderId.uuidString)-\(daysBefore)d"
     }

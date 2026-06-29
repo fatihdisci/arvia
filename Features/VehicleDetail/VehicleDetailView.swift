@@ -11,6 +11,7 @@ struct VehicleDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var paywallService: PaywallService
+    @EnvironmentObject private var navigationRouter: AppNavigationRouter
 
     let vehicle: Vehicle
 
@@ -71,6 +72,11 @@ struct VehicleDetailView: View {
             VStack(spacing: AppSpacing.lg) {
                 // MARK: Visual Anchor — Hero Header
                 VehicleHeroHeader(vehicle: vehicle)
+
+                if let banner = notificationRouteBanner {
+                    banner
+                        .padding(.horizontal, AppSpacing.screenMarginH)
+                }
 
                 // MARK: Most Important Task
                 if let reminder = mostCriticalReminder {
@@ -175,6 +181,63 @@ struct VehicleDetailView: View {
         } message: {
             Text("Bu işlem geri alınamaz. Araca ait tüm hatırlatıcılar, masraflar, bakım kayıtları, belgeler ve ekspertiz raporları kalıcı olarak silinir.")
         }
+    }
+
+    // MARK: - Upcoming Task Empty State
+    private var notificationRouteBanner: AnyView? {
+        guard case let .vehicle(routeVehicleId, focus)? = navigationRouter.pendingNotificationRoute,
+              routeVehicleId == vehicle.id else { return nil }
+
+        let title: String
+        let message: String
+        let icon: String
+        let actionTitle: String?
+        let action: (() -> Void)?
+
+        switch focus {
+        case .kmUpdate:
+            title = "Kilometre güncelleme"
+            message = "Bu araç için güncel kilometreyi düzenleme ekranından hemen güncelleyebilirsin."
+            icon = "gauge.with.needle"
+            actionTitle = "Km Güncelle"
+            action = { showEditSheet = true }
+        case .fileCompleteness:
+            title = "Dosya tamlığı"
+            message = "Aşağıdaki Dosya Tamlığı ve Belgeler alanlarından eksik bilgileri tamamlayabilirsin."
+            icon = "doc.text.magnifyingglass"
+            actionTitle = nil
+            action = nil
+        case .saleFile:
+            title = "Satış dosyası"
+            message = "Satış dosyası kartından araç bilgilerini ve belgelerini gözden geçirebilirsin."
+            icon = "doc.richtext"
+            actionTitle = "Satış Dosyası"
+            action = { handleSaleFileTap() }
+        }
+
+        return AnyView(
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                Image(systemName: icon)
+                    .foregroundColor(AppColors.accentPrimary)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text(title)
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text(message)
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                    if let actionTitle, let action {
+                        Button(actionTitle, action: action)
+                            .font(AppTypography.captionMedium)
+                            .foregroundColor(AppColors.accentPrimary)
+                    }
+                }
+                Spacer()
+            }
+            .padding(AppSpacing.md)
+            .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(AppColors.accentPrimary.opacity(0.08)))
+        )
     }
 
     // MARK: - Upcoming Task Empty State
@@ -395,6 +458,7 @@ struct VehicleDetailView: View {
         try? DocumentStorageService.shared.deleteFile(doc.localFileName)
         modelContext.delete(doc)
         try? modelContext.save()
+        Task { await NotificationRefreshService.refreshAll(context: modelContext) }
     }
 
     // MARK: - Inspection Report Card
@@ -836,6 +900,7 @@ struct VehicleDetailView: View {
     private func archiveVehicle() {
         vehicle.archivedAt = Date()
         try? modelContext.save()
+        Task { await NotificationRefreshService.refreshAll(context: modelContext) }
         dismiss()
     }
 
@@ -882,6 +947,8 @@ struct VehicleDetailView: View {
 
         modelContext.delete(vehicle)
         try? modelContext.save()
+        NotificationRefreshService.cancelAllForVehicle(vehicle, context: modelContext)
+        Task { await NotificationRefreshService.refreshAll(context: modelContext) }
 
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.warning)
