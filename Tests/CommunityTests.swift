@@ -351,3 +351,70 @@ final class CommunityRoleTests: XCTestCase {
         XCTAssertEqual(CommunityRole.admin.rawValue, "admin")
     }
 }
+
+// MARK: - Moderation Action Type Differentiation
+
+final class CommunityModerationActionTests: XCTestCase {
+    private func makeReport(targetType: String, reason: ReportReason = .spam) -> CommunityReport {
+        CommunityReport(
+            id: UUID(),
+            reporterId: UUID(),
+            targetType: targetType,
+            targetId: UUID(),
+            reason: reason,
+            status: .pending,
+            createdAt: Date()
+        )
+    }
+
+    func testTargetLabelForPost() {
+        let report = makeReport(targetType: "post")
+        XCTAssertEqual(report.targetLabel, "Gönderi")
+    }
+
+    func testTargetLabelForComment() {
+        let report = makeReport(targetType: "comment")
+        XCTAssertEqual(report.targetLabel, "Yorum")
+    }
+
+    func testTargetLabelForUnknownDefaultsToRaw() {
+        let report = makeReport(targetType: "unknown_type")
+        XCTAssertEqual(report.targetLabel, "unknown_type")
+    }
+
+    func testPostReportTargetTypeIsPost() {
+        let report = makeReport(targetType: "post")
+        XCTAssertEqual(report.targetType, "post")
+        XCTAssertTrue(report.targetType == "post")
+        XCTAssertFalse(report.targetType == "comment")
+    }
+
+    func testCommentReportTargetTypeIsComment() {
+        let report = makeReport(targetType: "comment")
+        XCTAssertEqual(report.targetType, "comment")
+        XCTAssertTrue(report.targetType == "comment")
+        XCTAssertFalse(report.targetType == "post")
+    }
+
+    func testReviewStatusTransitions() {
+        let report = makeReport(targetType: "post")
+        XCTAssertEqual(report.status, .pending)
+        XCTAssertTrue(report.isPending)
+        XCTAssertFalse(report.isReviewed)
+        XCTAssertFalse(report.isDismissed)
+    }
+
+    func testReportIdentifiableConformance() {
+        let id = UUID()
+        let report = CommunityReport(
+            id: id,
+            reporterId: UUID(),
+            targetType: "post",
+            targetId: UUID(),
+            reason: .harassment,
+            status: .pending,
+            createdAt: Date()
+        )
+        XCTAssertEqual(report.id, id)
+    }
+}

@@ -178,6 +178,81 @@ final class CommunityModerationService {
             .execute()
     }
 
+    // MARK: - Comment Moderation
+
+    func hideComment(_ commentId: UUID) async throws {
+        guard let client = client else {
+            throw CommunityServiceError.configMissing
+        }
+
+        try await client
+            .from("community_comments")
+            .update(["is_hidden": AnyJSON.bool(true)])
+            .eq("id", value: commentId.uuidString)
+            .execute()
+    }
+
+    func deleteCommentHard(_ commentId: UUID) async throws {
+        guard let client = client else {
+            throw CommunityServiceError.configMissing
+        }
+
+        try await client
+            .from("community_comments")
+            .delete()
+            .eq("id", value: commentId.uuidString)
+            .execute()
+    }
+
+    // MARK: - Content Preview (for moderation view)
+
+    func fetchPostTitle(_ postId: UUID) async throws -> String? {
+        guard let client = client else {
+            throw CommunityServiceError.configMissing
+        }
+
+        struct PostTitle: Codable {
+            let title: String
+        }
+
+        let rows: [PostTitle] = try await client
+            .from("community_posts")
+            .select("title")
+            .eq("id", value: postId.uuidString)
+            .limit(1)
+            .execute()
+            .value
+
+        return rows.first?.title
+    }
+
+    func fetchCommentBody(_ commentId: UUID) async throws -> String? {
+        guard let client = client else {
+            throw CommunityServiceError.configMissing
+        }
+
+        struct CommentBody: Codable {
+            let body: String
+        }
+
+        let rows: [CommentBody] = try await client
+            .from("community_comments")
+            .select("body")
+            .eq("id", value: commentId.uuidString)
+            .limit(1)
+            .execute()
+            .value
+
+        return rows.first?.body
+    }
+
+    func fetchReporterName(_ reporterId: UUID) async throws -> String? {
+        let profile = try await CommunityProfileService.shared.fetchProfile(userId: reporterId)
+        return profile?.effectiveDisplayName
+    }
+
+    // MARK: - User Management
+
     func banUser(_ userId: UUID) async throws {
         guard let client = client else {
             throw CommunityServiceError.configMissing

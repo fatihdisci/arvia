@@ -1,5 +1,9 @@
+-- ⚠️ BU DOSYA ARTIK GEÇERLİ DEĞİL.
+-- Anon okuma açık kalacak şekilde karar değişti.
+-- Bu dosya anon okumayı KAPATIR — tersi karar verildi.
+-- Yetkili dosya: SUPABASE_FORUM_OPEN_ACCESS.sql
 -- ============================================================================
--- Arvia — Topluluk RLS Anonymous Okuma Kapatma Migration
+-- Arvia — Topluluk RLS Anonymous Okuma Kapatma Migration (DEPRECATED)
 -- ============================================================================
 -- Supabase SQL Editor'da çalıştırın. Idempotent'tir.
 --
@@ -8,6 +12,7 @@
 --        forum gönderilerini okuyabiliyordu.
 -- Çözüm: SELECT policy'lere `auth.uid() IS NOT NULL` ekleyerek sadece
 --        Apple ile giriş yapmış kullanıcıların okumasına izin ver.
+-- NOT: Bu karar DEĞİŞTİ. Anon okuma AÇIK kaldı. Bu SQL'i production'da çalıştırmayın.
 -- ============================================================================
 
 -- ============================================================================

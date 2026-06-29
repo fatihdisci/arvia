@@ -1,5 +1,10 @@
+-- ⚠️ BU DOSYA ARTIK GEÇERLİ DEĞİL.
+-- Yetkili dosya: SUPABASE_FORUM_OPEN_ACCESS.sql
+-- Satır 290'a yakın doğrulama notu HATALIDIR:
+--   "Free kullanıcı INSERT yapabilir mi? (cevap: HAYIR)" → cevap EVET.
+--   Free kullanıcı INSERT yapabilir; forum yazma Pro gerektirmez.
 -- ============================================================================
--- Garajım — Topluluk RLS Fix / Migration
+-- Garajım — Topluluk RLS Fix / Migration (DEPRECATED)
 -- ============================================================================
 -- Supabase SQL Editor'da çalıştırın. Idempotent'tir (tekrar çalıştırılabilir).
 --
@@ -283,10 +288,10 @@ CREATE POLICY "Users_can_unblock" ON community_blocks
 -- WHERE tablename LIKE 'community_%' OR tablename = 'profiles'
 -- ORDER BY tablename, cmd;
 
--- Test: Free kullanıcı INSERT yapabilir mi? (cevap: HAYIR)
+-- Test: Free kullanıcı INSERT yapabilir mi? (cevap: EVET — forum auth-gated, Pro gerektirmez)
 -- 1. Supabase Dashboard → Authentication → kendinize test kullanıcısı oluşturun
 -- 2. profiles tablosuna o kullanıcı için is_pro=false, is_banned=false kayıt ekleyin
 -- 3. O kullanıcı ile giriş yapıp community_posts insert deneyin
--- 4. RLS hatası almalısınız: "new row violates row-level security policy"
+-- 4. BAŞARILI olmalı: 201 Created
 
 -- ============================================================================

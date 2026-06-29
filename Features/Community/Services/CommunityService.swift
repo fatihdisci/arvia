@@ -31,7 +31,6 @@ final class CommunityService {
         let posts: [CommunityPost] = try await client
             .from("community_posts")
             .select("*")
-            .eq("is_hidden", value: false)
             .is("deleted_at", value: nil)
             .order("is_pinned", ascending: false)
             .order("created_at", ascending: false)
@@ -86,7 +85,6 @@ final class CommunityService {
             .from("community_comments")
             .select("*")
             .eq("post_id", value: postId.uuidString)
-            .eq("is_hidden", value: false)
             .is("deleted_at", value: nil)
             .order("created_at", ascending: true)
             .execute()
