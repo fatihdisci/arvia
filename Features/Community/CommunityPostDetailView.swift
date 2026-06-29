@@ -15,6 +15,7 @@ struct CommunityPostDetailView: View {
     @State private var error: String?
     @State private var commentText = ""
     @State private var isSubmittingComment = false
+    @State private var commentError: String?
     @State private var showPaywall = false
     @State private var showReportSheet = false
     @State private var reportTarget: (type: String, id: UUID)?
@@ -352,6 +353,14 @@ struct CommunityPostDetailView: View {
                 )
             }
 
+            // Comment submit error
+            if let commentError = commentError {
+                Text(commentError)
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.critical)
+                    .padding(.vertical, AppSpacing.xs)
+            }
+
             // Comments list
             if comments.isEmpty {
                 VStack(spacing: AppSpacing.sm) {
@@ -440,11 +449,17 @@ struct CommunityPostDetailView: View {
         let body = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !body.isEmpty, body.count <= 2000 else { return }
         isSubmittingComment = true
+        commentError = nil
         do {
             _ = try await CommunityService.shared.createComment(postId: postId, body: body)
             commentText = ""
             comments = try await CommunityService.shared.fetchComments(postId: postId)
-        } catch {}
+        } catch {
+            #if DEBUG
+            print("[CommunityPostDetail] Comment submit error: \(error.localizedDescription)")
+            #endif
+            commentError = "Bu işlem için Arvia Pro gerekli olabilir. Satın alımını geri yüklemeyi deneyebilirsin."
+        }
         isSubmittingComment = false
     }
 

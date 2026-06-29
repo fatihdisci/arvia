@@ -267,7 +267,10 @@ struct CommunityCreatePostView: View {
                 }
                 dismiss()
             } catch {
-                submitError = "Paylaşılamadı: \(error.localizedDescription)"
+                #if DEBUG
+                print("[CommunityCreatePost] Submit error: \(error.localizedDescription)")
+                #endif
+                submitError = "Bu işlem için Arvia Pro gerekli olabilir. Satın alımını geri yüklemeyi deneyebilirsin."
             }
             isSubmitting = false
         }

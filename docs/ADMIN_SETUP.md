@@ -58,18 +58,24 @@ SET username = 'garajim',
    - Doğrulanmış rozeti (checkmark.seal.fill)
    - Profil ayarlarında moderasyon araçları erişimi
 
-## Manuel Pro Ataması
+## Manual Pro Access for Community Writing
 
-Bir kullanıcıya manuel Pro yetkisi vermek için:
+StoreKit satın alma işlemi uygulama içinde Pro özellikleri açar.
+Ancak **community write permission** sunucu tarafında Supabase Row-Level Security (RLS)
+tarafından `profiles.is_pro` alanı ile korunur.
+
+Server-side verification pipeline (RevenueCat webhook → Supabase Edge Function)
+kurulana kadar, community writing access için admin'in ilgili kullanıcının
+`profiles.is_pro` alanını **manuel** olarak güncellemesi gerekir.
+
+⚠️ **Güvenlik:** Kullanıcı auth kimliği doğrulanmadan güncelleme yapılmamalıdır.
+Client-side `is_pro` update güvenli değildir ve kullanılmamalıdır.
 
 ```sql
 UPDATE profiles
 SET is_pro = true
-WHERE id = '<KULLANICI-AUTH-USER-ID>';
+WHERE id = '<AUTH_USER_ID>';
 ```
 
-## Notlar
-
-- Admin yetkisi Supabase'deki `role` alanından gelir. Kodda hardcoded bypass yoktur.
-- RevenueCat webhook entegrasyonu yapıldığında `is_pro` alanı otomatik güncellenecek.
-- Şimdilik tüm Pro atamaları manuel olarak bu SQL ile yapılır.
+Supabase Dashboard → Authentication → Users üzerinden auth user ID doğrulaması yapın.
+Ardından SQL Editor'da yukarıdaki sorguyu çalıştırın.
