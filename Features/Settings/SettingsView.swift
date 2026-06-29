@@ -307,8 +307,6 @@ struct SettingsView: View {
 
             Link(destination: eulaURL) {
                 HStack {
-            Link(destination: eulaURL) {
-                HStack {
                     Label("Apple Standart EULA", systemImage: "checkmark.seal")
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()

@@ -1,5 +1,13 @@
 import SwiftUI
 
+// MARK: - Report Target
+
+struct ReportTarget: Identifiable {
+    let id = UUID()
+    let type: String
+    let targetId: UUID
+}
+
 // MARK: - Report Reason Sheet
 // Kullanıcıya şikayet sebebi seçtiren alt ekran.
 
