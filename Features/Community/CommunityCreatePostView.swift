@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 // MARK: - Community Create/Edit Post View
-// Gönderi oluşturma ve düzenleme formu. Pro gate ile korunur.
+// Gönderi oluşturma ve düzenleme formu. Auth gate ile korunur.
 
 struct CommunityCreatePostView: View {
     @Environment(\.dismiss) private var dismiss
@@ -270,7 +270,7 @@ struct CommunityCreatePostView: View {
                 #if DEBUG
                 print("[CommunityCreatePost] Submit error: \(error.localizedDescription)")
                 #endif
-                submitError = "Bu işlem için Arvia Pro gerekli olabilir. Satın alımını geri yüklemeyi deneyebilirsin."
+                submitError = "Gönderi paylaşılamadı. Lütfen tekrar dene."
             }
             isSubmitting = false
         }

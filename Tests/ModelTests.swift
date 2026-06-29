@@ -743,16 +743,9 @@ final class PaywallLimitTests: XCTestCase {
         XCTAssertTrue(pro.canSaveNewDocument(currentCount: 5000))
     }
 
-    // Forum yazma: Free kullanıcı gönderi/yorum yazamaz
-    func testForumWriteIsProOnly() {
-        let free = PaywallService(isProForTesting: false)
-        XCTAssertFalse(free.canCreateCommunityPost())
-        XCTAssertFalse(free.canWriteComment())
-
-        let pro = PaywallService(isProForTesting: true)
-        XCTAssertTrue(pro.canCreateCommunityPost())
-        XCTAssertTrue(pro.canWriteComment())
-    }
+    // Forum yazma artık Pro gerektirmez — auth yeterlidir.
+    // canCreateCommunityPost() ve canWriteComment() kaldırıldı.
+    // Pro gate sadece araç/belge/rapor/ekspertiz/satış PDF için geçerli.
 
     // Araç limiti active vehicle üzerinden değerlendirilmeli (archived sayılmaz)
     func testVehicleLimitExcludesArchived() {

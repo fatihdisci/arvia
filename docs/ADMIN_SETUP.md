@@ -58,20 +58,36 @@ SET username = 'garajim',
    - Doğrulanmış rozeti (checkmark.seal.fill)
    - Profil ayarlarında moderasyon araçları erişimi
 
-## Manual Pro Access for Community Writing
+## Forum Erişim Modeli
 
-StoreKit satın alma işlemi uygulama içinde Pro özellikleri açar.
-Ancak **community write permission** sunucu tarafında Supabase Row-Level Security (RLS)
-tarafından `profiles.is_pro` alanı ile korunur.
+Forum erişimi **auth-gated** modeldedir, Pro-gated değildir:
 
-Server-side verification pipeline (RevenueCat webhook → Supabase Edge Function)
-kurulana kadar, community writing access için admin'in ilgili kullanıcının
-`profiles.is_pro` alanını **manuel** olarak güncellemesi gerekir.
+| Kullanıcı | Forum okuma | Gönderi yazma | Yorum yazma | Etkileşim |
+|---|---|---|---|---|
+| Guest (anon) | ✅ | ❌ | ❌ | ❌ |
+| Signed-in Free | ✅ | ✅ | ✅ | ✅ |
+| Signed-in Pro | ✅ | ✅ | ✅ | ✅ |
+| Admin/mod | ✅ | ✅ (modere) | ✅ (modere) | ✅ |
+
+Yazma ve etkileşim için Apple ile giriş yeterlidir. Pro şartı yoktur.
+
+Supabase RLS:
+- `profiles.is_banned = false` olan tüm authenticated kullanıcılar INSERT yapabilir.
+- `is_pro` alanı forum INSERT için kullanılmaz.
+- `is_pro` ileride Pro badge veya Pro-only forum özellikleri için saklı tutulabilir.
+
+## Manual Pro Access (İleriye Dönük)
+
+StoreKit satın alma işlemi uygulama içinde Pro özellikleri açar (sınırsız araç/belge, satış PDF, gelişmiş rapor, ekspertiz arşivi).
+
+App Store öncesinde `profiles.is_pro` client-side update yapılmaz.
+Server-side pipeline (RevenueCat webhook → Supabase Edge Function) ileride kurulacak.
 
 ⚠️ **Güvenlik:** Kullanıcı auth kimliği doğrulanmadan güncelleme yapılmamalıdır.
 Client-side `is_pro` update güvenli değildir ve kullanılmamalıdır.
 
 ```sql
+-- Manuel Pro ataması (sadece admin tarafından, auth ID doğrulanarak):
 UPDATE profiles
 SET is_pro = true
 WHERE id = '<AUTH_USER_ID>';

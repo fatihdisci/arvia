@@ -206,13 +206,8 @@ final class PaywallService: ObservableObject {
         isPro
     }
 
-    func canCreateCommunityPost() -> Bool {
-        isPro
-    }
-
-    func canWriteComment() -> Bool {
-        isPro
-    }
+    // Forum yazma artık Pro gerektirmez — auth yeterli.
+    // Bu metodlar kaldırıldı; community gate'ler doğrudan CommunityAuthService üzerinden yapılıyor.
 
     // MARK: - Feature display
     static let freeFeatures: [(icon: String, title: String)] = [
@@ -228,6 +223,5 @@ final class PaywallService: ObservableObject {
         ("doc.richtext", "Satış dosyası PDF"),
         ("chart.bar", "Gelişmiş raporlar"),
         ("magnifyingglass", "Ekspertiz raporlarını satış dosyasına ekleme"),
-        ("square.and.pencil", "Toplulukta gönderi ve yorum yazma"),
     ]
 }

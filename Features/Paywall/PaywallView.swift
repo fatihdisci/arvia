@@ -37,7 +37,6 @@ struct PaywallView: View {
         case saleFile
         case advancedReports
         case inspectionArchive
-        case communityWrite
 
         var title: String {
             switch self {
@@ -46,7 +45,6 @@ struct PaywallView: View {
             case .saleFile: return "Satış Dosyası Oluştur"
             case .advancedReports: return "Gelişmiş Raporlar"
             case .inspectionArchive: return "Ekspertiz Arşivi"
-            case .communityWrite: return "Toplulukta Paylaşım Yap"
             }
         }
 
@@ -62,8 +60,6 @@ struct PaywallView: View {
                 return "Yıllık trend, araç karşılaştırma ve detaylı maliyet analizi."
             case .inspectionArchive:
                 return "Ekspertiz raporlarını arşivle ve satış dosyana dahil et."
-            case .communityWrite:
-                return "Toplulukta gönderi oluştur ve yorum yaparak diğer araç sahipleriyle etkileşime geç."
             }
         }
     }

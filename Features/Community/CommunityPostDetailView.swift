@@ -2,12 +2,12 @@ import SwiftUI
 
 // MARK: - Community Post Detail View
 // Gönderi detayı, yorumlar, beğeni/kaydet/şikayet.
+// Guest okuyabilir, yazma/etkileşim için giriş gerekir.
 
 struct CommunityPostDetailView: View {
     let postId: UUID
 
     @EnvironmentObject private var communityAuth: CommunityAuthService
-    @EnvironmentObject private var paywallService: PaywallService
 
     @State private var post: CommunityPost?
     @State private var comments: [CommunityComment] = []
@@ -16,9 +16,8 @@ struct CommunityPostDetailView: View {
     @State private var commentText = ""
     @State private var isSubmittingComment = false
     @State private var commentError: String?
-    @State private var showPaywall = false
-    @State private var showReportSheet = false
-    @State private var reportTarget: (type: String, id: UUID)?
+    @State private var showSignInPrompt = false
+    @State private var reportTarget: ReportTarget?
 
     var body: some View {
         Group {
@@ -66,17 +65,15 @@ struct CommunityPostDetailView: View {
         .background(Color.appBackground)
         .navigationTitle("Gönderi")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showPaywall) {
-            PaywallView(feature: .communityWrite)
+        .sheet(isPresented: $showSignInPrompt) {
+            signInPromptSheet
         }
-        .sheet(isPresented: $showReportSheet) {
-            if let target = reportTarget {
-                ReportReasonSheet(
-                    targetType: target.type,
-                    targetId: target.id,
-                    onDismiss: { showReportSheet = false }
-                )
-            }
+        .sheet(item: $reportTarget) { target in
+            ReportReasonSheet(
+                targetType: target.type,
+                targetId: target.targetId,
+                onDismiss: { reportTarget = nil }
+            )
         }
         .task { await load() }
     }
@@ -246,8 +243,11 @@ struct CommunityPostDetailView: View {
             Spacer()
 
             Button {
-                reportTarget = ("post", post.id)
-                showReportSheet = true
+                guard communityAuth.isAuthenticated else {
+                    showSignInPrompt = true
+                    return
+                }
+                reportTarget = ReportTarget(type: "post", targetId: post.id)
             } label: {
                 Image(systemName: "flag")
                     .font(.subheadline)
@@ -273,7 +273,7 @@ struct CommunityPostDetailView: View {
             }
 
             // Comment composer
-            if paywallService.canWriteComment() {
+            if communityAuth.isAuthenticated {
                 HStack(spacing: AppSpacing.sm) {
                     Image(systemName: "person.crop.circle.fill")
                         .font(.callout)
@@ -321,26 +321,23 @@ struct CommunityPostDetailView: View {
                     )
                 }
             } else {
-                // Free user upsell
+                // Guest login prompt
                 HStack(spacing: AppSpacing.md) {
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                         HStack(spacing: AppSpacing.xs) {
-                            Image(systemName: "crown.fill")
+                            Image(systemName: "person.crop.circle.badge.questionmark")
                                 .font(.subheadline)
-                                .foregroundColor(AppColors.warning)
-                            Text("Pro üyeler paylaşım yapabilir")
+                                .foregroundColor(AppColors.accentPrimary)
+                            Text("Yorum yazmak için Apple ile giriş yap.")
                                 .font(AppTypography.secondaryMedium)
                                 .foregroundColor(AppColors.textPrimary)
                         }
-                        Text("Toplulukta yorum yapmak ve gönderi paylaşmak için Pro üyeliğe geç.")
-                            .font(AppTypography.caption)
-                            .foregroundColor(AppColors.textSecondary)
                     }
 
                     Spacer()
 
-                    Button("Pro'ya Geç") {
-                        showPaywall = true
+                    Button("Giriş Yap") {
+                        showSignInPrompt = true
                     }
                     .buttonStyle(.primary)
                     .controlSize(.small)
@@ -349,7 +346,7 @@ struct CommunityPostDetailView: View {
                 .padding(AppSpacing.md)
                 .background(
                     RoundedRectangle(cornerRadius: AppRadius.medium)
-                        .fill(AppColors.warningBackground)
+                        .fill(AppColors.accentPrimary.opacity(0.08))
                 )
             }
 
@@ -381,8 +378,7 @@ struct CommunityPostDetailView: View {
                     CommentRow(
                         comment: comment,
                         onReport: {
-                            reportTarget = ("comment", comment.id)
-                            showReportSheet = true
+                            reportTarget = ReportTarget(type: "comment", targetId: comment.id)
                         },
                         onBlock: {
                             Task { await blockCommentAuthor(comment) }
@@ -426,6 +422,10 @@ struct CommunityPostDetailView: View {
     }
 
     private func toggleLike() async {
+        guard communityAuth.isAuthenticated else {
+            showSignInPrompt = true
+            return
+        }
         guard var p = post else { return }
         do {
             let liked = try await CommunityService.shared.toggleLike(postId: p.id)
@@ -436,6 +436,10 @@ struct CommunityPostDetailView: View {
     }
 
     private func toggleSave() async {
+        guard communityAuth.isAuthenticated else {
+            showSignInPrompt = true
+            return
+        }
         guard var p = post else { return }
         do {
             let saved = try await CommunityService.shared.toggleSave(postId: p.id)
@@ -458,7 +462,7 @@ struct CommunityPostDetailView: View {
             #if DEBUG
             print("[CommunityPostDetail] Comment submit error: \(error.localizedDescription)")
             #endif
-            commentError = "Bu işlem için Arvia Pro gerekli olabilir. Satın alımını geri yüklemeyi deneyebilirsin."
+            commentError = "Yorum gönderilemedi. Lütfen tekrar dene."
         }
         isSubmittingComment = false
     }
@@ -474,5 +478,43 @@ struct CommunityPostDetailView: View {
         do {
             try await CommunityModerationService.shared.blockUser(userId: comment.authorId)
         } catch {}
+    }
+
+    // MARK: - Sign-In Prompt Sheet
+    private var signInPromptSheet: some View {
+        NavigationStack {
+            VStack(spacing: AppSpacing.xl) {
+                Spacer()
+                Image(systemName: "person.crop.circle.badge.questionmark")
+                    .font(.system(size: 48, weight: .light))
+                    .foregroundColor(AppColors.accentPrimary)
+                Text("Topluluğa katılmak için Apple ile giriş yap.")
+                    .font(AppTypography.sectionTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                Button {
+                    showSignInPrompt = false
+                    Task { try? await communityAuth.signInWithApple() }
+                } label: {
+                    HStack {
+                        Image(systemName: "apple.logo")
+                        Text("Apple ile Giriş Yap")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.md)
+                }
+                .buttonStyle(.primary)
+                Spacer()
+            }
+            .padding(.horizontal, AppSpacing.screenMarginH)
+            .background(Color.appBackground)
+            .navigationTitle("Giriş Yap")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Kapat") { showSignInPrompt = false }
+                }
+            }
+        }
     }
 }

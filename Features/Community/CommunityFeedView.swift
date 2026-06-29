@@ -1,7 +1,7 @@
 import SwiftUI
 
 // MARK: - Community Feed View
-// Topluluk ana ekranı. Auth state'e göre farklı durumlar gösterir.
+// Topluluk ana ekranı. Guest okuyabilir, yazmak için giriş gerekir.
 
 struct CommunityFeedView: View {
     @EnvironmentObject private var communityAuth: CommunityAuthService
@@ -16,7 +16,8 @@ struct CommunityFeedView: View {
     @State private var showCreatePost = false
     @State private var selectedPostId: UUID?
     @State private var showModeration = false
-    @State private var showPaywall = false
+    @State private var showSignInPrompt = false
+    @State private var reportTarget: ReportTarget?
 
     // Profile creation (first-time)
     @State private var usernameInput = ""
@@ -31,9 +32,7 @@ struct CommunityFeedView: View {
                     configMissingView
                 } else if communityAuth.isSigningIn {
                     signingInView
-                } else if !communityAuth.isAuthenticated {
-                    signedOutView
-                } else if communityAuth.needsProfileCreation {
+                } else if communityAuth.isAuthenticated && communityAuth.needsProfileCreation {
                     profileCreationView
                 } else {
                     feedView
@@ -74,6 +73,21 @@ struct CommunityFeedView: View {
                             .accessibilityLabel("Profil")
                         }
                     }
+                } else if !communityAuth.isAuthenticated && communityAuth.isCommunityAvailable {
+                    // Guest: show sign-in button in toolbar
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            Task { try? await communityAuth.signInWithApple() }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "apple.logo")
+                                Text("Giriş Yap")
+                                    .font(AppTypography.captionMedium)
+                            }
+                            .foregroundColor(AppColors.accentPrimary)
+                        }
+                        .accessibilityLabel("Apple ile Giriş Yap")
+                    }
                 }
             }
             .sheet(isPresented: $showProfile) {
@@ -90,11 +104,56 @@ struct CommunityFeedView: View {
             .sheet(isPresented: $showModeration) {
                 CommunityModerationView()
             }
-            .sheet(isPresented: $showPaywall) {
-                PaywallView(feature: .communityWrite)
+            .sheet(isPresented: $showSignInPrompt) {
+                signInPromptSheet
+            }
+            .sheet(item: $reportTarget) { target in
+                ReportReasonSheet(
+                    targetType: target.type,
+                    targetId: target.targetId,
+                    onDismiss: { reportTarget = nil }
+                )
             }
         }
         .environmentObject(communityAuth)
+    }
+
+    // MARK: - Sign-In Prompt Sheet
+    private var signInPromptSheet: some View {
+        NavigationStack {
+            VStack(spacing: AppSpacing.xl) {
+                Spacer()
+                Image(systemName: "person.crop.circle.badge.questionmark")
+                    .font(.system(size: 48, weight: .light))
+                    .foregroundColor(AppColors.accentPrimary)
+                Text("Topluluğa katılmak için Apple ile giriş yap.")
+                    .font(AppTypography.sectionTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                Button {
+                    showSignInPrompt = false
+                    Task { try? await communityAuth.signInWithApple() }
+                } label: {
+                    HStack {
+                        Image(systemName: "apple.logo")
+                        Text("Apple ile Giriş Yap")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.md)
+                }
+                .buttonStyle(.primary)
+                Spacer()
+            }
+            .padding(.horizontal, AppSpacing.screenMarginH)
+            .background(Color.appBackground)
+            .navigationTitle("Giriş Yap")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Kapat") { showSignInPrompt = false }
+                }
+            }
+        }
     }
 
     // MARK: - Config Missing
@@ -116,31 +175,29 @@ struct CommunityFeedView: View {
         .frame(maxHeight: .infinity)
     }
 
-    // MARK: - Signed Out
-
-    private var signedOutView: some View {
-        VStack(spacing: AppSpacing.xxl) {
+    // MARK: - Guest Banner (feed üzerinde)
+    private var guestBanner: some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: "person.crop.circle.badge.questionmark")
+                .foregroundColor(AppColors.accentPrimary)
+            Text("Topluluğa katılmak için Apple ile giriş yap.")
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textSecondary)
             Spacer()
-
-            EmptyStateView(
-                icon: "person.crop.circle.badge.questionmark",
-                title: "Topluluğa katıl",
-                description: "Topluluğu görmek için Apple ile giriş yap.",
-                actionTitle: "Apple ile Giriş Yap",
-                action: {
-                    Task { try? await communityAuth.signInWithApple() }
-                }
-            )
-
-            Spacer()
-
-            if let error = communityAuth.authError {
-                Text(error)
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.critical)
-                    .padding(.horizontal, AppSpacing.screenMarginH)
+            Button("Giriş Yap") {
+                Task { try? await communityAuth.signInWithApple() }
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .tint(AppColors.accentPrimary)
         }
+        .padding(AppSpacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.medium)
+                .fill(AppColors.accentPrimary.opacity(0.08))
+        )
+        .padding(.horizontal, AppSpacing.screenMarginH)
+        .padding(.top, AppSpacing.xs)
     }
 
     // MARK: - Profile Creation (inline)
@@ -253,6 +310,11 @@ struct CommunityFeedView: View {
 
     private var feedView: some View {
         VStack(spacing: 0) {
+            // Guest banner
+            if !communityAuth.isAuthenticated && communityAuth.isCommunityAvailable {
+                guestBanner
+            }
+
             // Filter chips
             CommunityFilterChips(selectedType: $selectedType, selectedTags: $selectedTags)
                 .padding(.vertical, AppSpacing.xs)
@@ -342,6 +404,10 @@ struct CommunityFeedView: View {
     }
 
     private func handleLike(_ post: CommunityPost) async {
+        guard communityAuth.isAuthenticated else {
+            showSignInPrompt = true
+            return
+        }
         do {
             let isLiked = try await CommunityService.shared.toggleLike(postId: post.id)
             if let index = posts.firstIndex(where: { $0.id == post.id }) {
@@ -354,6 +420,10 @@ struct CommunityFeedView: View {
     }
 
     private func handleSave(_ post: CommunityPost) async {
+        guard communityAuth.isAuthenticated else {
+            showSignInPrompt = true
+            return
+        }
         do {
             let isSaved = try await CommunityService.shared.toggleSave(postId: post.id)
             if let index = posts.firstIndex(where: { $0.id == post.id }) {
@@ -366,10 +436,18 @@ struct CommunityFeedView: View {
     }
 
     private func handleReport(_ post: CommunityPost) {
-        // Open report sheet — handled by PostCard context menu
+        guard communityAuth.isAuthenticated else {
+            showSignInPrompt = true
+            return
+        }
+        reportTarget = ReportTarget(type: "post", targetId: post.id)
     }
 
     private func handleBlock(_ post: CommunityPost) async {
+        guard communityAuth.isAuthenticated else {
+            showSignInPrompt = true
+            return
+        }
         do {
             try await CommunityModerationService.shared.blockUser(userId: post.authorId)
         } catch {
@@ -378,10 +456,10 @@ struct CommunityFeedView: View {
     }
 
     private func handleCreatePostTap() {
-        if paywallService.isPro || communityAuth.profile?.isPro == true {
+        if communityAuth.isAuthenticated {
             showCreatePost = true
         } else {
-            showPaywall = true
+            showSignInPrompt = true
         }
     }
 

@@ -199,22 +199,31 @@ final class CommunityRolePermissionTests: XCTestCase {
     }
 }
 
-// MARK: - Paywall Gate
+// MARK: - Auth Gate (forum writing is auth-gated, not Pro-gated)
 
-final class CommunityPaywallGateTests: XCTestCase {
-    #if DEBUG
-    func testFreeUserCannotCreatePost() {
-        let service = PaywallService(isProForTesting: false)
-        XCTAssertFalse(service.canCreateCommunityPost())
-        XCTAssertFalse(service.canWriteComment())
-    }
+final class CommunityAuthGateTests: XCTestCase {
+    // Forum yazma artık Pro gerektirmez — auth yeterlidir.
+    // canCreateCommunityPost() ve canWriteComment() kaldırıldı.
+    // Guest auth kontrolü CommunityAuthService üzerinden yapılır.
+    // Bu testler auth-gate modelinin doğru çalıştığını doğrular.
 
-    func testProUserCanCreatePost() {
-        let service = PaywallService(isProForTesting: true)
-        XCTAssertTrue(service.canCreateCommunityPost())
-        XCTAssertTrue(service.canWriteComment())
+    func testProGateStillAppliesToNonForumFeatures() {
+        let free = PaywallService(isProForTesting: false)
+        // Pro gate'ler forum dışı özelliklerde korunuyor
+        XCTAssertFalse(free.canCreateSaleFile())
+        XCTAssertFalse(free.canAccessAdvancedReports())
+        XCTAssertFalse(free.canCreateInspectionReport())
+        // Araç/belge limitleri korunuyor
+        XCTAssertFalse(free.canAddVehicle(currentCount: 1))
+        XCTAssertFalse(free.canAddDocument(currentCount: 5))
+
+        let pro = PaywallService(isProForTesting: true)
+        XCTAssertTrue(pro.canCreateSaleFile())
+        XCTAssertTrue(pro.canAccessAdvancedReports())
+        XCTAssertTrue(pro.canCreateInspectionReport())
+        XCTAssertTrue(pro.canAddVehicle(currentCount: 99))
+        XCTAssertTrue(pro.canAddDocument(currentCount: 500))
     }
-    #endif
 }
 
 // MARK: - Report Reason Mapping
