@@ -210,7 +210,7 @@ struct GarageView: View {
                         }
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
-                    .frame(height: 416)
+                    .frame(height: 392)
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
                     // Subtle page indicator
@@ -269,24 +269,18 @@ struct GarageView: View {
     /// Sadece kart içeriği; NavigationLink ve padding ayrı ayrı sarılır
     /// (tek araçta doğrudan, çoklu araçta TabView içinde).
     private func heroCardContent(vehicle: Vehicle) -> some View {
-        ZStack {
-            // Alt katman: shadow'lu arka plan (shape'e bağlı, clipping yok)
-            RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
-                .fill(Color.appSurface)
-                .shadow(color: AppColors.textPrimary.opacity(0.08), radius: 18, x: 0, y: 10)
-                .shadow(color: AppColors.textPrimary.opacity(0.035), radius: 4, x: 0, y: 1)
-
-            // Üst katman: içerik (clipped)
-            heroCardInner(vehicle: vehicle)
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
-                        .stroke(AppColors.border.opacity(0.42), lineWidth: 0.5)
-                )
-        }
-        .padding(.vertical, 12) // shadow taşması için alan
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("\\(vehicle.plate), \\(vehicle.fullName), \\(vehicle.odometerDisplay)")
+        heroCardInner(vehicle: vehicle)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
+                    .fill(Color.appSurface)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
+                    .stroke(AppColors.border.opacity(0.6), lineWidth: 0.5)
+            )
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("\\(vehicle.plate), \\(vehicle.fullName), \\(vehicle.odometerDisplay)")
     }
 
     private func heroCardInner(vehicle: Vehicle) -> some View {
