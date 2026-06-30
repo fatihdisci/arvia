@@ -10,7 +10,7 @@ enum ReminderRepeatRule: String, CaseIterable {
     case quarterly
     case biannual
     case yearly
-    case custom // UI'da gösterilmez, "yakında" olarak işaretlenir.
+    case custom // UI'da gösterilmez, özel periyot için ayrılmıştır.
 
     var displayName: String {
         switch self {
@@ -48,7 +48,7 @@ struct ReminderRepeatEngine {
         case .yearly:
             return calendar.date(byAdding: .year, value: 1, to: date)
         case .custom:
-            // "Yakında" — şimdilik güvenli nil dönüş.
+            // Özel periyot üretimde kapalı; güvenli nil dönüş.
             return nil
         }
     }

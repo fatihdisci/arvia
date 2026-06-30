@@ -31,7 +31,6 @@ struct SettingsView: View {
             Form {
                 // Pro / Abonelik
                 proSection
-                futureProRoadmapSection
 
                 // Bildirimler
                 notificationSection
@@ -119,57 +118,6 @@ struct SettingsView: View {
             Text("Plan")
         }
         .listRowBackground(Color.appSurface)
-    }
-
-    // MARK: - Future Pro Roadmap
-    private var futureProRoadmapSection: some View {
-        Section {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack(alignment: .top, spacing: AppSpacing.sm) {
-                    Image(systemName: "sparkles")
-                        .foregroundColor(AppColors.accentPrimary)
-                        .frame(width: 24)
-                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("Gelecek Pro özellikleri")
-                            .font(AppTypography.bodyMedium)
-                            .foregroundColor(AppColors.textPrimary)
-                        Text("Tek araç için mevcut temel özellikler ücretsiz ve reklamsız kalır. Pro yol haritası çoklu araç ve gelişmiş rehberlik üzerine kuruludur.")
-                            .font(AppTypography.caption)
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    roadmapRow("Arvia Rehber gelişmiş öneriler", icon: "lightbulb")
-                    roadmapRow("Belge/fatura akıllı okuma", icon: "doc.text.magnifyingglass")
-                    roadmapRow("Satış dosyası link/QR", icon: "qrcode")
-                    roadmapRow("Araç karşılaştırma", icon: "rectangle.split.2x1")
-                    roadmapRow("Business/Filo Lite", icon: "building.2")
-                }
-            }
-            .padding(.vertical, AppSpacing.xxs)
-        } header: {
-            Text("Yol Haritası")
-        } footer: {
-            Text("Bu özellikler gelecek planıdır; mevcut sürümde ödeme arkasında sunulan tek ana sınır ikinci ve sonraki araçlardır.")
-        }
-        .listRowBackground(Color.appSurface)
-    }
-
-    private func roadmapRow(_ title: LocalizedStringKey, icon: String) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Image(systemName: icon)
-                .foregroundColor(AppColors.textTertiary)
-                .frame(width: 22)
-            Text(title)
-                .font(AppTypography.secondary)
-                .foregroundColor(AppColors.textPrimary)
-            Spacer()
-            Text("Yakında")
-                .font(AppTypography.captionMedium)
-                .foregroundColor(AppColors.textTertiary)
-        }
-        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Notification Preferences (Retention)

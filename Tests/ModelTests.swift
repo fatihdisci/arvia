@@ -924,6 +924,28 @@ final class VehicleInsightServiceTests: XCTestCase {
         }
     }
 
+    func testVehicleInsightCopyDoesNotExposeRoadmapLanguage() {
+        let vehicleId = UUID()
+        let insights = service.insights(
+            for: Vehicle(id: vehicleId, fuelType: .diesel, transmissionType: .manual, currentOdometer: 42_000),
+            reminders: [],
+            expenses: [expense(vehicleId: vehicleId, amount: 100)],
+            serviceRecords: [serviceRecord(vehicleId: vehicleId)],
+            documents: [document(vehicleId: vehicleId)],
+            inspectionReports: [inspection(vehicleId: vehicleId)],
+            maxVisible: 10,
+            displayContext: .vehicleDetailGuide()
+        )
+        let blockedFragments = ["yakında", "gelecek", "ileride", "roadmap", "pro yakında"]
+
+        for insight in insights {
+            let copy = "\(insight.title) \(insight.body) \(insight.action.title)".lowercased()
+            for fragment in blockedFragments {
+                XCTAssertFalse(copy.contains(fragment), "Unexpected future-facing copy: \(fragment)")
+            }
+        }
+    }
+
     @MainActor
     func testKmUpdateRefreshPathCallsRefreshLogic() async throws {
         let container = try ModelContainer(

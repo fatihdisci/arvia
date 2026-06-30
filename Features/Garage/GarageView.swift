@@ -249,7 +249,7 @@ struct GarageView: View {
                     archivedSection
                 }
 
-                Spacer().frame(height: AppSpacing.xxl)
+                Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
             }
             .padding(.vertical, AppSpacing.md)
             .opacity(hasAppeared ? 1 : 0)
@@ -296,8 +296,12 @@ struct GarageView: View {
                 }
 
                 LinearGradient(
-                    colors: [.clear, .black.opacity(0.44)],
-                    startPoint: .center,
+                    colors: [
+                        .black.opacity(0.12),
+                        .black.opacity(0.2),
+                        .black.opacity(0.68)
+                    ],
+                    startPoint: .top,
                     endPoint: .bottom
                 )
 
@@ -305,12 +309,16 @@ struct GarageView: View {
                     Text(vehicle.nickname.isEmpty ? "Seçili araç" : vehicle.nickname)
                         .font(AppTypography.captionMedium)
                         .foregroundColor(.white.opacity(0.82))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                        .shadow(color: .black.opacity(0.45), radius: 6, x: 0, y: 2)
 
                     Text(vehicle.fullName.isEmpty ? "Araç dosyası" : vehicle.fullName)
                         .font(.system(size: 27, weight: .semibold))
                         .foregroundColor(.white)
                         .lineLimit(2)
                         .minimumScaleFactor(0.82)
+                        .shadow(color: .black.opacity(0.55), radius: 8, x: 0, y: 2)
                 }
                 .padding(AppSpacing.md)
             }

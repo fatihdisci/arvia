@@ -1,7 +1,7 @@
 import SwiftUI
 
 // MARK: - Yapılacaklar (Todos) Tab
-// Gelecekte yapılacak işler/hatırlatıcılar.
+// Yaklaşan işler/hatırlatıcılar.
 // Odak: "ne yapmam gerekiyor?"
 
 struct TodosView: View {

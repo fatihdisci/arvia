@@ -339,7 +339,7 @@ struct VehicleInsightService {
         case .automatic:
             body = "Otomatik vitesli araçlarda şanzıman bakım geçmişini kayıt altında tutmak faydalı olabilir."
         case .manual:
-            body = "Manuel araçlarda debriyajla ilgili bakım ve masraf kayıtlarını ayrı tutmak ileride faydalı olabilir."
+            body = "Manuel araçlarda debriyajla ilgili bakım ve masraf kayıtlarını ayrı tutmak kayıt düzenini güçlendirebilir."
         case .semiAutomatic:
             body = "Yarı otomatik araçlarda şanzıman ve debriyaj sistemiyle ilgili kayıtları ayrı tutmak faydalı olabilir."
         }

@@ -21,6 +21,7 @@ enum AppSpacing {
     static let screenMarginH: CGFloat = md     // 16 — ekran yatay margin (16-20)
     static let ctaSpacing: CGFloat = lg        // 24 — CTA çevresi
     static let largeGap: CGFloat = xl          // 32 — büyük bölüm arası
+    static let floatingTabBarContentInset: CGFloat = 72
 
     // MARK: Minimums
     static let minimumRowHeight: CGFloat = 52

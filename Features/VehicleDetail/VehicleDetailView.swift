@@ -143,7 +143,7 @@ struct VehicleDetailView: View {
                 // MARK: Vehicle Life Timeline
                 lifeTimelineSection
 
-                Spacer().frame(height: AppSpacing.xxl)
+                Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
             }
             .padding(.vertical, AppSpacing.md)
         }
@@ -286,35 +286,8 @@ struct VehicleDetailView: View {
                 }
             }
 
-            arviaGuideProTeaser
             arviaGuideDisclaimer
         }
-    }
-
-    private var arviaGuideProTeaser: some View {
-        HStack(alignment: .top, spacing: AppSpacing.sm) {
-            Image(systemName: "sparkles")
-                .foregroundColor(AppColors.accentPrimary)
-                .frame(width: 28)
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text("Arvia Rehber Pro yakında")
-                    .font(AppTypography.captionMedium)
-                    .foregroundColor(AppColors.textPrimary)
-                Text("Belgeleri özetleme, servis öncesi not hazırlama ve detaylı bakım önerileri ileride Arvia Pro ile sunulabilir.")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer()
-        }
-        .padding(AppSpacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.medium)
-                .fill(AppColors.accentPrimary.opacity(0.06))
-        )
-        .accessibilityElement(children: .combine)
     }
 
     private var arviaGuideDisclaimer: some View {
@@ -371,28 +344,28 @@ struct VehicleDetailView: View {
             }
 
             QuickActionRail(actions: [
-                .init(icon: "gauge.with.needle", label: "Km Güncelle", color: AppColors.vehicle) {
+                .init(icon: "gauge.with.needle", label: "Km", color: AppColors.vehicle) {
                     showQuickKmUpdate = true
                 },
-                .init(icon: "turkishlirasign.circle", label: "Masraf Ekle", color: AppColors.accentPrimary) {
+                .init(icon: "turkishlirasign.circle", label: "Masraf", color: AppColors.accentPrimary) {
                     showAddExpense = true
                 },
-                .init(icon: "fuelpump", label: "Yakıt Ekle", color: AppColors.warning) {
+                .init(icon: "fuelpump", label: "Yakıt", color: AppColors.warning) {
                     showAddFuelExpense = true
                 },
-                .init(icon: "doc.text.viewfinder", label: "Belge Ekle", color: AppColors.document) {
+                .init(icon: "doc.text.viewfinder", label: "Belge", color: AppColors.document) {
                     showAddDocument = true
                 },
-                .init(icon: "bell.badge", label: "Hatırlatıcı Ekle", color: AppColors.success) {
+                .init(icon: "bell.badge", label: "Hatırlatıcı", color: AppColors.success) {
                     showAddReminder = true
                 },
-            ])
+            ], style: .compact)
             .padding(.horizontal, -AppSpacing.screenMarginH)
         }
-        .padding(AppSpacing.sm)
+        .padding(AppSpacing.xs)
         .background(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .fill(AppColors.backgroundSecondary.opacity(0.7))
+                .fill(AppColors.backgroundSecondary.opacity(0.48))
         )
     }
 
@@ -623,23 +596,23 @@ struct VehicleDetailView: View {
     private var fileCompletenessCard: some View {
         let score = computeFileScore()
 
-        return VStack(alignment: .leading, spacing: AppSpacing.md) {
+        return VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(alignment: .center, spacing: AppSpacing.md) {
                 ZStack {
                     Circle()
-                        .stroke(scoreColor(score).opacity(0.16), lineWidth: 7)
-                        .frame(width: 66, height: 66)
+                        .stroke(scoreColor(score).opacity(0.12), lineWidth: 4)
+                        .frame(width: 58, height: 58)
 
                     Circle()
                         .trim(from: 0, to: CGFloat(score) / 100.0)
-                        .stroke(scoreColor(score), style: StrokeStyle(lineWidth: 7, lineCap: .round))
-                        .frame(width: 66, height: 66)
+                        .stroke(scoreColor(score).opacity(0.82), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .frame(width: 58, height: 58)
                         .rotationEffect(.degrees(-90))
                         .animation(.easeOut(duration: 0.75), value: score)
 
                     Text("%\(score)")
-                        .font(AppTypography.cardTitleSmall)
-                        .foregroundColor(scoreColor(score))
+                        .font(AppTypography.captionMedium)
+                        .foregroundColor(AppColors.textPrimary)
                 }
 
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
@@ -661,16 +634,15 @@ struct VehicleDetailView: View {
                 completenessChip(icon: "doc.text", title: documents.isEmpty ? "Belge bekliyor" : "Belge var", isComplete: !documents.isEmpty)
             }
         }
-        .padding(AppSpacing.md)
+        .padding(AppSpacing.sm)
         .background(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .fill(AppColors.accentPrimary.opacity(0.055))
+                .fill(Color.appSurface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.accentPrimary.opacity(0.12), lineWidth: 1)
+                .stroke(scoreColor(score).opacity(0.1), lineWidth: 1)
         )
-        .subtleShadow()
     }
 
     private func completenessChip(icon: String, title: String, isComplete: Bool) -> some View {
@@ -680,10 +652,10 @@ struct VehicleDetailView: View {
             .lineLimit(1)
             .minimumScaleFactor(0.78)
             .padding(.horizontal, AppSpacing.xs)
-            .padding(.vertical, 6)
+            .padding(.vertical, 5)
             .background(
                 Capsule()
-                    .fill((isComplete ? AppColors.success : AppColors.textTertiary).opacity(0.1))
+                    .fill((isComplete ? AppColors.success : AppColors.textTertiary).opacity(0.075))
             )
     }
 
@@ -1059,14 +1031,23 @@ struct VehicleDetailView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             SectionHeader(title: "Araç Yaşam Çizgisi")
 
-            VStack(spacing: 0) {
-                let events = buildTimelineEvents()
+            VStack(spacing: AppSpacing.xs) {
+                let allEvents = buildTimelineEvents()
+                let events = Array(allEvents.suffix(8))
                 ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
                     timelineItem(
                         event: event,
                         isFirst: index == 0,
                         isLast: index == events.count - 1
                     )
+                }
+
+                if allEvents.count > events.count {
+                    Text("En güncel \(events.count) kayıt gösteriliyor.")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, AppSpacing.xs)
                 }
 
                 if events.isEmpty {
@@ -1087,9 +1068,12 @@ struct VehicleDetailView: View {
             .padding(AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: AppRadius.card)
-                    .fill(Color.appSurface)
+                    .fill(AppColors.backgroundSecondary.opacity(0.52))
             )
-            .subtleShadow()
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.card)
+                    .stroke(AppColors.border.opacity(0.6), lineWidth: 1)
+            )
             .padding(.horizontal, AppSpacing.screenMarginH)
 
             if serviceRecords.isEmpty {
@@ -1166,7 +1150,6 @@ struct VehicleDetailView: View {
         isLast: Bool
     ) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
-            // Timeline çizgi + nokta
             VStack(spacing: 0) {
                 if !isFirst {
                     Rectangle()
@@ -1176,12 +1159,17 @@ struct VehicleDetailView: View {
                     Spacer().frame(height: 4)
                 }
 
-                Circle()
-                    .fill(event.isMilestone ? AppColors.accentPrimary : AppColors.border)
-                    .frame(width: event.isMilestone ? 12 : 8, height: event.isMilestone ? 12 : 8)
+                Image(systemName: event.icon)
+                    .font(.system(size: event.isMilestone ? 12 : 10, weight: .semibold))
+                    .foregroundColor(event.isMilestone ? .white : AppColors.textSecondary)
+                    .frame(width: event.isMilestone ? 28 : 24, height: event.isMilestone ? 28 : 24)
+                    .background(
+                        Circle()
+                            .fill(event.isMilestone ? AppColors.accentPrimary : Color.appSurface)
+                    )
                     .overlay(
-                        event.isMilestone ?
-                        Circle().stroke(AppColors.accentPrimary.opacity(0.3), lineWidth: 3) : nil
+                        Circle()
+                            .stroke(event.isMilestone ? AppColors.accentPrimary.opacity(0.24) : AppColors.border.opacity(0.8), lineWidth: 1)
                     )
 
                 if !isLast {
@@ -1193,7 +1181,6 @@ struct VehicleDetailView: View {
                 }
             }
 
-            // İçerik
             VStack(alignment: .leading, spacing: 2) {
                 Text(event.title)
                     .font(event.isMilestone ? AppTypography.bodyMedium : AppTypography.secondary)

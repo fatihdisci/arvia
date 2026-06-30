@@ -45,7 +45,7 @@ struct DosyaniTamamlaChecklist: View {
                 checklistItem(
                     icon: "checkmark.seal",
                     title: "Muayene tarihi",
-                    subtitle: "Gelecek muayene tarihini Yapılacaklar'a ekle",
+                    subtitle: "Yaklaşan muayene tarihini Yapılacaklar'a ekle",
                     done: hasInspectionReminder,
                     action: { reminderType = .inspection; showReminderForm = true }
                 )

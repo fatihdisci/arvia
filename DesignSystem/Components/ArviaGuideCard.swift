@@ -19,28 +19,19 @@ struct ArviaGuideCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
             HStack(alignment: .top, spacing: AppSpacing.sm) {
-                VStack(spacing: AppSpacing.xxs) {
-                    Image(systemName: iconName)
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(priorityColor)
-                        .frame(width: 38, height: 38)
-                        .background(
-                            Circle()
-                                .fill(priorityColor.opacity(0.12))
-                        )
-                        .accessibilityHidden(true)
-
-                    RoundedRectangle(cornerRadius: AppRadius.capsule)
-                        .fill(priorityColor.opacity(0.24))
-                        .frame(width: 2, height: 28)
-                }
+                Image(systemName: iconName)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(priorityColor)
+                    .frame(width: 34, height: 34)
+                    .background(
+                        Circle()
+                            .fill(priorityColor.opacity(0.1))
+                    )
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("Rehber notu")
-                        .font(AppTypography.captionMedium)
-                        .foregroundColor(priorityColor)
                     Text(insight.title)
                         .font(AppTypography.bodyMedium)
                         .foregroundColor(AppColors.textPrimary)
@@ -49,18 +40,19 @@ struct ArviaGuideCard: View {
                     Text(insight.body)
                         .font(AppTypography.secondarySmall)
                         .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: AppSpacing.xs)
             }
 
-            HStack(spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.xs) {
                 Button(action: primaryAction) {
                     Label(insight.action.title, systemImage: actionIconName)
                         .font(AppTypography.captionMedium)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(AppColors.accentPrimary)
@@ -70,7 +62,7 @@ struct ArviaGuideCard: View {
 
                 if let dismissAction {
                     Button(action: dismissAction) {
-                        Label("Daha sonra", systemImage: "clock")
+                        Text("Daha sonra")
                             .font(AppTypography.captionMedium)
                     }
                     .buttonStyle(.plain)
@@ -79,14 +71,14 @@ struct ArviaGuideCard: View {
                 }
             }
         }
-        .padding(AppSpacing.md)
+        .padding(AppSpacing.sm)
         .background(
             RoundedRectangle(cornerRadius: AppRadius.card)
                 .fill(
                     LinearGradient(
                         colors: [
                             Color.appSurface,
-                            priorityColor.opacity(0.055),
+                            priorityColor.opacity(0.04),
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -95,9 +87,8 @@ struct ArviaGuideCard: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(priorityColor.opacity(insight.priority == .info ? 0.14 : 0.28), lineWidth: 1)
+                .stroke(priorityColor.opacity(insight.priority == .info ? 0.1 : 0.2), lineWidth: 1)
         )
-        .subtleShadow()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(insight.title). \(insight.body). \(insight.action.title)")
     }

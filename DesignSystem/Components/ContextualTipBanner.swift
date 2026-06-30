@@ -93,7 +93,7 @@ enum ContextualTips {
             tipKey: "test_tip",
             icon: "lightbulb",
             title: "Burayı biliyor musun?",
-            message: "Burada gelecekte yapman gereken işleri görürsün. Muayene, sigorta ve bakım tarihlerini ekleyebilirsin."
+            message: "Burada yaklaşan işleri görürsün. Muayene, sigorta ve bakım tarihlerini ekleyebilirsin."
         )
     }
     .padding(.vertical)
