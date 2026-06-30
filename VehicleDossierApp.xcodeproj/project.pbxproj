@@ -109,6 +109,8 @@
 		938026983DF74919BBB96424 /* DataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09A32A70BC64A4EA0A3A0E4 /* DataExportService.swift */; };
 		F86C454CA71F4ECA9B06D43C /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFEF2F33804411F9FE8E65D /* ShareSheet.swift */; };
 		47BEBA6379DF4E79B5CA2759 /* DataExportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A549B5834CF84A9FB6B40BF9 /* DataExportServiceTests.swift */; };
+		5D6B29EE702641628D020614 /* InsightSnoozeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BD3256A3EC4846BA2BB240 /* InsightSnoozeStore.swift */; };
+		C32ADF231A8F497281953818 /* InsightSnoozeStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1596A40B83B44069AB02AE67 /* InsightSnoozeStoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -228,6 +230,8 @@
 		C09A32A70BC64A4EA0A3A0E4 /* DataExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/DataExportService.swift"; sourceTree = SOURCE_ROOT; };
 		0AFEF2F33804411F9FE8E65D /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Features/Settings/ShareSheet.swift"; sourceTree = SOURCE_ROOT; };
 		A549B5834CF84A9FB6B40BF9 /* DataExportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/DataExportServiceTests.swift"; sourceTree = SOURCE_ROOT; };
+		A3BD3256A3EC4846BA2BB240 /* InsightSnoozeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/InsightSnoozeStore.swift"; sourceTree = SOURCE_ROOT; };
+		1596A40B83B44069AB02AE67 /* InsightSnoozeStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/InsightSnoozeStoreTests.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -676,6 +680,9 @@
 				CCAT0006CCAT0006CCAT0006 /* CarCatalog.tr.json in Resources */,
 				8C7FFCB7FFF845AA8EE42147 /* ShareSheet.swift in Sources */,
 				F86C454CA71F4ECA9B06D43C /* ShareSheet.swift in Sources */,
+				5D6B29EE702641628D020614 /* InsightSnoozeStore.swift in Sources */,
+				938026983DF74919BBB96424 /* DataExportService.swift in Sources */,
+				C32ADF231A8F497281953818 /* InsightSnoozeStoreTests.swift in Sources */,
 );
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -776,8 +783,9 @@
 				BAF1DFDCDD3E58F7E9441214 /* CommunityAuthService.swift in Sources */,
 				71DD89397F1ADA6DFD3236EE /* SupabaseClientProvider.swift in Sources */,
 				5AA1F995EAC2702BA402B5E0 /* SupabaseConfig.swift in Sources */,
-							8C7FFCB7FFF845AA8EE42147 /* ShareSheet.swift in Sources */,
 				F86C454CA71F4ECA9B06D43C /* ShareSheet.swift in Sources */,
+				5D6B29EE702641628D020614 /* InsightSnoozeStore.swift in Sources */,
+				938026983DF74919BBB96424 /* DataExportService.swift in Sources */,
 );
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -786,7 +794,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				C8FCA87C42B54C109FB322DD /* ModelTests.swift in Sources */,
-			);
+							C32ADF231A8F497281953818 /* InsightSnoozeStoreTests.swift in Sources */,
+);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */

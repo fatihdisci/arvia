@@ -36,6 +36,7 @@ struct VehicleDetailView: View {
     @State private var showDocumentPreview = false
     @State private var previewDocumentURL: URL?
     @State private var dismissedGuideInsightIDs: Set<String> = []
+    private let snoozeStore = InsightSnoozeStore()
 
     // Filtered data
     private var reminders: [Reminder] {
@@ -88,6 +89,7 @@ struct VehicleDetailView: View {
             displayContext: .vehicleDetailGuide(excludingReminderIds: Set(upcomingTasks.map(\.reminderId)))
         )
         .filter { !dismissedGuideInsightIDs.contains($0.id) }
+        .filter { !snoozeStore.isSnoozed(vehicleId: vehicle.id, insightId: $0.id) }
     }
 
     private var upcomingTasks: [VehicleUpcomingTask] {
@@ -234,6 +236,9 @@ struct VehicleDetailView: View {
         } message: {
             Text("Bu işlem geri alınamaz. Araca ait tüm hatırlatıcılar, masraflar, bakım kayıtları, belgeler ve ekspertiz raporları kalıcı olarak silinir.")
         }
+        .task {
+            snoozeStore.removeExpired()
+        }
     }
 
     // MARK: - Arvia Rehber
@@ -280,6 +285,7 @@ struct VehicleDetailView: View {
                             primaryAction: { handleGuideAction(insight.action) },
                             dismissAction: {
                                 dismissedGuideInsightIDs.insert(insight.id)
+                                snoozeStore.snooze(vehicleId: vehicle.id, insight: insight)
                             }
                         )
                     }

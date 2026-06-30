@@ -532,6 +532,7 @@ struct GarageView: View {
             documents: documents(for: vehicle),
             inspectionReports: inspectionReports(for: vehicle)
         )
+        .filter { !InsightSnoozeStore().isSnoozed(vehicleId: vehicle.id, insightId: $0.id) }
 
         return VStack(alignment: .leading, spacing: AppSpacing.sm) {
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
