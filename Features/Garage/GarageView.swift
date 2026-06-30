@@ -210,7 +210,7 @@ struct GarageView: View {
                         }
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
-                    .frame(height: 392)
+                    .frame(height: 416)
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
                     // Subtle page indicator
@@ -270,7 +270,7 @@ struct GarageView: View {
     /// (tek araçta doğrudan, çoklu araçta TabView içinde).
     private func heroCardContent(vehicle: Vehicle) -> some View {
         ZStack {
-            // Alt katman: shadow'lu arka plan (clipped DEĞİL, shape'e bağlı)
+            // Alt katman: shadow'lu arka plan (shape'e bağlı, clipping yok)
             RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
                 .fill(Color.appSurface)
                 .shadow(color: AppColors.textPrimary.opacity(0.08), radius: 18, x: 0, y: 10)
@@ -284,6 +284,7 @@ struct GarageView: View {
                         .stroke(AppColors.border.opacity(0.42), lineWidth: 0.5)
                 )
         }
+        .padding(.vertical, 12) // shadow taşması için alan
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\\(vehicle.plate), \\(vehicle.fullName), \\(vehicle.odometerDisplay)")
     }
