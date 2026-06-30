@@ -962,11 +962,22 @@ struct VehicleDetailView: View {
                 )
                 .padding(.horizontal, AppSpacing.screenMarginH)
             } else {
-                // Son 3 kayıt (masraf + bakım karışık, tarihe göre)
                 let recentItems = recentRecords()
-                ForEach(recentItems.prefix(3)) { item in
-                    recentRecordRow(item)
+                VStack(spacing: AppSpacing.xs) {
+                    ForEach(recentItems.prefix(3)) { item in
+                        recentRecordRow(item)
+                    }
                 }
+                .padding(AppSpacing.xs)
+                .background(
+                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                        .fill(Color.appSurface)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                        .stroke(AppColors.border.opacity(0.42), lineWidth: 0.5)
+                )
+                .padding(.horizontal, AppSpacing.screenMarginH)
             }
         }
     }
@@ -1002,17 +1013,23 @@ struct VehicleDetailView: View {
     private func recentRecordRow(_ item: RecentRecordItem) -> some View {
         HStack(spacing: AppSpacing.sm) {
             Image(systemName: item.icon)
-                .font(.body)
+                .font(.subheadline.weight(.semibold))
                 .foregroundColor(AppColors.accentPrimary)
-                .frame(width: 28)
+                .frame(width: 34, height: 34)
+                .background(
+                    Circle()
+                        .fill(AppColors.accentPrimary.opacity(0.08))
+                )
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text(item.title)
-                    .font(AppTypography.secondary)
+                    .font(AppTypography.bodyMedium)
                     .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(1)
                 Text(item.subtitle)
                     .font(AppTypography.caption)
                     .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(1)
             }
 
             Spacer()
@@ -1020,9 +1037,13 @@ struct VehicleDetailView: View {
             Text(item.date.formatted(date: .numeric, time: .omitted))
                 .font(AppTypography.caption)
                 .foregroundColor(AppColors.textTertiary)
+                .monospacedDigit()
         }
-        .padding(.horizontal, AppSpacing.screenMarginH)
-        .padding(.vertical, AppSpacing.xs)
+        .padding(AppSpacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+                .fill(AppColors.backgroundSecondary.opacity(0.42))
+        )
     }
 
     // MARK: - Vehicle Life Timeline
@@ -1067,12 +1088,12 @@ struct VehicleDetailView: View {
             }
             .padding(AppSpacing.md)
             .background(
-                RoundedRectangle(cornerRadius: AppRadius.card)
-                    .fill(AppColors.backgroundSecondary.opacity(0.52))
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .fill(Color.appSurface)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.card)
-                    .stroke(AppColors.border.opacity(0.6), lineWidth: 1)
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .stroke(AppColors.border.opacity(0.45), lineWidth: 0.5)
             )
             .padding(.horizontal, AppSpacing.screenMarginH)
 
@@ -1153,8 +1174,8 @@ struct VehicleDetailView: View {
             VStack(spacing: 0) {
                 if !isFirst {
                     Rectangle()
-                        .fill(event.isMilestone ? AppColors.accentPrimary.opacity(0.3) : AppColors.border)
-                        .frame(width: 2, height: 14)
+                        .fill(event.isMilestone ? AppColors.accentPrimary.opacity(0.28) : AppColors.border.opacity(0.72))
+                        .frame(width: 1.5, height: 12)
                 } else {
                     Spacer().frame(height: 4)
                 }
@@ -1174,34 +1195,46 @@ struct VehicleDetailView: View {
 
                 if !isLast {
                     Rectangle()
-                        .fill(AppColors.border)
-                        .frame(width: 2, height: 14)
+                        .fill(AppColors.border.opacity(0.72))
+                        .frame(width: 1.5, height: 16)
                 } else {
                     Spacer().frame(height: 4)
                 }
             }
+            .frame(width: 30)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(event.title)
-                    .font(event.isMilestone ? AppTypography.bodyMedium : AppTypography.secondary)
-                    .foregroundColor(event.isMilestone ? AppColors.accentPrimary : AppColors.textPrimary)
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(event.title)
+                        .font(event.isMilestone ? AppTypography.bodyMedium : AppTypography.secondary)
+                        .foregroundColor(event.isMilestone ? AppColors.accentPrimary : AppColors.textPrimary)
+                        .lineLimit(2)
 
-                if let subtitle = event.subtitle, !subtitle.isEmpty {
-                    Text(subtitle)
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                    if let subtitle = event.subtitle, !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                            .lineLimit(1)
+                    }
                 }
+
+                Spacer(minLength: AppSpacing.xs)
 
                 if let date = event.date {
                     Text(date.formatted(date: .abbreviated, time: .omitted))
                         .font(AppTypography.caption)
                         .foregroundColor(AppColors.textTertiary)
+                        .lineLimit(1)
+                        .monospacedDigit()
                 }
             }
-
-            Spacer()
         }
+        .padding(AppSpacing.xs)
         .frame(minHeight: AppSpacing.minimumTapTarget)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+                .fill(event.isMilestone ? AppColors.accentPrimary.opacity(0.055) : AppColors.backgroundSecondary.opacity(0.35))
+        )
     }
 
     // MARK: - Score Helpers

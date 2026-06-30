@@ -269,134 +269,144 @@ struct GarageView: View {
     /// Sadece kart içeriği; NavigationLink ve padding ayrı ayrı sarılır
     /// (tek araçta doğrudan, çoklu araçta TabView içinde).
     private func heroCardContent(vehicle: Vehicle) -> some View {
-        VStack(spacing: 0) {
-            ZStack(alignment: .bottomLeading) {
-                if let photoFileName = vehicle.photoFileName,
-                   let image = VehiclePhotoStorageService.shared.loadPhoto(fileName: photoFileName) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(height: 190)
-                        .clipped()
-                } else {
-                    LinearGradient(
-                        colors: [
-                            AppColors.vehicle.opacity(0.96),
-                            AppColors.accentPrimary.opacity(0.78),
-                            AppColors.backgroundSecondary
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-
-                    Image(systemName: vehicle.vehicleType.heroSymbol)
-                        .font(.system(size: 64, weight: .ultraLight))
-                        .foregroundColor(.white.opacity(0.42))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                }
-
-                LinearGradient(
-                    colors: [
-                        .black.opacity(0.12),
-                        .black.opacity(0.2),
-                        .black.opacity(0.68)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(vehicle.nickname.isEmpty ? "Seçili araç" : vehicle.nickname)
-                        .font(AppTypography.captionMedium)
-                        .foregroundColor(.white.opacity(0.82))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
-                        .shadow(color: .black.opacity(0.45), radius: 6, x: 0, y: 2)
-
-                    Text(vehicle.fullName.isEmpty ? "Araç dosyası" : vehicle.fullName)
-                        .font(.system(size: 27, weight: .semibold))
-                        .foregroundColor(.white)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.82)
-                        .shadow(color: .black.opacity(0.55), radius: 8, x: 0, y: 2)
-                }
-                .padding(AppSpacing.md)
-            }
-            .frame(height: 190)
-            .clipShape(
-                UnevenRoundedRectangle(
-                    topLeadingRadius: AppRadius.heroCard,
-                    bottomLeadingRadius: 0,
-                    bottomTrailingRadius: 0,
-                    topTrailingRadius: AppRadius.heroCard
-                )
-            )
-
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack(alignment: .center, spacing: AppSpacing.sm) {
-                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text(vehicle.plate.isEmpty ? "Plaka yok" : vehicle.plate)
-                            .font(.system(size: 18, weight: .semibold, design: .monospaced))
-                            .tracking(1.2)
-                            .foregroundColor(AppColors.textPrimary)
-                            .lineLimit(1)
-
-                        if let year = vehicle.year {
-                            Text("\(year) · \(vehicle.vehicleType.displayName)")
-                                .font(AppTypography.caption)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                    }
-
-                    Spacer()
-
-                    statusPill(for: vehicle)
-                }
-
-                HStack(spacing: AppSpacing.sm) {
-                    infoBadge(icon: "gauge.with.needle", text: vehicle.odometerDisplay)
-                    infoBadge(icon: "fuelpump", text: vehicle.fuelType.displayName)
-                    if let trans = vehicle.transmissionType {
-                        infoBadge(
-                            icon: trans == .automatic ? "a.circle" : "m.circle",
-                            text: trans.displayName
-                        )
-                    }
-                }
-
-                if let reminder = upcomingReminder(for: vehicle) {
-                    HStack(spacing: AppSpacing.xs) {
-                        Image(systemName: reminder.isOverdue ? "exclamationmark.triangle.fill" : "bell.badge")
-                            .font(.caption)
-                            .foregroundColor(reminder.isOverdue ? AppColors.critical : AppColors.warning)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(reminder.isOverdue ? "Öncelik istiyor" : "Sıradaki önemli iş")
-                                .font(AppTypography.caption)
-                                .foregroundColor(AppColors.textTertiary)
-                            Text(reminder.title.isEmpty ? reminder.type.displayName : reminder.title)
-                                .font(AppTypography.captionMedium)
-                                .foregroundColor(AppColors.textPrimary)
-                                .lineLimit(1)
-                        }
-                        Spacer()
-                    }
-                    .padding(AppSpacing.sm)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppRadius.medium)
-                            .fill((reminder.isOverdue ? AppColors.critical : AppColors.warning).opacity(0.08))
-                    )
-                }
-            }
-            .padding(AppSpacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        heroCardInner(vehicle: vehicle)
         .background(
             RoundedRectangle(cornerRadius: AppRadius.heroCard)
                 .fill(Color.appSurface)
         )
-        .elevatedShadow()
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
+                .stroke(AppColors.border.opacity(0.42), lineWidth: 0.5)
+        )
+        .shadow(color: AppColors.textPrimary.opacity(0.08), radius: 18, x: 0, y: 10)
+        .shadow(color: AppColors.textPrimary.opacity(0.035), radius: 4, x: 0, y: 1)
+        .compositingGroup()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(vehicle.plate), \(vehicle.fullName), \(vehicle.odometerDisplay)")
+    }
+
+    private func heroCardInner(vehicle: Vehicle) -> some View {
+        VStack(spacing: 0) {
+            heroImageArea(vehicle: vehicle)
+            heroMetadataArea(vehicle: vehicle)
+        }
+    }
+
+    private func heroImageArea(vehicle: Vehicle) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            if let photoFileName = vehicle.photoFileName,
+               let image = VehiclePhotoStorageService.shared.loadPhoto(fileName: photoFileName) {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(height: 190)
+                    .clipped()
+            } else {
+                LinearGradient(
+                    colors: [
+                        AppColors.vehicle.opacity(0.96),
+                        AppColors.accentPrimary.opacity(0.78),
+                        AppColors.backgroundSecondary
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                Image(systemName: vehicle.vehicleType.heroSymbol)
+                    .font(.system(size: 64, weight: .ultraLight))
+                    .foregroundColor(.white.opacity(0.42))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            }
+
+            LinearGradient(
+                colors: [
+                    .black.opacity(0.12),
+                    .black.opacity(0.2),
+                    .black.opacity(0.68)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(vehicle.nickname.isEmpty ? "Seçili araç" : vehicle.nickname)
+                    .font(AppTypography.captionMedium)
+                    .foregroundColor(.white.opacity(0.82))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .shadow(color: .black.opacity(0.45), radius: 6, x: 0, y: 2)
+
+                Text(vehicle.fullName.isEmpty ? "Araç dosyası" : vehicle.fullName)
+                    .font(.system(size: 27, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+                    .shadow(color: .black.opacity(0.55), radius: 8, x: 0, y: 2)
+            }
+            .padding(AppSpacing.md)
+        }
+        .frame(height: 190)
+    }
+
+    private func heroMetadataArea(vehicle: Vehicle) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(alignment: .center, spacing: AppSpacing.sm) {
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text(vehicle.plate.isEmpty ? "Plaka yok" : vehicle.plate)
+                        .font(.system(size: 17, weight: .semibold, design: .monospaced))
+                        .tracking(1.0)
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(1)
+
+                    if let year = vehicle.year {
+                        Text("\(year) · \(vehicle.vehicleType.displayName)")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                }
+
+                Spacer()
+
+                statusPill(for: vehicle)
+            }
+
+            HStack(spacing: AppSpacing.xs) {
+                infoBadge(icon: "gauge.with.needle", text: vehicle.odometerDisplay)
+                infoBadge(icon: "fuelpump", text: vehicle.fuelType.displayName)
+                if let trans = vehicle.transmissionType {
+                    infoBadge(
+                        icon: trans == .automatic ? "a.circle" : "m.circle",
+                        text: trans.displayName
+                    )
+                }
+            }
+
+            if let reminder = upcomingReminder(for: vehicle) {
+                HStack(spacing: AppSpacing.xs) {
+                    Image(systemName: reminder.isOverdue ? "exclamationmark.triangle.fill" : "bell.badge")
+                        .font(.caption)
+                        .foregroundColor(reminder.isOverdue ? AppColors.critical : AppColors.warning)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(reminder.isOverdue ? "Öncelik istiyor" : "Sıradaki önemli iş")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                        Text(reminder.title.isEmpty ? reminder.type.displayName : reminder.title)
+                            .font(AppTypography.captionMedium)
+                            .foregroundColor(AppColors.textPrimary)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                }
+                .padding(AppSpacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+                        .fill((reminder.isOverdue ? AppColors.critical : AppColors.warning).opacity(0.075))
+                )
+            }
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func statusPill(for vehicle: Vehicle) -> some View {
@@ -408,7 +418,11 @@ struct GarageView: View {
             .padding(.vertical, 7)
             .background(
                 Capsule()
-                    .fill((score >= 80 ? AppColors.success : AppColors.accentPrimary).opacity(0.1))
+                    .fill((score >= 80 ? AppColors.success : AppColors.accentPrimary).opacity(0.085))
+            )
+            .overlay(
+                Capsule()
+                    .stroke((score >= 80 ? AppColors.success : AppColors.accentPrimary).opacity(0.12), lineWidth: 0.5)
             )
             .accessibilityLabel("Dosya tamlığı yüzde \(score)")
     }
@@ -425,7 +439,7 @@ struct GarageView: View {
         .padding(.vertical, 5)
         .background(
             Capsule()
-                .fill(AppColors.backgroundSecondary)
+                .fill(AppColors.backgroundSecondary.opacity(0.82))
         )
     }
 

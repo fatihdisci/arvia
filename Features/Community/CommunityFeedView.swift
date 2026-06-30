@@ -211,7 +211,7 @@ struct CommunityFeedView: View {
     private var profileCreationView: some View {
         ScrollView {
             VStack(spacing: AppSpacing.lg) {
-                Spacer().frame(height: AppSpacing.xl)
+                Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
 
                 VStack(spacing: AppSpacing.xs) {
                     Image(systemName: "person.crop.circle.badge.plus")

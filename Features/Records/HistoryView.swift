@@ -258,6 +258,7 @@ struct HistoryView: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
+        .safeAreaPadding(.bottom, AppSpacing.floatingTabBarContentInset)
     }
 
     // MARK: - Timeline (Tümü)

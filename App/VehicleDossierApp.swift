@@ -130,6 +130,11 @@ struct VehicleDossierApp: App {
                 .environmentObject(navigationRouter)
                 .environment(\.locale, Locale(identifier: "tr_TR"))
                 .task {
+                    #if DEBUG
+                    if ProcessInfo.processInfo.arguments.contains("-ArviaSeedDemoData") {
+                        DemoDataSeeder.seed(context: modelContainer.mainContext)
+                    }
+                    #endif
                     navigationRouter.configureNotificationDelegate()
                     NotificationService.shared.clearBadge()
                     await communityAuthService.restoreSession()

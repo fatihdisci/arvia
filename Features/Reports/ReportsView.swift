@@ -162,7 +162,7 @@ struct ReportsView: View {
                 // Sale file CTA
                 saleFileCTA
 
-                Spacer().frame(height: AppSpacing.xxl)
+                Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
             }
             .padding(.vertical, AppSpacing.md)
         }
