@@ -240,26 +240,16 @@ struct VehicleDetailView: View {
 
     // MARK: - Detail Hero
     private var vehicleDetailHero: some View {
-        VStack(spacing: 0) {
-            detailHeroPhotoArea
-            detailHeroInfoArea
+        VStack(spacing: AppSpacing.md) {
+            detailHeroPhotoCard
+            detailHeroInfoCard
         }
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
-                .fill(Color.appSurface)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
-        )
-        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
         .padding(.horizontal, AppSpacing.screenMarginH)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(vehicle.plate), \(vehicle.fullName), \(vehicle.odometerDisplay)")
     }
 
-    private var detailHeroPhotoArea: some View {
+    private var detailHeroPhotoCard: some View {
         ZStack {
             if let photoFileName = vehicle.photoFileName,
                let image = VehiclePhotoStorageService.shared.loadPhoto(fileName: photoFileName) {
@@ -289,16 +279,15 @@ struct VehicleDetailView: View {
         }
         .frame(height: 200)
         .frame(maxWidth: .infinity)
-        // Sadece üst köşeler yuvarlatılmış, alt köşeler info alanıyla bitişik.
-        .clipShape(UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(
-            topLeading: AppRadius.heroCard,
-            bottomLeading: 0,
-            bottomTrailing: 0,
-            topTrailing: AppRadius.heroCard
-        ), style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+        )
+        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
     }
 
-    private var detailHeroInfoArea: some View {
+    private var detailHeroInfoCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             // Satır 1: kimlik (fullName/nickname + plaka yan yana)
             HStack(alignment: .top, spacing: AppSpacing.md) {
@@ -356,12 +345,12 @@ struct VehicleDetailView: View {
         .padding(AppSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
                 .fill(Color.appSurface)
         )
         .cardShadow()
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
                 .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
     }
