@@ -117,7 +117,7 @@ struct PremiumMetricHero: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
-                .stroke(AppColors.border.opacity(0.45), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
         .padding(.horizontal, AppSpacing.screenMarginH)
         .opacity(appeared ? 1 : 0)

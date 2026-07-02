@@ -112,7 +112,7 @@ struct ReminderListView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
-                .stroke(AppColors.border.opacity(0.42), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Önümüzdeki 30 gün: \(next30DaysCount) hatırlatıcı. Geciken: \(overdueCount). Bugün: \(todayCount).")

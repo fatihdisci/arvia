@@ -251,7 +251,7 @@ struct VehicleDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
-                .stroke(AppColors.border.opacity(0.50), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
         .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
         .padding(.horizontal, AppSpacing.screenMarginH)
@@ -362,7 +362,7 @@ struct VehicleDetailView: View {
         .cardShadow()
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.5), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
     }
 
@@ -490,7 +490,7 @@ struct VehicleDetailView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                        .stroke(AppColors.border.opacity(0.42), lineWidth: 0.5)
+                        .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
                 )
             } else {
                 VStack(spacing: AppSpacing.xs) {
@@ -584,7 +584,7 @@ struct VehicleDetailView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.45), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
     }
 
@@ -701,7 +701,7 @@ struct VehicleDetailView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.42), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
         .accessibilityElement(children: .combine)
     }
@@ -785,7 +785,7 @@ struct VehicleDetailView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.42), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
     }
 
@@ -890,7 +890,7 @@ struct VehicleDetailView: View {
             HStack(alignment: .center, spacing: AppSpacing.md) {
                 ZStack {
                     Circle()
-                        .stroke(AppColors.border.opacity(0.35), lineWidth: 3.5)
+                        .stroke(AppColors.border.opacity(0.70), lineWidth: 3.5)
                         .frame(width: 56, height: 56)
 
                     Circle()
@@ -932,7 +932,7 @@ struct VehicleDetailView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.42), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
     }
 
@@ -1266,7 +1266,7 @@ struct VehicleDetailView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                        .stroke(AppColors.border.opacity(0.42), lineWidth: 0.5)
+                        .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
                 )
                 .padding(.horizontal, AppSpacing.screenMarginH)
             }
@@ -1421,7 +1421,7 @@ struct VehicleDetailView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .stroke(AppColors.border.opacity(0.45), lineWidth: 0.5)
+                    .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
             )
             .padding(.horizontal, AppSpacing.screenMarginH)
 
@@ -1875,7 +1875,7 @@ struct VehicleDetailGuideCard: View {
             }
         }
         .padding(AppSpacing.md).background(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).fill(Color.appSurface))
-        .overlay(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).stroke(AppColors.border.opacity(0.42), lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).stroke(AppColors.border.opacity(0.85), lineWidth: 0.5))
         .accessibilityElement(children: .combine).accessibilityLabel("\(insight.title). \(insight.body)")
     }
     private var color: Color { switch insight.priority { case .important: AppColors.critical; case .warning: AppColors.warning; case .info: AppColors.accentPrimary } }

@@ -421,7 +421,7 @@ struct GarageView: View {
         }
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.4), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
     }
 
@@ -478,7 +478,7 @@ struct GarageView: View {
                     )
                     .overlay(
                         Capsule()
-                            .stroke(AppColors.border.opacity(0.6), lineWidth: 0.5)
+                            .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
                     )
                     .frame(maxWidth: 130, alignment: .trailing)
             }
@@ -515,7 +515,7 @@ struct GarageView: View {
         .cardShadow()
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.5), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
     }
 
@@ -688,7 +688,7 @@ struct GarageView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.border.opacity(0.55), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
         .padding(.horizontal, AppSpacing.screenMarginH)
         .accessibilityElement(children: .contain)
@@ -730,7 +730,7 @@ struct GarageView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.medium)
-                .stroke(AppColors.border.opacity(0.35), lineWidth: 0.5)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
     }
 
