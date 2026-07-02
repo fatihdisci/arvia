@@ -198,45 +198,80 @@ struct GarageView: View {
     }
 
     // MARK: - Vehicle Picker
-    /// Çoklu araç varken aktif aracı değiştirmek için manuel segmented control.
-    /// SwiftUI Picker + Optional tag iOS'ta bazen binding güncellemediği için
-    /// Button tabanlı manuel versiyon kullanıyoruz — kesin çalışır.
+    /// Çoklu araç varken aktif aracı değiştirmek için chevron pagination.
+    /// Apple Music playlist header gibi — kaç araç olursa olsun sıkışmaz,
+    /// çünkü ortadaki label değişir, kenar butonlar sabit kalır.
     private var vehiclePicker: some View {
-        HStack(spacing: 6) {
-            ForEach(activeVehicles) { vehicle in
-                let isActive = activeVehicleId == vehicle.id
-                Button {
-                    activeVehicleId = vehicle.id
-                } label: {
-                    Text(vehiclePickerLabel(for: vehicle))
-                        .font(AppTypography.captionMedium)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                        .padding(.horizontal, AppSpacing.sm)
-                        .padding(.vertical, 8)
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(isActive
-                                      ? AppColors.accentPrimary.opacity(0.16)
-                                      : AppColors.backgroundSecondary.opacity(0.55))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(
-                                    isActive ? AppColors.accentPrimary.opacity(0.4) : Color.clear,
-                                    lineWidth: 1
-                                )
-                        )
-                        .foregroundColor(isActive ? AppColors.accentPrimary : AppColors.textSecondary)
-                }
-                .buttonStyle(.plain)
+        HStack(spacing: AppSpacing.md) {
+            chevronButton(systemName: "chevron.left", enabled: canGoPrevious) {
+                goToPreviousVehicle()
+            }
+
+            VStack(spacing: 2) {
+                Text(currentVehicle.flatMap { vehiclePickerLabel(for: $0) } ?? "Araç")
+                    .font(AppTypography.bodyMedium)
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text("\(activeVehicleIndex + 1) / \(activeVehicles.count)")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // Ortadaki etikete tıklayınca hafif haptic ile küçük bir geri bildirim
+                let impact = UIImpactFeedbackGenerator(style: .light)
+                impact.impactOccurred()
+            }
+
+            chevronButton(systemName: "chevron.right", enabled: canGoNext) {
+                goToNextVehicle()
             }
         }
+        .padding(.horizontal, AppSpacing.xs)
+    }
+
+    private func chevronButton(systemName: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 14, weight: .semibold))
+                .frame(width: 36, height: 36)
+                .background(
+                    Circle()
+                        .fill(enabled
+                              ? AppColors.backgroundSecondary
+                              : AppColors.backgroundSecondary.opacity(0.4))
+                )
+                .foregroundColor(enabled ? AppColors.textPrimary : AppColors.textTertiary)
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+    }
+
+    private var canGoPrevious: Bool {
+        activeVehicleIndex > 0
+    }
+
+    private var canGoNext: Bool {
+        activeVehicleIndex < activeVehicles.count - 1
+    }
+
+    private func goToPreviousVehicle() {
+        guard canGoPrevious else { return }
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
+        activeVehicleId = activeVehicles[activeVehicleIndex - 1].id
+    }
+
+    private func goToNextVehicle() {
+        guard canGoNext else { return }
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
+        activeVehicleId = activeVehicles[activeVehicleIndex + 1].id
     }
 
     private func vehiclePickerLabel(for vehicle: Vehicle) -> String {
-        // Plakayı tercih et; plaka yoksa fullName; o da yoksa "Araç N"
         if !vehicle.plate.isEmpty { return vehicle.plate }
         if !vehicle.fullName.isEmpty { return vehicle.fullName }
         if let idx = activeVehicles.firstIndex(where: { $0.id == vehicle.id }) {
