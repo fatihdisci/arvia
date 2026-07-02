@@ -21,6 +21,7 @@ Bu dosya, MVP öncesi ve v1.1'de uygulanacak **stratejik ürün kararlarını**,
 | 3.4 | Insight test stratejisi = `DemoDataSeeder`'a 5 senaryo | `seedInsightScenarios()` + Developer Settings UI | 2.7 (BUCKET 2) | 1 gün |
 | 3.5 | Onboarding sonrası araç ekleme = 3 adım wizard | `VehicleFormView` → `VehicleFormWizardView` (3 adım: tanımla / durum / sıradaki işler) | 2.8 (BUCKET 2) | 3-4 gün |
 | 3.6 | Satış dosyası PDF'ine Arvia markası + App Store linki | `PDFExportService`'e brand header/footer | 1.11 (BUCKET 1) | 30 dakika |
+| 4.1 | Açık mod border'ları görünmez — **Subtle Fill + Border** ile çözüm | Asset catalog Border `#C7C7CC → #AEAEB2`, SurfacePrimary `#FFFFFF → #FAFAFA`, `border.opacity()` 0.4-0.5 → 0.7-0.85 | TestFlight öncesi (acele) | 1-2 saat |
 
 ---
 
@@ -254,6 +255,44 @@ Code agent şu kurallara uymalı:
 5. **Boş/hata state zorunlu:** yeni eklenen her view'da empty state + error state.
 6. **Accessibility:** Dynamic Type, VoiceOver label, 44pt minimum tap target.
 7. **Dark mode gerçek:** sadece invert değil, el ile tasarlanmış.
+
+---
+
+## 4.1 — Açık Mod: Border + Subtle Fill
+
+**Karar (2 Temmuz 2026):** Açık modda beyaz zemin üstünde border'lar görünmez hale geldi — birçok card neredeyse hiç algılanmıyor. Önceki fix (`#D1D1D6 → #C7C7CC`) yetersiz kaldı. **3 seçenek tartışıldı:**
+
+1. Sadece border koyulaştır — minimal ama yetersiz
+2. **Border + Subtle Fill (kabul edilen)** — card zemin `#FAFAFA`, border `#AEAEB2` → border gereksiz ama hâlâ orada, depth hissi artar
+3. Sadece fill + shadow — cesur ama TestFlight öncesi riskli
+
+**Neden seçildi:**
+- Card artık beyaz zemin üstünde subtle ama **algılanabilir** ayrılıyor.
+- Border gereksiz hale geliyor ama hâlâ tutuluyor — çünkü bazı card'lar (örn. rehber kartları) hâlâ border'a güveniyor.
+- Koyu modda otomatik doğru çalışır (her iki renk de light/dark appearance destekli).
+- Tek tip "iOS native" görünüm — Settings.app gibi ciddi ama sıcak.
+
+**Nasıl:**
+
+**Asset catalog değişiklikleri:**
+- `Resources/Assets.xcassets/Border.colorset/Contents.json` — light variant: `#C7C7CC` → `#AEAEB2` (RGB: 0.682, 0.682, 0.698)
+- `Resources/Assets.xcassets/SurfacePrimary.colorset/Contents.json` — light variant: `#FFFFFF` → `#FAFAFA` (RGB: 0.980, 0.980, 0.980)
+- Dark variant'lara dokunma (zaten doğru koyu tonlar).
+
+**Code değişikliği:**
+- Mevcut tüm `.stroke(AppColors.border.opacity(0.X), lineWidth: 0.5)` çağrılarında opacity'yi **+0.25-0.35 artır** (örn. 0.42 → 0.7, 0.5 → 0.75). Bu yeni border rengiyle birlikte dengeli kontrast verir.
+- Card fill'leri zaten `Color.appSurface` kullanıyor — bu otomatik olarak yeni `#FAFAFA`'yı alır, ek değişiklik gerekmez.
+- Stroke lineWidth'leri 0.5'te kalabilir; daha kalın stroke gerekmiyor.
+
+**Erişim:**
+- 25 border kullanım yeri var. Hepsini tek seferde `grep` ile bulup güncelle.
+- Kod agent bu iş için ayrı prompt ile çalışacak: `docs/CODING_AGENT_PROMPT_OPEN_MODE_FIXES.md`.
+
+**Acceptance criteria:**
+- Açık modda tüm card'lar beyaz zeminden subtle ama net ayrılıyor.
+- Border hâlâ görünür ama fill ile uyumlu (göz yormuyor).
+- Koyu mod görsel olarak değişmedi (dark appearance asset'leri korundu).
+- TestFlight internal testing'de 5-10 kişi açık modda test edecek.
 
 ---
 
