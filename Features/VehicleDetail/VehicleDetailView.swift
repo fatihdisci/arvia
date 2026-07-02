@@ -266,7 +266,7 @@ struct VehicleDetailView: View {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(height: 188)
+                    .frame(maxHeight: .infinity)
                     .clipped()
             } else {
                 ZStack {
@@ -317,7 +317,7 @@ struct VehicleDetailView: View {
             .padding(.bottom, AppSpacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(height: 188)
+        .containerRelativeFrame(.vertical) { height, _ in height * 0.22 }
     }
 
     private var detailHeroInfoArea: some View {
@@ -384,10 +384,13 @@ struct VehicleDetailView: View {
     }
 
     private var detailYearTypeBlock: some View {
-        VStack(alignment: .leading, spacing: 1) {
+        HStack(spacing: 3) {
             Text(vehicle.yearDisplay)
                 .font(AppTypography.captionMedium)
                 .foregroundColor(AppColors.textPrimary)
+            Text("•")
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textTertiary)
             Text(vehicle.vehicleType.displayName)
                 .font(AppTypography.caption)
                 .foregroundColor(AppColors.textTertiary)
@@ -396,13 +399,38 @@ struct VehicleDetailView: View {
 
     private var detailDossierBadge: some View {
         let score = computeFileScore()
-        return Label("%\(score)", systemImage: "doc.text.magnifyingglass")
-            .font(AppTypography.captionMedium)
-            .foregroundColor(AppColors.accentPrimary)
-            .monospacedDigit()
-            .padding(.horizontal, AppSpacing.xs + 2)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(AppColors.accentPrimary.opacity(0.08)))
+        let barColor = score >= 80 ? AppColors.success : AppColors.accentPrimary
+        return HStack(spacing: AppSpacing.xs) {
+            Image(systemName: "doc.text.magnifyingglass")
+                .font(.caption2)
+                .foregroundColor(barColor)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(barColor.opacity(0.12))
+                        .frame(height: 6)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(barColor)
+                        .frame(width: max(6, geo.size.width * CGFloat(score) / 100.0), height: 6)
+                        .animation(.easeOut(duration: 0.7), value: score)
+                }
+            }
+            .frame(height: 6)
+            Text("%\(score)")
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .foregroundColor(barColor)
+        }
+        .padding(.horizontal, AppSpacing.sm)
+        .padding(.vertical, 7)
+        .background(
+            Capsule()
+                .fill(barColor.opacity(0.06))
+        )
+        .overlay(
+            Capsule()
+                .stroke(barColor.opacity(0.10), lineWidth: 0.5)
+        )
+        .accessibilityLabel("Dosya tamlığı yüzde \(score)")
     }
 
     private func detailMetricBadge(icon: String, text: String) -> some View {
@@ -1599,460 +1627,158 @@ struct VehicleDetailView: View {
     }
 }
 
-// MARK: - Upcoming Task Card
-struct UpcomingTaskCard: View {
-    let reminder: Reminder
-
-    var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            // İkon
-            Image(systemName: reminder.type.defaultIcon)
-                .font(.title3)
-                .foregroundColor(statusColor)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(statusColor.opacity(0.12))
-                )
-
-            // İçerik
-            VStack(alignment: .leading, spacing: 2) {
-                Text(statusTitle)
-                    .font(AppTypography.captionMedium)
-                    .foregroundColor(statusColor)
-
-                Text(reminder.title)
-                    .font(AppTypography.bodyMedium)
-                    .foregroundColor(AppColors.textPrimary)
-
-                if let dueDate = reminder.dueDate {
-                    Text(dueDate.formatted(date: .abbreviated, time: .omitted))
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-            }
-
-            Spacer()
-
-            // Kalan gün
-            if reminder.isOverdue {
-                Text("\(reminder.daysOverdue) gün")
-                    .font(AppTypography.captionMedium)
-                    .foregroundColor(AppColors.critical)
-            } else if reminder.isToday {
-                Text("Bugün")
-                    .font(AppTypography.captionMedium)
-                    .foregroundColor(AppColors.warning)
-            } else {
-                Text("\(reminder.daysRemaining) gün")
-                    .font(AppTypography.captionMedium)
-                    .foregroundColor(AppColors.textSecondary)
-            }
-        }
-        .padding(AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .fill(Color.appSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(statusColor.opacity(0.3), lineWidth: 1)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(statusTitle): \(reminder.title), \(statusText)")
-    }
-
-    private var statusColor: Color {
-        if reminder.isOverdue { return AppColors.critical }
-        if reminder.isToday { return AppColors.warning }
-        return AppColors.accentPrimary
-    }
-
-    private var statusTitle: String {
-        if reminder.isOverdue { return "Gecikmiş İş" }
-        if reminder.isToday { return "Bugün" }
-        return "Yaklaşan İş"
-    }
-
-    private var statusText: String {
-        if reminder.isOverdue { return "\(reminder.daysOverdue) gün gecikti" }
-        if reminder.isToday { return "Bugün" }
-        return "\(reminder.daysRemaining) gün kaldı"
-    }
-}
-
-// MARK: - Vehicle Detail Guide Card
-private struct VehicleDetailGuideCard: View {
-    let insight: VehicleInsight
-    let primaryAction: () -> Void
-    let dismissAction: () -> Void
-
-    var body: some View {
-        HStack(alignment: .top, spacing: AppSpacing.sm) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(color)
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(color.opacity(0.1)))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(insight.title)
-                    .font(AppTypography.bodyMedium)
-                    .foregroundColor(AppColors.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text(insight.body)
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textSecondary)
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: AppSpacing.xs) {
-                    Button(action: primaryAction) {
-                        HStack(spacing: 4) {
-                            Text(insight.action.title)
-                                .font(AppTypography.captionMedium)
-                            Image(systemName: "arrow.right")
-                                .font(.caption2.weight(.semibold))
-                        }
-                        .foregroundColor(color)
-                    }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-
-                    Button(action: dismissAction) {
-                        Text("Daha sonra")
-                            .font(AppTypography.caption)
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Öneriyi gizle")
-                }
-                .frame(minHeight: 32)
-            }
-        }
-        .padding(AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .fill(Color.appSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.42), lineWidth: 0.5)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(insight.title). \(insight.body). \(insight.action.title)")
-    }
-
-    private var color: Color {
-        switch insight.priority {
-        case .important:
-            return AppColors.critical
-        case .warning:
-            return AppColors.warning
-        case .info:
-            return AppColors.accentPrimary
-        }
-    }
-
-    private var icon: String {
-        switch insight.type {
-        case .overdueReminder:
-            return "exclamationmark.triangle.fill"
-        case .upcomingReminder:
-            return "bell.badge"
-        case .calendarPeriod:
-            return "calendar.badge.clock"
-        case .odometerUpdate:
-            return "gauge.with.needle"
-        case .seasonalGuidance:
-            return "sun.max"
-        case .missingDocument:
-            return "doc.text"
-        case .monthlyExpensePrompt:
-            return "turkishlirasign.circle"
-        case .fuelTypeGuidance:
-            return "fuelpump"
-        case .transmissionGuidance:
-            return "gearshape.2"
-        case .odometerMilestone:
-            return "flag.checkered"
-        case .maintenance:
-            return "wrench.and.screwdriver"
-        case .quietGoodState:
-            return "checkmark.seal"
-        case .saleFileReadiness:
-            return "doc.richtext"
-        }
-    }
-}
-
-struct ContextualInsightCompactCard: View {
-    let insight: VehicleInsight
-    var prominence: Prominence = .secondary
-    let action: () -> Void
-
-    enum Prominence {
-        case primary
-        case secondary
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: prominence == .primary ? AppSpacing.md : AppSpacing.sm) {
-            HStack(alignment: .top, spacing: AppSpacing.sm) {
-                Image(systemName: icon)
-                    .font(prominence == .primary ? .title3 : .body)
-                    .foregroundColor(color)
-                    .frame(width: prominence == .primary ? 42 : 32, height: prominence == .primary ? 42 : 32)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppRadius.medium)
-                            .fill(color.opacity(prominence == .primary ? 0.15 : 0.1))
-                    )
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(insight.title)
-                        .font(prominence == .primary ? AppTypography.cardTitle : AppTypography.bodyMedium)
-                        .foregroundColor(AppColors.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(insight.body)
-                        .font(prominence == .primary ? AppTypography.secondarySmall : AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
-            }
-
-            Button {
-                action()
-            } label: {
-                HStack(spacing: AppSpacing.xs) {
-                    Text(insight.action.title)
-                        .font(AppTypography.captionMedium)
-                    Image(systemName: "arrow.right")
-                        .font(.caption2.weight(.semibold))
-                }
-                .foregroundColor(prominence == .primary ? AppColors.textOnAccent : AppColors.accentPrimary)
-                .padding(.horizontal, prominence == .primary ? AppSpacing.sm : 0)
-                .frame(minHeight: AppSpacing.minimumTapTarget, alignment: .leading)
-                .background(
-                    Capsule()
-                        .fill(prominence == .primary ? color : Color.clear)
-                )
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(prominence == .primary ? AppSpacing.md : AppSpacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: prominence == .primary ? AppRadius.heroCard : AppRadius.card)
-                .fill(backgroundFill)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: prominence == .primary ? AppRadius.heroCard : AppRadius.card)
-                .stroke(color.opacity(prominence == .primary ? 0.2 : 0.12), lineWidth: 1)
-        )
-        .subtleShadow()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(insight.title). \(insight.body). \(insight.action.title)")
-    }
-
-    private var backgroundFill: LinearGradient {
-        LinearGradient(
-            colors: prominence == .primary
-                ? [Color.appSurface, color.opacity(0.095)]
-                : [Color.appSurface, AppColors.backgroundSecondary.opacity(0.45)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var color: Color {
-        switch insight.priority {
-        case .important:
-            return AppColors.critical
-        case .warning:
-            return AppColors.warning
-        case .info:
-            return AppColors.accentPrimary
-        }
-    }
-
-    private var icon: String {
-        switch insight.type {
-        case .overdueReminder:
-            return "exclamationmark.triangle.fill"
-        case .upcomingReminder:
-            return "bell.badge"
-        case .calendarPeriod:
-            return "calendar.badge.clock"
-        case .odometerUpdate:
-            return "gauge.with.needle"
-        case .seasonalGuidance:
-            return "sun.max"
-        case .missingDocument:
-            return "doc.text"
-        case .monthlyExpensePrompt:
-            return "turkishlirasign.circle"
-        case .fuelTypeGuidance:
-            return "fuelpump"
-        case .transmissionGuidance:
-            return "gearshape.2"
-        case .odometerMilestone:
-            return "flag.checkered"
-        case .maintenance:
-            return "wrench.and.screwdriver"
-        case .quietGoodState:
-            return "checkmark.seal"
-        case .saleFileReadiness:
-            return "doc.richtext"
-        }
-    }
-}
-
 // MARK: - Quick Odometer Update Sheet
 struct QuickOdometerUpdateSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-
     let vehicle: Vehicle
-
     @State private var odometerText: String
     @State private var errorMessage: String?
     @State private var showLowerConfirmation = false
     @State private var pendingLowerValue: Int?
     @FocusState private var isInputFocused: Bool
-
     init(vehicle: Vehicle) {
         self.vehicle = vehicle
         _odometerText = State(initialValue: vehicle.currentOdometer > 0 ? String(vehicle.currentOdometer) : "")
     }
-
     var body: some View {
         NavigationStack {
             Form {
                 Section {
                     HStack {
-                        Text("Mevcut km")
-                            .foregroundColor(AppColors.textSecondary)
+                        Text("Mevcut km").foregroundColor(AppColors.textSecondary)
                         Spacer()
-                        Text(vehicle.odometerDisplay)
-                            .font(AppTypography.bodyMedium)
-                            .foregroundColor(AppColors.textPrimary)
+                        Text(vehicle.odometerDisplay).font(AppTypography.bodyMedium).foregroundColor(AppColors.textPrimary)
                     }
-
                     HStack(spacing: AppSpacing.sm) {
-                        Image(systemName: "gauge.with.needle")
-                            .foregroundColor(AppColors.textTertiary)
-                        TextField("Yeni km", text: $odometerText)
-                            .keyboardType(.numberPad)
-                            .focused($isInputFocused)
+                        Image(systemName: "gauge.with.needle").foregroundColor(AppColors.textTertiary)
+                        TextField("Yeni km", text: $odometerText).keyboardType(.decimalPad).focused($isInputFocused)
                     }
                 } footer: {
                     Text("Güncel kilometre, bakım ve masraf takibini daha doğru hale getirir.")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(AppTypography.caption).foregroundColor(AppColors.textTertiary)
                 }
                 .listRowBackground(Color.appSurface)
-
                 if let errorMessage {
                     Section {
                         Label(errorMessage, systemImage: "exclamationmark.circle.fill")
-                            .font(AppTypography.secondary)
-                            .foregroundColor(AppColors.critical)
+                            .font(AppTypography.secondary).foregroundColor(AppColors.critical)
                     }
                     .listRowBackground(AppColors.criticalBackground)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(Color.appBackground)
-            .navigationTitle("Kilometreyi Güncelle")
-            .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden).background(Color.appBackground)
+            .navigationTitle("Kilometreyi Güncelle").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("İptal") { dismiss() }
-                        .foregroundColor(AppColors.textSecondary)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Kaydet", action: validateAndSave)
-                        .font(AppTypography.bodyMedium)
-                        .foregroundColor(AppColors.accentPrimary)
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("İptal") { dismiss() }.foregroundColor(AppColors.textSecondary) }
+                ToolbarItem(placement: .confirmationAction) { Button("Kaydet", action: validateAndSave).font(AppTypography.bodyMedium).foregroundColor(AppColors.accentPrimary) }
             }
-            .onAppear {
-                isInputFocused = true
-            }
+            .onAppear { isInputFocused = true }
             .confirmationDialog("Daha düşük km kaydedilsin mi?", isPresented: $showLowerConfirmation) {
-                Button("Daha düşük km ile kaydet") {
-                    if let pendingLowerValue {
-                        save(pendingLowerValue)
-                    }
-                }
+                Button("Daha düşük km ile kaydet") { if let pendingLowerValue { save(pendingLowerValue) } }
                 Button("İptal", role: .cancel) {}
-            } message: {
-                Text("Yeni km mevcut km'den düşük. Bunu yalnızca önceki kaydı düzeltmek istiyorsan onayla.")
-            }
+            } message: { Text("Yeni km mevcut km'den düşük. Bunu yalnızca önceki kaydı düzeltmek istiyorsan onayla.") }
         }
     }
-
     private func validateAndSave() {
         errorMessage = nil
-        let result = VehicleInsightService.shared.validateOdometerInput(
-            odometerText,
-            currentOdometer: vehicle.currentOdometer,
-            allowLowerValue: false
-        )
-
+        let result = VehicleInsightService.shared.validateOdometerInput(odometerText, currentOdometer: vehicle.currentOdometer, allowLowerValue: false)
         switch result {
-        case .valid:
-            if let value = VehicleInsightService.shared.parsedOdometer(odometerText) {
-                save(value)
-            }
-        case .empty:
-            errorMessage = "Yeni kilometre değerini girmelisin."
-        case .invalid:
-            errorMessage = "Geçerli bir kilometre değeri girmelisin."
-        case .negative:
-            errorMessage = "Km sıfırdan küçük olamaz."
-        case .lowerNeedsConfirmation:
-            pendingLowerValue = VehicleInsightService.shared.parsedOdometer(odometerText)
-            showLowerConfirmation = true
+        case .valid: if let v = VehicleInsightService.shared.parsedOdometer(odometerText) { save(v) }
+        case .empty: errorMessage = "Yeni kilometre değerini girmelisin."
+        case .invalid: errorMessage = "Geçerli bir kilometre değeri girmelisin."
+        case .negative: errorMessage = "Km sıfırdan küçük olamaz."
+        case .lowerNeedsConfirmation: pendingLowerValue = VehicleInsightService.shared.parsedOdometer(odometerText); showLowerConfirmation = true
         }
     }
-
     private func save(_ value: Int) {
         Task {
             do {
-                try await VehicleContextRefreshService.updateCurrentOdometer(
-                    vehicle: vehicle,
-                    newOdometer: value,
-                    context: modelContext
-                )
-                let generator = UINotificationFeedbackGenerator()
-                generator.notificationOccurred(.success)
+                try await VehicleContextRefreshService.updateCurrentOdometer(vehicle: vehicle, newOdometer: value, context: modelContext)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
                 dismiss()
-            } catch {
-                errorMessage = "Kaydedilemedi: \(error.localizedDescription)"
-            }
+            } catch { errorMessage = "Kaydedilemedi: \(error.localizedDescription)" }
         }
     }
 }
 
+// MARK: - Upcoming Task Card
+struct UpcomingTaskCard: View {
+    let reminder: Reminder
+    var body: some View {
+        HStack(spacing: AppSpacing.md) {
+            Image(systemName: reminder.type.defaultIcon).font(.title3).foregroundColor(statusColor).frame(width: 40, height: 40).background(Circle().fill(statusColor.opacity(0.12)))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(statusTitle).font(AppTypography.captionMedium).foregroundColor(statusColor)
+                Text(reminder.title).font(AppTypography.bodyMedium).foregroundColor(AppColors.textPrimary)
+                if let dueDate = reminder.dueDate { Text(dueDate.formatted(date: .abbreviated, time: .omitted)).font(AppTypography.caption).foregroundColor(AppColors.textSecondary) }
+            }
+            Spacer()
+            if reminder.isOverdue { Text("\(reminder.daysOverdue) gün").font(AppTypography.captionMedium).foregroundColor(AppColors.critical) }
+            else if reminder.isToday { Text("Bugün").font(AppTypography.captionMedium).foregroundColor(AppColors.warning) }
+            else { Text("\(reminder.daysRemaining) gün").font(AppTypography.captionMedium).foregroundColor(AppColors.textSecondary) }
+        }
+        .padding(AppSpacing.md).background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(statusColor.opacity(0.3), lineWidth: 1))
+        .accessibilityElement(children: .combine).accessibilityLabel("\(statusTitle): \(reminder.title)")
+    }
+    private var statusColor: Color { reminder.isOverdue ? AppColors.critical : (reminder.isToday ? AppColors.warning : AppColors.accentPrimary) }
+    private var statusTitle: String { reminder.isOverdue ? "Gecikmiş İş" : (reminder.isToday ? "Bugün" : "Yaklaşan İş") }
+}
+
+// MARK: - Vehicle Detail Guide Card
+struct VehicleDetailGuideCard: View {
+    let insight: VehicleInsight; let primaryAction: () -> Void; let dismissAction: () -> Void
+    var body: some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            Image(systemName: icon).font(.system(size: 14, weight: .semibold)).foregroundColor(color).frame(width: 28, height: 28).background(Circle().fill(color.opacity(0.1)))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(insight.title).font(AppTypography.bodyMedium).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                Text(insight.body).font(AppTypography.caption).foregroundColor(AppColors.textSecondary).lineLimit(3).fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: AppSpacing.xs) {
+                    Button(action: primaryAction) { HStack(spacing: 4) { Text(insight.action.title).font(AppTypography.captionMedium); Image(systemName: "arrow.right").font(.caption2.weight(.semibold)) }.foregroundColor(color) }.buttonStyle(.plain)
+                    Spacer()
+                    Button(action: dismissAction) { Text("Daha sonra").font(AppTypography.caption).foregroundColor(AppColors.textTertiary) }.buttonStyle(.plain).accessibilityLabel("Öneriyi gizle")
+                }.frame(minHeight: 32)
+            }
+        }
+        .padding(AppSpacing.md).background(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).fill(Color.appSurface))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).stroke(AppColors.border.opacity(0.42), lineWidth: 0.5))
+        .accessibilityElement(children: .combine).accessibilityLabel("\(insight.title). \(insight.body)")
+    }
+    private var color: Color { switch insight.priority { case .important: AppColors.critical; case .warning: AppColors.warning; case .info: AppColors.accentPrimary } }
+    private var icon: String { switch insight.type { case .overdueReminder: "exclamationmark.triangle.fill"; case .upcomingReminder: "bell.badge"; case .calendarPeriod: "calendar.badge.clock"; case .odometerUpdate: "gauge.with.needle"; case .seasonalGuidance: "sun.max"; case .missingDocument: "doc.text"; case .monthlyExpensePrompt: "turkishlirasign.circle"; case .fuelTypeGuidance: "fuelpump"; case .transmissionGuidance: "gearshape.2"; case .odometerMilestone: "flag.checkered"; case .maintenance: "wrench.and.screwdriver"; case .quietGoodState: "checkmark.seal"; case .saleFileReadiness: "doc.richtext" } }
+}
+
+// MARK: - Contextual Insight Compact Card
+struct ContextualInsightCompactCard: View {
+    let insight: VehicleInsight; var prominence: Prominence = .secondary; let action: () -> Void
+    enum Prominence { case primary; case secondary }
+    var body: some View {
+        VStack(alignment: .leading, spacing: prominence == .primary ? AppSpacing.md : AppSpacing.sm) {
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                Image(systemName: icon).font(prominence == .primary ? .title3 : .body).foregroundColor(color).frame(width: prominence == .primary ? 42 : 32, height: prominence == .primary ? 42 : 32).background(RoundedRectangle(cornerRadius: AppRadius.medium).fill(color.opacity(prominence == .primary ? 0.15 : 0.1))).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text(insight.title).font(prominence == .primary ? AppTypography.cardTitle : AppTypography.bodyMedium).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                    Text(insight.body).font(prominence == .primary ? AppTypography.secondarySmall : AppTypography.caption).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            Button { action() } label: { HStack(spacing: AppSpacing.xs) { Text(insight.action.title).font(AppTypography.captionMedium); Image(systemName: "arrow.right").font(.caption2.weight(.semibold)) }.foregroundColor(prominence == .primary ? AppColors.textOnAccent : AppColors.accentPrimary).padding(.horizontal, prominence == .primary ? AppSpacing.sm : 0).frame(minHeight: AppSpacing.minimumTapTarget, alignment: .leading).background(Capsule().fill(prominence == .primary ? color : Color.clear)) }.buttonStyle(.plain)
+        }
+        .padding(prominence == .primary ? AppSpacing.md : AppSpacing.sm).background(RoundedRectangle(cornerRadius: prominence == .primary ? AppRadius.heroCard : AppRadius.card).fill(backgroundFill))
+        .overlay(RoundedRectangle(cornerRadius: prominence == .primary ? AppRadius.heroCard : AppRadius.card).stroke(color.opacity(prominence == .primary ? 0.2 : 0.12), lineWidth: 1))
+        .subtleShadow().accessibilityElement(children: .combine).accessibilityLabel("\(insight.title). \(insight.body)")
+    }
+    private var backgroundFill: LinearGradient { LinearGradient(colors: prominence == .primary ? [Color.appSurface, color.opacity(0.095)] : [Color.appSurface, AppColors.backgroundSecondary.opacity(0.45)], startPoint: .topLeading, endPoint: .bottomTrailing) }
+    private var color: Color { switch insight.priority { case .important: AppColors.critical; case .warning: AppColors.warning; case .info: AppColors.accentPrimary } }
+    private var icon: String { switch insight.type { case .overdueReminder: "exclamationmark.triangle.fill"; case .upcomingReminder: "bell.badge"; case .calendarPeriod: "calendar.badge.clock"; case .odometerUpdate: "gauge.with.needle"; case .seasonalGuidance: "sun.max"; case .missingDocument: "doc.text"; case .monthlyExpensePrompt: "turkishlirasign.circle"; case .fuelTypeGuidance: "fuelpump"; case .transmissionGuidance: "gearshape.2"; case .odometerMilestone: "flag.checkered"; case .maintenance: "wrench.and.screwdriver"; case .quietGoodState: "checkmark.seal"; case .saleFileReadiness: "doc.richtext" } }
+}
+
 // MARK: - Recent Record Item
 struct RecentRecordItem: Identifiable {
-    let id: UUID
-    let type: RecordType
-    let title: String
-    let subtitle: String
-    let date: Date
-    let icon: String
-
-    enum RecordType {
-        case expense
-        case service
-    }
+    let id: UUID; let type: RecordType; let title: String; let subtitle: String; let date: Date; let icon: String
+    enum RecordType { case expense; case service }
 }
 
 // MARK: - Preview

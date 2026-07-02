@@ -40,7 +40,7 @@ struct VehicleHeroHeader: View {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(height: 180)
+                    .frame(maxHeight: .infinity)
                     .clipped()
             } else {
                 // Placeholder gradyan (tasarım anayasası izinli kullanım)
@@ -74,7 +74,7 @@ struct VehicleHeroHeader: View {
                 .background(Capsule().fill(.black.opacity(0.22)))
                 .padding(AppSpacing.md)
         }
-        .frame(height: 180)
+        .containerRelativeFrame(.vertical) { height, _ in height * 0.22 }
         .clipShape(
             UnevenRoundedRectangle(
                 topLeadingRadius: AppRadius.heroCard,

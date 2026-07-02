@@ -11,7 +11,7 @@ struct GarageView: View {
     @EnvironmentObject private var paywallService: PaywallService
     @EnvironmentObject private var navigationRouter: AppNavigationRouter
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
-    @Query(filter: #Predicate<Reminder> { $0.statusRaw != "completed" },
+    @Query(filter: #Predicate<Reminder> { $0.statusRaw != "Tamamlandı" },
            sort: \Reminder.dueDate)
     private var activeReminders: [Reminder]
     @Query private var allExpenses: [Expense]
@@ -34,7 +34,7 @@ struct GarageView: View {
     @State private var showQuickKmUpdate = false
     @State private var showSaleFile = false
     @State private var paywallFeature: PaywallView.PaywallFeature = .secondVehicle
-    @State private var activeVehicleIndex = 0
+    @State private var activeVehicleId: UUID?
     @State private var navigationPath: [UUID] = []
     @State private var hasAppeared = false
 
@@ -46,11 +46,16 @@ struct GarageView: View {
         vehicles.filter { $0.archivedAt != nil }
     }
 
+    private var activeVehicleIndex: Int {
+        guard let id = activeVehicleId else { return 0 }
+        return activeVehicles.firstIndex(where: { $0.id == id }) ?? 0
+    }
+
     private var currentVehicle: Vehicle? {
-        guard !activeVehicles.isEmpty, activeVehicleIndex < activeVehicles.count else {
-            return nil
+        if let id = activeVehicleId, let vehicle = activeVehicles.first(where: { $0.id == id }) {
+            return vehicle
         }
-        return activeVehicles[activeVehicleIndex]
+        return activeVehicles.first
     }
 
     var body: some View {
@@ -198,18 +203,22 @@ struct GarageView: View {
             VStack(spacing: AppSpacing.lg) {
                 // 1. Hero Vehicle Card(s)
                 if activeVehicles.count > 1 {
-                    TabView(selection: $activeVehicleIndex) {
-                        ForEach(Array(activeVehicles.enumerated()), id: \.offset) { index, vehicle in
-                            NavigationLink {
-                                VehicleDetailView(vehicle: vehicle)
-                            } label: {
-                                heroCardContent(vehicle: vehicle)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: AppSpacing.md) {
+                            ForEach(activeVehicles) { vehicle in
+                                NavigationLink {
+                                    VehicleDetailView(vehicle: vehicle)
+                                } label: {
+                                    heroCardContent(vehicle: vehicle)
+                                }
+                                .buttonStyle(PlainCardButtonStyle())
+                                .containerRelativeFrame(.horizontal, count: 1, spacing: AppSpacing.md)
                             }
-                            .buttonStyle(PlainCardButtonStyle())
-                            .tag(index)
                         }
+                        .scrollTargetLayout()
                     }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .scrollTargetBehavior(.viewAligned)
+                    .scrollPosition(id: $activeVehicleId)
                     .frame(height: 414)
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
@@ -259,8 +268,8 @@ struct GarageView: View {
         .onAppear { hasAppeared = true }
         .onChange(of: activeVehicles.count) { _, newCount in
             guard newCount > 0 else { return }
-            if activeVehicleIndex >= newCount {
-                activeVehicleIndex = newCount - 1
+            if let id = activeVehicleId, !activeVehicles.contains(where: { $0.id == id }) {
+                activeVehicleId = activeVehicles.first?.id
             }
         }
     }
@@ -297,7 +306,7 @@ struct GarageView: View {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(height: 190)
+                    .frame(maxHeight: .infinity)
                     .clipped()
             } else {
                 LinearGradient(
@@ -344,7 +353,7 @@ struct GarageView: View {
             .padding(.bottom, AppSpacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(height: 190)
+        .containerRelativeFrame(.vertical) { height, _ in height * 0.24 }
     }
 
     private func heroMetadataArea(vehicle: Vehicle) -> some View {
@@ -405,10 +414,13 @@ struct GarageView: View {
                 )
 
             if let year = vehicle.year {
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                HStack(spacing: AppSpacing.xxs) {
                     Text(String(year))
                         .font(AppTypography.captionMedium)
                         .foregroundColor(AppColors.textPrimary)
+                    Text("•")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textTertiary)
                     Text(vehicle.vehicleType.displayName)
                         .font(AppTypography.caption)
                         .foregroundColor(AppColors.textTertiary)
@@ -436,21 +448,38 @@ struct GarageView: View {
     }
 
     private func compactFileBadge(score: Int) -> some View {
-        Label("Dosya %\(score)", systemImage: "doc.text.magnifyingglass")
-            .font(AppTypography.captionMedium)
-            .foregroundColor(score >= 80 ? AppColors.success : AppColors.accentPrimary)
-            .monospacedDigit()
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill((score >= 80 ? AppColors.success : AppColors.accentPrimary).opacity(0.085))
-            )
-            .overlay(
-                Capsule()
-                    .stroke((score >= 80 ? AppColors.success : AppColors.accentPrimary).opacity(0.12), lineWidth: 0.5)
-            )
-            .accessibilityLabel("Dosya tamlığı yüzde \(score)")
+        let barColor = score >= 80 ? AppColors.success : AppColors.accentPrimary
+        return HStack(spacing: AppSpacing.xs) {
+            Image(systemName: "doc.text.magnifyingglass")
+                .font(.caption2)
+                .foregroundColor(barColor)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(barColor.opacity(0.12))
+                        .frame(height: 6)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(barColor)
+                        .frame(width: max(6, geo.size.width * CGFloat(score) / 100.0), height: 6)
+                        .animation(.easeOut(duration: 0.7), value: score)
+                }
+            }
+            .frame(height: 6)
+            Text("%\(score)")
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .foregroundColor(barColor)
+        }
+        .padding(.horizontal, AppSpacing.sm)
+        .padding(.vertical, 7)
+        .background(
+            Capsule()
+                .fill(barColor.opacity(0.06))
+        )
+        .overlay(
+            Capsule()
+                .stroke(barColor.opacity(0.10), lineWidth: 0.5)
+        )
+        .accessibilityLabel("Dosya tamlığı yüzde \(score)")
     }
 
     private func infoBadge(icon: String, text: String) -> some View {
@@ -710,9 +739,7 @@ struct GarageView: View {
     // MARK: - Actions
     private func handleNotificationRoute(_ route: AppNotificationRoute?) {
         guard case let .vehicle(vehicleId, _)? = route else { return }
-        if let index = activeVehicles.firstIndex(where: { $0.id == vehicleId }) {
-            activeVehicleIndex = index
-        }
+        activeVehicleId = vehicleId
         if navigationPath.last != vehicleId {
             navigationPath = [vehicleId]
         }

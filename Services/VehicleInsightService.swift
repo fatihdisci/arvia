@@ -114,7 +114,7 @@ struct VehicleInsightService {
     }
 
     func validateOdometerInput(_ rawValue: String, currentOdometer: Int, allowLowerValue: Bool) -> QuickOdometerValidationResult {
-        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = rawValue.sanitizedIntInput()
         guard !trimmed.isEmpty else { return .empty }
         guard let value = Int(trimmed) else { return .invalid }
         guard value >= 0 else { return .negative }
@@ -125,7 +125,7 @@ struct VehicleInsightService {
     }
 
     func parsedOdometer(_ rawValue: String) -> Int? {
-        Int(rawValue.trimmingCharacters(in: .whitespacesAndNewlines))
+        Int(rawValue.sanitizedIntInput())
     }
 
     private func contextualInsights(

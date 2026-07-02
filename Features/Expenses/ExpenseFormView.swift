@@ -47,7 +47,7 @@ struct ExpenseFormView: View {
 
     private var isEditing: Bool { existingExpense != nil }
     private var amount: Double? { Double(amountText.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")) }
-    private var odometer: Int? { Int(odometerText.trimmingCharacters(in: .whitespaces)) }
+    private var odometer: Int? { Int(odometerText.sanitizedIntInput()) }
 
     var body: some View {
         NavigationStack {
@@ -170,7 +170,7 @@ struct ExpenseFormView: View {
                 Image(systemName: "gauge.with.needle")
                     .foregroundColor(AppColors.textTertiary)
                 TextField("Km (isteğe bağlı)", text: $odometerText)
-                    .keyboardType(.numberPad)
+                    .keyboardType(.decimalPad)
                     .font(AppTypography.body)
             }
 

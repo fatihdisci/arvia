@@ -105,7 +105,7 @@ struct InspectionReportFormView: View {
             DatePicker("Rapor Tarihi", selection: $reportDate, displayedComponents: .date)
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: "gauge.with.needle").foregroundColor(AppColors.textTertiary)
-                TextField("Km (isteğe bağlı)", text: $odometerText).keyboardType(.numberPad)
+                TextField("Km (isteğe bağlı)", text: $odometerText).keyboardType(.decimalPad)
             }
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Label("Sonuç Özeti", systemImage: "doc.plaintext")
@@ -232,7 +232,7 @@ struct InspectionReportFormView: View {
         report.providerName = providerName.trimmingCharacters(in: .whitespaces)
         report.branchName = branchName.trimmingCharacters(in: .whitespaces).isEmpty ? nil : branchName.trimmingCharacters(in: .whitespaces)
         report.reportDate = reportDate
-        report.odometer = Int(odometerText.trimmingCharacters(in: .whitespaces))
+        report.odometer = Int(odometerText.sanitizedIntInput())
         report.summary = summary.trimmingCharacters(in: .whitespaces)
         report.documentId = selectedDocumentId
         report.verificationStatusRaw = verificationStatus.rawValue

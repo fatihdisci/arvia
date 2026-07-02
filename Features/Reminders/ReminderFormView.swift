@@ -187,7 +187,7 @@ struct ReminderFormView: View {
                     Image(systemName: "gauge.with.needle")
                         .foregroundColor(AppColors.textTertiary)
                     TextField("Hedef km", text: $dueOdometerText)
-                        .keyboardType(.numberPad)
+                        .keyboardType(.decimalPad)
                         .font(AppTypography.body)
                 }
             }
@@ -295,10 +295,8 @@ struct ReminderFormView: View {
             errors.append("Hatırlatıcı adı girmelisin.")
         }
 
-        guard let vehicleId = selectedVehicleId else {
+        if selectedVehicleId == nil {
             errors.append("Bir araç seçmelisin.")
-            validationErrors = errors
-            return
         }
 
         if !errors.isEmpty {
@@ -306,7 +304,9 @@ struct ReminderFormView: View {
             return
         }
 
-        let dueOdometer = hasDueOdometer ? Int(dueOdometerText.trimmingCharacters(in: .whitespaces)) : nil
+        guard let vehicleId = selectedVehicleId else { return }
+
+        let dueOdometer = hasDueOdometer ? Int(dueOdometerText.sanitizedIntInput()) : nil
 
         if let existing = existingReminder {
             // Edit mode: mevcut kaydı güncelle

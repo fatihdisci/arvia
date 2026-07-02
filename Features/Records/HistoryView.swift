@@ -119,57 +119,44 @@ struct HistoryView: View {
 
     // MARK: - Filter Rails
     private var filterRail: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                ForEach(HistoryFilter.allCases, id: \.self) { filter in
-                    Button {
-                        selectedFilter = filter
-                    } label: {
-                        Text(filter.rawValue)
-                            .font(selectedFilter == filter ? .system(size: 14, weight: .semibold) : AppTypography.captionMedium)
-                            .foregroundColor(selectedFilter == filter ? .white : AppColors.textSecondary)
-                            .padding(.horizontal, AppSpacing.md)
-                            .padding(.vertical, AppSpacing.xs)
-                            .background(
-                                Capsule()
-                                    .fill(selectedFilter == filter ? AppColors.accentPrimary : AppColors.backgroundSecondary)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
+        Picker("Filtre", selection: $selectedFilter) {
+            ForEach(HistoryFilter.allCases, id: \.self) { filter in
+                Text(filter.rawValue).tag(filter)
             }
-            .padding(.horizontal, AppSpacing.screenMarginH)
-            .padding(.vertical, AppSpacing.xxs)
         }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, AppSpacing.screenMarginH)
+        .padding(.vertical, AppSpacing.xxs)
     }
 
     private var dateFilterRail: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.xs) {
+        HStack {
+            Menu {
                 ForEach(DateRange.allCases, id: \.self) { range in
-                    Button {
+                    Button(range.rawValue) {
                         selectedDateRange = range
-                    } label: {
-                        Text(range.rawValue)
-                            .font(.system(size: 13, weight: selectedDateRange == range ? .semibold : .regular))
-                            .foregroundColor(selectedDateRange == range ? AppColors.accentPrimary : AppColors.textTertiary)
-                            .padding(.horizontal, AppSpacing.sm)
-                            .padding(.vertical, AppSpacing.xs)
-                            .background(
-                                Capsule()
-                                    .fill(selectedDateRange == range ? AppColors.accentPrimary.opacity(0.1) : Color.clear)
-                            )
-                            .overlay(
-                                Capsule()
-                                    .stroke(selectedDateRange == range ? AppColors.accentPrimary.opacity(0.3) : AppColors.border.opacity(0.3), lineWidth: 1)
-                            )
                     }
-                    .buttonStyle(.plain)
                 }
+            } label: {
+                HStack(spacing: AppSpacing.xs) {
+                    Image(systemName: "calendar")
+                    Text(selectedDateRange.rawValue)
+                    Image(systemName: "chevron.down")
+                        .font(.caption)
+                }
+                .font(AppTypography.captionMedium)
+                .foregroundColor(AppColors.accentPrimary)
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.xs)
+                .background(
+                    Capsule()
+                        .fill(AppColors.accentPrimary.opacity(0.08))
+                )
             }
-            .padding(.horizontal, AppSpacing.screenMarginH)
-            .padding(.vertical, AppSpacing.xxs)
+            Spacer()
         }
+        .padding(.horizontal, AppSpacing.screenMarginH)
+        .padding(.vertical, AppSpacing.xxs)
     }
 
     // MARK: - Date Range Helper

@@ -40,6 +40,7 @@ struct EmptyStateView: View {
                     .font(AppTypography.sectionTitleSmall)
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
 
                 Text(description)
                     .font(AppTypography.secondary)
@@ -61,8 +62,6 @@ struct EmptyStateView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.appBackground)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(title)
     }
 }
 
@@ -109,6 +108,7 @@ struct ErrorStateView: View {
                     .font(AppTypography.cardTitleSmall)
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
 
                 Text(message)
                     .font(AppTypography.secondary)
@@ -161,6 +161,17 @@ struct ErrorStateView: View {
         retryAction: {},
         dismissAction: {}
     )
+}
+
+// MARK: - String + Sanitized Integer Input
+extension String {
+    /// Nokta ve virgülleri temizleyerek sadece rakamlardan oluşan
+    /// bir metin döndürür. "192.000" → "192000", "1,500" → "1500"
+    func sanitizedIntInput() -> String {
+        trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(of: ".", with: "")
+            .replacingOccurrences(of: ",", with: "")
+    }
 }
 
 #Preview("Boş Durum — Dark Mode") {

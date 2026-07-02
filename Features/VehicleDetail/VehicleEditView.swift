@@ -74,10 +74,10 @@ struct VehicleEditView: View {
         _hasExistingPhoto = State(initialValue: vehicle.photoFileName != nil)
     }
 
-    private var year: Int? { Int(yearText.trimmingCharacters(in: .whitespaces)) }
-    private var odometer: Int? { Int(odometerText.trimmingCharacters(in: .whitespaces)) }
+    private var year: Int? { Int(yearText.sanitizedIntInput()) }
+    private var odometer: Int? { Int(odometerText.sanitizedIntInput()) }
     private var purchaseOdometer: Int? {
-        let t = purchaseOdometerText.trimmingCharacters(in: .whitespaces)
+        let t = purchaseOdometerText.sanitizedIntInput()
         return t.isEmpty ? nil : Int(t)
     }
     private var purchasePrice: Double? {
@@ -183,7 +183,7 @@ struct VehicleEditView: View {
                                 .frame(width: 24)
                             TextField("Motor Hacmi (cc)", text: $engineCCText)
                                 .font(AppTypography.body)
-                                .keyboardType(.numberPad)
+                                .keyboardType(.decimalPad)
                             if !engineCCText.isEmpty {
                                 Text("cc")
                                     .font(AppTypography.caption)

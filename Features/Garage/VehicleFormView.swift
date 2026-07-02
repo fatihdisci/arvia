@@ -63,10 +63,10 @@ struct VehicleFormView: View {
     @State private var showPaywall = false
 
     // MARK: Computed
-    private var year: Int? { Int(yearText.trimmingCharacters(in: .whitespaces)) }
-    private var odometer: Int? { Int(odometerText.trimmingCharacters(in: .whitespaces)) }
+    private var year: Int? { Int(yearText.sanitizedIntInput()) }
+    private var odometer: Int? { Int(odometerText.sanitizedIntInput()) }
     private var lastServiceOdometer: Int? {
-        let text = lastServiceOdometerText.trimmingCharacters(in: .whitespaces)
+        let text = lastServiceOdometerText.sanitizedIntInput()
         return text.isEmpty ? nil : Int(text)
     }
 
@@ -178,7 +178,7 @@ struct VehicleFormView: View {
                     .frame(width: 24)
                 TextField("Motor Hacmi (cc)", text: $engineCCText)
                     .font(AppTypography.body)
-                    .keyboardType(.numberPad)
+                    .keyboardType(.decimalPad)
                 if !engineCCText.isEmpty {
                     Text("cc")
                         .font(AppTypography.caption)
@@ -234,8 +234,8 @@ struct VehicleFormView: View {
                     formField(icon: "pencil", placeholder: "Model adı", text: $model)
                 }
 
-                formField(icon: "calendar", placeholder: "Yıl", text: $yearText, keyboardType: .numberPad)
-                formField(icon: "gauge.with.needle", placeholder: "Güncel Km", text: $odometerText, keyboardType: .numberPad)
+                formField(icon: "calendar", placeholder: "Yıl", text: $yearText, keyboardType: .decimalPad)
+                formField(icon: "gauge.with.needle", placeholder: "Güncel Km", text: $odometerText, keyboardType: .decimalPad)
             }
 
             Picker(selection: $fuelType) {
@@ -359,9 +359,8 @@ struct VehicleFormView: View {
                     TextField("Satın Alma Km (isteğe bağlı)", text: $purchaseOdometerText)
                         .font(AppTypography.body)
                         .foregroundColor(AppColors.textPrimary)
-                        .keyboardType(.numberPad)
+                        .keyboardType(.decimalPad)
                 }
-
                 HStack(spacing: AppSpacing.sm) {
                     Image(systemName: "banknote")
                         .font(.body)
@@ -419,7 +418,7 @@ struct VehicleFormView: View {
                     HStack(spacing: AppSpacing.md) {
                         Spacer().frame(width: 24)
                         TextField("Km (isteğe bağlı)", text: $lastServiceOdometerText)
-                            .keyboardType(.numberPad)
+                            .keyboardType(.decimalPad)
                             .font(AppTypography.secondary)
                             .foregroundColor(AppColors.textSecondary)
                             .padding(.horizontal, AppSpacing.sm)
@@ -601,7 +600,7 @@ struct VehicleFormView: View {
     }
 
     private var purchaseOdometer: Int? {
-        let text = purchaseOdometerText.trimmingCharacters(in: .whitespaces)
+        let text = purchaseOdometerText.sanitizedIntInput()
         return text.isEmpty ? nil : Int(text)
     }
     private var purchasePrice: Double? {
@@ -610,7 +609,7 @@ struct VehicleFormView: View {
     }
 
     private var engineCC: Int? {
-        let text = engineCCText.trimmingCharacters(in: .whitespaces)
+        let text = engineCCText.sanitizedIntInput()
         return text.isEmpty ? nil : Int(text)
     }
 

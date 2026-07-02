@@ -5,11 +5,9 @@ import SwiftUI
 // Emoji yok, mavi-mor gradient yok, gereksiz illüstrasyon yok.
 
 struct OnboardingView: View {
-    @Environment(\.dismiss) private var dismiss
     @AppStorage("onboarding_completed") private var onboardingCompleted = false
 
     @State private var currentPage = 0
-    @State private var showAddVehicle = false
 
     private let pages: [OnboardingPage] = [
         OnboardingPage(
@@ -83,9 +81,6 @@ struct OnboardingView: View {
             }
         }
         .background(Color.appBackground)
-        .sheet(isPresented: $showAddVehicle) {
-            VehicleFormView()
-        }
     }
 
     private func onboardingPageView(_ page: OnboardingPage) -> some View {
@@ -120,8 +115,6 @@ struct OnboardingView: View {
 
     private func completeOnboarding() {
         onboardingCompleted = true
-        showAddVehicle = true
-        dismiss()
     }
 }
 

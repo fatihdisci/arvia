@@ -11,6 +11,8 @@ struct VehicleDossierApp: App {
     @StateObject private var paywallService = PaywallService.shared
     @StateObject private var communityAuthService = CommunityAuthService.shared
     @StateObject private var navigationRouter = AppNavigationRouter.shared
+    @AppStorage("onboarding_completed") private var onboardingCompleted = false
+    @State private var showAddVehicleAfterOnboarding = false
 
     init() {
         Self.configureAppearance()
@@ -139,6 +141,14 @@ struct VehicleDossierApp: App {
                     NotificationService.shared.clearBadge()
                     await communityAuthService.restoreSession()
                     await scheduleRetentionNotifications()
+                }
+                .onChange(of: onboardingCompleted) { _, completed in
+                    if completed {
+                        showAddVehicleAfterOnboarding = true
+                    }
+                }
+                .sheet(isPresented: $showAddVehicleAfterOnboarding) {
+                    VehicleFormView()
                 }
             }
         }

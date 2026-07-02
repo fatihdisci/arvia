@@ -33,13 +33,69 @@ struct PaywallView: View {
 
     enum PaywallFeature {
         case secondVehicle
+        case documentLimit
+        case saleFileExport
+        case advancedReports
+        case inspectionReport
 
         var title: String {
-            "Birden fazla aracı tek garajda yönet"
+            switch self {
+            case .secondVehicle: return "Birden fazla aracı tek garajda yönet"
+            case .documentLimit: return "Sınırsız belge kasası"
+            case .saleFileExport: return "Sınırsız satış dosyası"
+            case .advancedReports: return "Gelişmiş raporlar"
+            case .inspectionReport: return "Ekspertiz raporları"
+            }
         }
 
-        var description: String {
-            "Arvia tek araç için ücretsiz ve reklamsızdır. Arvia Pro ile ailedeki veya işletmendeki tüm araçların bakım, belge, masraf ve hatırlatıcılarını ayrı ayrı takip edebilirsin."
+        var subtitle: String {
+            switch self {
+            case .secondVehicle:
+                return "Arvia tek araç için ücretsiz ve reklamsızdır. Arvia Pro ile ailedeki veya işletmendeki tüm araçların bakım, belge, masraf ve hatırlatıcılarını ayrı ayrı takip edebilirsin."
+            case .documentLimit:
+                return "Aracın tüm belgelerini — ruhsat, poliçe, fatura, ekspertiz — tek kasada sakla. Arvia Pro ile sınır olmadan ekle."
+            case .saleFileExport:
+                return "Aracını satarken bakım ve belge geçmişini paylaşılabilir PDF olarak hazırla. Arvia Pro ile sınırsız kez oluştur."
+            case .advancedReports:
+                return "Yıllık, aylık ve km bazlı maliyet analizleriyle aracının gerçek sahiplik maliyetini gör."
+            case .inspectionReport:
+                return "TÜVTÜRK veya bağımsız ekspertiz raporlarını aracının dosyasına ekle. Arvia Pro ile sınırsız."
+            }
+        }
+
+        var topBenefits: [(icon: String, title: String)] {
+            switch self {
+            case .secondVehicle:
+                return [
+                    ("car.2", "Sınırsız araç"),
+                    ("rectangle.grid.2x2", "Çoklu araç garajı"),
+                    ("bell.badge", "Tüm araçlar için hatırlatıcılar"),
+                ]
+            case .documentLimit:
+                return [
+                    ("doc.text", "Sınırsız belge"),
+                    ("folder", "Araç bazlı belge kasası"),
+                    ("doc.text.magnifyingglass", "Hızlı belge önizleme"),
+                ]
+            case .saleFileExport:
+                return [
+                    ("doc.richtext", "Sınırsız satış dosyası"),
+                    ("square.and.arrow.up", "Hızlı paylaşım"),
+                    ("checkmark.seal", "Güvenilir araç geçmişi"),
+                ]
+            case .advancedReports:
+                return [
+                    ("chart.bar", "Gelişmiş raporlar"),
+                    ("chart.line.uptrend.xyaxis", "Trend analizi"),
+                    ("tablecells", "Kategori dağılımı"),
+                ]
+            case .inspectionReport:
+                return [
+                    ("magnifyingglass", "Sınırsız ekspertiz kaydı"),
+                    ("doc.text.magnifyingglass", "Rapor doğrulama"),
+                    ("checkmark.shield", "Güvenilir geçmiş"),
+                ]
+            }
         }
     }
 
@@ -76,10 +132,10 @@ struct PaywallView: View {
                 title: product.displayName,
                 price: product.displayPrice,
                 period: product.subscription?.subscriptionPeriod.periodDisplay ?? "",
-                badge: product.id.contains("yearly") ? "En Avantajlı"
-                     : (product.id.contains("lifetime") ? "Tek Seferlik" : nil),
-                sortOrder: product.id.contains("monthly") ? 0
-                         : (product.id.contains("yearly") ? 1 : 2)
+                badge: product.subscription?.subscriptionPeriod.unit == .year ? "En Avantajlı"
+                     : (product.type == .nonConsumable ? "Tek Seferlik" : nil),
+                sortOrder: product.subscription?.subscriptionPeriod.unit == .month ? 0
+                         : (product.subscription?.subscriptionPeriod.unit == .year ? 1 : 2)
             )
         }.sorted { $0.sortOrder < $1.sortOrder }
     }
@@ -138,31 +194,49 @@ struct PaywallView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(height: 100)
 
                 // Dark mode scrim: gradyan kartın koyulaşmasını ve metin okunabilirliğini artırır
                 if colorScheme == .dark {
                     RoundedRectangle(cornerRadius: AppRadius.large)
                         .fill(Color.black.opacity(0.35))
-                        .frame(height: 100)
                 }
 
-                HStack(spacing: AppSpacing.md) {
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 28))
-                        .foregroundColor(.white.opacity(0.9))
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    HStack(spacing: AppSpacing.md) {
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.white.opacity(0.9))
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(feature.title)
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-                        Text(feature.description)
-                            .font(AppTypography.caption)
-                            .foregroundColor(.white.opacity(0.85))
-                            .lineLimit(2)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(feature.title)
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                            Text(feature.subtitle)
+                                .font(AppTypography.caption)
+                                .foregroundColor(.white.opacity(0.85))
+                                .lineLimit(3)
+                        }
                     }
+
+                    // Top benefits spotlight
+                    VStack(spacing: AppSpacing.xs) {
+                        ForEach(feature.topBenefits, id: \.title) { benefit in
+                            HStack(spacing: AppSpacing.sm) {
+                                Image(systemName: benefit.icon)
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .frame(width: 20)
+                                Text(benefit.title)
+                                    .font(AppTypography.caption)
+                                    .foregroundColor(.white.opacity(0.9))
+                                Spacer()
+                            }
+                        }
+                    }
+                    .padding(.top, AppSpacing.xxs)
                 }
                 .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.md)
             }
             .padding(.horizontal, AppSpacing.screenMarginH)
         }

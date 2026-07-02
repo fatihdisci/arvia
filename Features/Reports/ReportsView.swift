@@ -572,12 +572,16 @@ struct ReportsView: View {
     }
 
     // MARK: - Helpers
-    private func currencyFormat(_ value: Double) -> String {
+    private static let currencyFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "TRY"
         formatter.locale = Locale(identifier: "tr_TR")
-        return formatter.string(from: NSNumber(value: value)) ?? "₺0,00"
+        return formatter
+    }()
+
+    private func currencyFormat(_ value: Double) -> String {
+        Self.currencyFormatter.string(from: NSNumber(value: value)) ?? "₺0,00"
     }
 
     private func openSaleFile(for vehicle: Vehicle) {
