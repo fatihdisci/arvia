@@ -23,6 +23,14 @@ final class PDFExportService {
     private let margin: CGFloat = 48
     private var contentWidth: CGFloat { pageWidth - margin * 2 }
 
+    /// App Store URL — submit sonrası manuel tamamlanacak
+    /// TODO: Submit onayından sonra gerçek App Store ID ile değiştir
+    static let appStoreURL = "https://apps.apple.com/app/arvia/PLACEHOLDER"
+
+    /// Footer pill metni — her içerik sayfasının altında görünür
+    private static let brandFooterText = "\(AppBrand.appName) ile oluşturuldu"
+    private static let brandFooterShortURL = "arvia.app"
+
     // MARK: - Generate
     func generatePDF(data: PDFData) -> URL {
         let fileName = "SatisDosyasi-\(data.vehicle.id.uuidString.prefix(8)).pdf"
@@ -71,6 +79,10 @@ final class PDFExportService {
                 context.beginPage()
                 drawDisclaimer(context: context)
             }
+
+            // Arvia Branding — son sayfa
+            context.beginPage()
+            drawArviaBrandingPage(context: context)
         }
 
         return outputURL
@@ -98,14 +110,16 @@ final class PDFExportService {
         let dateStr = Date().formatted(date: .long, time: .omitted)
         drawCenteredText(dateStr, at: y, font: .systemFont(ofSize: 12, weight: .regular), color: .gray)
 
-        // Footer: app name
-        drawCenteredText("\(AppBrand.appName) — Aracının Dijital Dosyası", at: pageHeight - margin - 20, font: .systemFont(ofSize: 10, weight: .light), color: .lightGray)
+        // Footer pill — Arvia branding
+        drawBrandFooter()
     }
 
     // MARK: - Vehicle Summary
     private func drawVehicleSummary(context: UIGraphicsPDFRendererContext, data: PDFData) {
         let v = data.vehicle
         var y = drawSectionHeader("Araç Özeti", at: margin)
+
+        drawBrandFooter()
 
         let items: [(String, String)] = [
             ("Plaka", v.plate),
@@ -136,6 +150,8 @@ final class PDFExportService {
     // MARK: - Service History
     private func drawServiceHistory(context: UIGraphicsPDFRendererContext, data: PDFData) {
         var y = drawSectionHeader("Bakım Geçmişi", at: margin)
+
+        drawBrandFooter()
 
         for record in data.serviceRecords.sorted(by: { $0.date > $1.date }).prefix(15) {
             // Check page break
@@ -169,6 +185,8 @@ final class PDFExportService {
     private func drawExpenseSummary(context: UIGraphicsPDFRendererContext, data: PDFData) {
         var y = drawSectionHeader("Masraf Özeti", at: margin)
 
+        drawBrandFooter()
+
         let total = data.expenses.reduce(0) { $0 + $1.amount }
         let yearly = data.expenses
             .filter { Calendar.current.component(.year, from: $0.date) == Calendar.current.component(.year, from: Date()) }
@@ -192,6 +210,8 @@ final class PDFExportService {
     // MARK: - Inspection Reports
     private func drawInspectionReports(context: UIGraphicsPDFRendererContext, data: PDFData) {
         var y = drawSectionHeader("Ekspertiz Raporu", at: margin)
+
+        drawBrandFooter()
 
         for report in data.inspectionReports.prefix(3) {
             if y > pageHeight - 100 { context.beginPage(); y = margin }
@@ -222,6 +242,8 @@ final class PDFExportService {
     private func drawDocumentsList(context: UIGraphicsPDFRendererContext, data: PDFData) {
         var y = drawSectionHeader("Belgeler", at: margin)
 
+        drawBrandFooter()
+
         for doc in data.documents {
             if y > pageHeight - 60 { context.beginPage(); y = margin }
             drawText("• \(doc.title.isEmpty ? doc.type.displayName : doc.title) (\(doc.type.displayName))", at: CGPoint(x: margin + 8, y: y), font: .systemFont(ofSize: 11, weight: .regular), color: .darkGray)
@@ -235,8 +257,111 @@ final class PDFExportService {
 
         drawWrappedText(SaleFile.legalDisclaimer, at: CGPoint(x: margin, y: y + 10), font: .systemFont(ofSize: 10, weight: .regular), color: .darkGray, maxWidth: contentWidth)
 
-        let footerY = pageHeight - margin - 20
-        drawCenteredText("Bu dosya \(AppBrand.appName) uygulaması tarafından oluşturulmuştur.", at: footerY, font: .systemFont(ofSize: 9, weight: .light), color: .lightGray)
+        // Brand footer pill
+        drawBrandFooter()
+    }
+
+    // MARK: - Arvia Branding Page (last page)
+    /// Son sayfa — Arvia markası + App Store placeholder linki.
+    private func drawArviaBrandingPage(context: UIGraphicsPDFRendererContext) {
+        // Arvia brand rengi — accentPrimary
+        let brandColor = UIColor(red: 0.06, green: 0.47, blue: 0.43, alpha: 1)
+
+        // Üstte Arvia wordmark — emoji icon + kalın text
+        let iconFont = UIFont.systemFont(ofSize: 56, weight: .light)
+        let wordmarkFont = UIFont.systemFont(ofSize: 48, weight: .bold)
+
+        let carSymbol = "🚗"
+        let carAttrs: [NSAttributedString.Key: Any] = [.font: iconFont, .foregroundColor: brandColor]
+        let carSize = (carSymbol as NSString).size(withAttributes: carAttrs)
+
+        let wordmarkText = AppBrand.appName
+        let wordmarkAttrs: [NSAttributedString.Key: Any] = [.font: wordmarkFont, .foregroundColor: brandColor]
+        let wordmarkSize = (wordmarkText as NSString).size(withAttributes: wordmarkAttrs)
+
+        let gap: CGFloat = 12
+        let totalWidth = carSize.width + gap + wordmarkSize.width
+        let startX = (pageWidth - totalWidth) / 2
+        let wordmarkY: CGFloat = pageHeight / 2 - 110
+
+        (carSymbol as NSString).draw(
+            at: CGPoint(x: startX, y: wordmarkY + (wordmarkSize.height - carSize.height) / 2),
+            withAttributes: carAttrs
+        )
+        (wordmarkText as NSString).draw(
+            at: CGPoint(x: startX + carSize.width + gap, y: wordmarkY),
+            withAttributes: wordmarkAttrs
+        )
+
+        // Tagline
+        let taglineY = wordmarkY + wordmarkSize.height + 28
+        drawCenteredText(
+            "Aracının dijital yaşam dosyası.",
+            at: taglineY,
+            font: .systemFont(ofSize: 16, weight: .regular),
+            color: .darkGray
+        )
+
+        // App Store link bölümü
+        let linkBlockY = taglineY + 60
+        let linkTitle = "Arvia'yı indir"
+        let linkTitleFont = UIFont.systemFont(ofSize: 13, weight: .medium)
+        drawCenteredText(linkTitle, at: linkBlockY, font: linkTitleFont, color: brandColor)
+
+        let urlY = linkBlockY + 24
+        let urlFont = UIFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+        let urlSize = (PDFExportService.appStoreURL as NSString).size(withAttributes: [.font: urlFont])
+        let urlX = (pageWidth - urlSize.width) / 2
+        (PDFExportService.appStoreURL as NSString).draw(
+            at: CGPoint(x: urlX, y: urlY),
+            withAttributes: [.font: urlFont, .foregroundColor: UIColor.darkGray]
+        )
+
+        // URL altı çizgisi — ince, brandColor ile
+        let underline = UIBezierPath()
+        underline.move(to: CGPoint(x: urlX, y: urlY + urlSize.height + 2))
+        underline.addLine(to: CGPoint(x: urlX + urlSize.width, y: urlY + urlSize.height + 2))
+        brandColor.withAlphaComponent(0.6).setStroke()
+        underline.lineWidth = 0.5
+        underline.stroke()
+
+        // Sayfa altı küçük imza
+        let signedAt = "Oluşturulma: \(Date().formatted(date: .abbreviated, time: .omitted))"
+        drawCenteredText(signedAt, at: pageHeight - margin - 6, font: .systemFont(ofSize: 8, weight: .light), color: .lightGray)
+    }
+
+    // MARK: - Brand Footer Pill
+    /// Tüm sayfaların altında küçük Arvia branding pill'i.
+    /// Sol: "• Arvia ile oluşturuldu"
+    /// Sağ: "arvia.app" monospace
+    private func drawBrandFooter() {
+        let footerY = pageHeight - margin - 16
+
+        // Hafif yatay divider
+        let dividerPath = UIBezierPath()
+        dividerPath.move(to: CGPoint(x: margin, y: footerY - 4))
+        dividerPath.addLine(to: CGPoint(x: pageWidth - margin, y: footerY - 4))
+        UIColor.lightGray.withAlphaComponent(0.25).setStroke()
+        dividerPath.lineWidth = 0.5
+        dividerPath.stroke()
+
+        // Sol metin — dot + "Arvia ile oluşturuldu"
+        let leftText = "• \(PDFExportService.brandFooterText)"
+        let leftAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 9, weight: .medium),
+            .foregroundColor: UIColor.lightGray
+        ]
+        (leftText as NSString).draw(at: CGPoint(x: margin, y: footerY), withAttributes: leftAttrs)
+
+        // Sağ metin — monospace short URL
+        let rightText = PDFExportService.brandFooterShortURL
+        let rightAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.monospacedSystemFont(ofSize: 9, weight: .regular),
+            .foregroundColor: UIColor.lightGray
+        ]
+        let rightSize = (rightText as NSString).size(withAttributes: rightAttrs)
+        let rightX = pageWidth - margin - rightSize.width
+        (rightText as NSString).draw(at: CGPoint(x: rightX, y: footerY), withAttributes: rightAttrs)
     }
 
     // MARK: - Drawing Helpers
