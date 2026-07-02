@@ -13,7 +13,7 @@ Bu dosya, MVP öncesi ve v1.1'de uygulanacak **stratejik ürün kararlarını**,
 
 | # | Karar | Uygulama | Bucket | Tahmini iş |
 |---|-------|----------|--------|------------|
-| 3.1 | Dosya tamlığı = checklist olarak Garaj'da | `DosyaniTamamlaChecklist` zaten var; Garaj'da bugünGarageSection altına/üstüne taşı | 1.10 (BUCKET 1) | 2 saat |
+| 3.1 | Dosya Skoru = checklist olarak Garaj'da (vibecoder feedback ile adı "Dosya Tamlığı" → "Dosya Skoru" olarak değişti) | `DosyaniTamamlaChecklist` zaten var; Garaj'da bugünGarageSection altına/üstüne taşı | 1.10 (BUCKET 1) | 2 saat |
 | 3.2 | Free = 1 araç, katı kural. Aile hesabı çözülmedi. Pro'ya ileride yeni değerler eklenecek. | Kod değişikliği yok, sadece bu manifesto. (Bkz. aşağıdaki "Pro stratejisi" bölümü) | — | — |
 | 3.2.a | Apple Family Sharing **devre dışı**. Türkiye'de kullanımı düşük. | App Store Connect'te subscription'lara dokunma; default haliyle bırak. | — | — |
 | 3.2.b | Lifetime ürünü **şimdilik korunur**, karar açık. İleride yeniden değerlendirilir. | Kod değişikliği yok. Fiyatlandırma sayfasında framing net olsun: "Kendi hesabınızda ömür boyu Pro." | — | — |
@@ -24,9 +24,11 @@ Bu dosya, MVP öncesi ve v1.1'de uygulanacak **stratejik ürün kararlarını**,
 
 ---
 
-## 3.1 — Dosya Tamlığı: istatistik değil, eylem
+## 3.1 — Dosya Skoru: istatistik değil, eylem
 
-**Karar:** `DosyaniTamamlaChecklist` component'i zaten var (Araç Detay'da gösteriliyor). Bunu **Garaj hero altına** da taşı, böylece kullanıcı arabasını ekledikten sonra ilk gördüğü yerde "3 adım kaldı" görsün.
+**Karar:** Skor adı **"Dosya Tamlığı" yerine "Dosya Skoru"** (vibecoder feedback, 2 Temmuz 2026). "Tamlık" kelimesi "her şey tamam" çağrışımı yapıyordu; "Skor" daha nötr ve "aracın dosyası ne kadar dokümante" anlamını doğru taşıyor. Aynı zamanda icon da `doc.text.magnifyingglass` → `chart.bar.fill` olarak değişti.
+
+`DosyaniTamamlaChecklist` component'i zaten var (Araç Detay'da gösteriliyor). Bunu **Garaj hero altına** da taşı, böylece kullanıcı arabasını ekledikten sonra ilk gördüğü yerde "3 adım kaldı" görsün.
 
 **Neden:** Skor tek başına geldiğinde kullanıcı ne yapacağını bilmiyor. Checklist zaten implement edilmiş; sadece **erişilebilirlik** sorunu var.
 
@@ -35,6 +37,20 @@ Bu dosya, MVP öncesi ve v1.1'de uygulanacak **stratejik ürün kararlarını**,
 - Aynı `DosyaniTamamlaChecklist` view'i reuse edilir (component zaten paylaşılabilir).
 - 5 kriterden <5 tamamlandıysa göster, hepsi tamamsa gizle (component zaten bunu yapıyor).
 - Acceptance: Araç eklenip muayene/sigorta/ilk masraf/ilk belge girilmediğinde Garaj'da checklist görünür. Tüm 5 kriter tamamlanınca gizlenir.
+
+**Dosya Skoru hesaplama mantığı (2 Temmuz 2026):**
+
+| Kategori | Puan | Koşul |
+|----------|------|-------|
+| Temel bilgiler | 40 | plaka + marka + model + yıl + km + vites + motor (motosiklet) + satın alma tarihi (her biri 5) |
+| Araç fotoğrafı | 10 | `vehicle.photoFileName != nil` |
+| Belgeler | 25 | En az 1 belge 15p, 3+ farklı belge tipi 10p (**belge olmadan %100 olamaz**) |
+| Hatırlatıcı | 10 | En az 1 aktif reminder |
+| Masraf | 8 | En az 1 expense |
+| Bakım | 7 | En az 1 service record |
+| **Toplam** | **100** | |
+
+Önceki mantıkta belge puan olarak hiç sayılmıyordu; yeni mantıkta belge yoksa max %75'e ulaşılabilir. Bu sayede "hiç belge yok %100" sorunu ortadan kalktı.
 
 ---
 
