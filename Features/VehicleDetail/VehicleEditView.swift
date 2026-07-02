@@ -198,7 +198,7 @@ struct VehicleEditView: View {
                 // Tip bilgileri
                 Section {
                     enumPicker("Yakıt Tipi", icon: "fuelpump", selection: $fuelType)
-                    enumPicker("Vites", icon: "gearshift", selection: $transmissionType)
+                    enumPicker("Vites", icon: "gearshape", selection: $transmissionType)
                     enumPicker("Kullanım", icon: "person", selection: $usageType)
                 } header: {
                     Text("Araç Özellikleri")

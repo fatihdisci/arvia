@@ -172,17 +172,27 @@ struct VehicleFormView: View {
                     .foregroundColor(AppColors.textPrimary)
             }
 
-            HStack(spacing: AppSpacing.sm) {
-                Image(systemName: "engine.combustion")
-                    .foregroundColor(AppColors.textTertiary)
-                    .frame(width: 24)
-                TextField("Motor Hacmi (cc)", text: $engineCCText)
-                    .font(AppTypography.body)
-                    .keyboardType(.decimalPad)
-                if !engineCCText.isEmpty {
-                    Text("cc")
-                        .font(AppTypography.caption)
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "engine.combustion")
                         .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 24)
+                    TextField("Motor Hacmi (cc)", text: $engineCCText)
+                        .font(AppTypography.body)
+                        .keyboardType(.decimalPad)
+                    if !engineCCText.isEmpty {
+                        Text("cc")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+                if let n = Int(engineCCText.sanitizedIntInput()), n > 0 {
+                    HStack(spacing: 4) {
+                        Spacer().frame(width: 24)
+                        Text("\(n.formatted(.number.locale(Locale(identifier: "tr_TR")))) cc olarak kaydedilecek")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
                 }
             }
         } header: {
@@ -234,8 +244,8 @@ struct VehicleFormView: View {
                     formField(icon: "pencil", placeholder: "Model adı", text: $model)
                 }
 
-                formField(icon: "calendar", placeholder: "Yıl", text: $yearText, keyboardType: .decimalPad)
-                formField(icon: "gauge.with.needle", placeholder: "Güncel Km", text: $odometerText, keyboardType: .decimalPad)
+                formField(icon: "calendar", placeholder: "Yıl", text: $yearText, keyboardType: .decimalPad, showNumberPreview: true)
+                formField(icon: "gauge.with.needle", placeholder: "Güncel Km", text: $odometerText, keyboardType: .decimalPad, showNumberPreview: true, previewSuffix: " km")
             }
 
             Picker(selection: $fuelType) {
@@ -253,7 +263,7 @@ struct VehicleFormView: View {
                     Text(type.displayName).tag(type)
                 }
             } label: {
-                Label("Vites", systemImage: "gearshift")
+                Label("Vites", systemImage: "gearshape")
                     .font(AppTypography.body)
                     .foregroundColor(AppColors.textPrimary)
             }
@@ -351,25 +361,45 @@ struct VehicleFormView: View {
                         .foregroundColor(AppColors.textPrimary)
                 }
 
-                HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: "gauge.with.needle")
-                        .font(.body)
-                        .foregroundColor(AppColors.textTertiary)
-                        .frame(width: 24)
-                    TextField("Satın Alma Km (isteğe bağlı)", text: $purchaseOdometerText)
-                        .font(AppTypography.body)
-                        .foregroundColor(AppColors.textPrimary)
-                        .keyboardType(.decimalPad)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Image(systemName: "gauge.with.needle")
+                            .font(.body)
+                            .foregroundColor(AppColors.textTertiary)
+                            .frame(width: 24)
+                        TextField("Satın Alma Km (isteğe bağlı)", text: $purchaseOdometerText)
+                            .font(AppTypography.body)
+                            .foregroundColor(AppColors.textPrimary)
+                            .keyboardType(.decimalPad)
+                    }
+                    if let n = Int(purchaseOdometerText.sanitizedIntInput()), n > 0 {
+                        HStack(spacing: 4) {
+                            Spacer().frame(width: 24)
+                            Text("\(n.formatted(.number.locale(Locale(identifier: "tr_TR")))) km olarak kaydedilecek")
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                    }
                 }
-                HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: "banknote")
-                        .font(.body)
-                        .foregroundColor(AppColors.textTertiary)
-                        .frame(width: 24)
-                    TextField("Satın Alma Fiyatı - ₺ (isteğe bağlı)", text: $purchasePriceText)
-                        .font(AppTypography.body)
-                        .foregroundColor(AppColors.textPrimary)
-                        .keyboardType(.decimalPad)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Image(systemName: "banknote")
+                            .font(.body)
+                            .foregroundColor(AppColors.textTertiary)
+                            .frame(width: 24)
+                        TextField("Satın Alma Fiyatı - ₺ (isteğe bağlı)", text: $purchasePriceText)
+                            .font(AppTypography.body)
+                            .foregroundColor(AppColors.textPrimary)
+                            .keyboardType(.decimalPad)
+                    }
+                    if let n = Int(purchasePriceText.sanitizedIntInput()), n > 0 {
+                        HStack(spacing: 4) {
+                            Spacer().frame(width: 24)
+                            Text("\(n.formatted(.currency(code: "TRY").locale(Locale(identifier: "tr_TR")))) olarak kaydedilecek")
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                    }
                 }
             }
         } header: {
@@ -384,6 +414,7 @@ struct VehicleFormView: View {
             reminderToggle(
                 icon: ReminderType.inspection.defaultIcon,
                 title: "Muayene",
+                subtitle: "Muayenenin yapıldığı tarihi gir",
                 isOn: $addInspectionReminder,
                 date: $inspectionDate,
                 hasOdometer: false
@@ -391,7 +422,8 @@ struct VehicleFormView: View {
 
             reminderToggle(
                 icon: ReminderType.trafficInsurance.defaultIcon,
-                title: "Trafik Sigortası",
+                title: "Trafik Sigortası Bitiş Tarihi",
+                subtitle: "Sigortanın biteceği tarihi gir",
                 isOn: $addInsuranceReminder,
                 date: $insuranceDate,
                 hasOdometer: false
@@ -399,7 +431,8 @@ struct VehicleFormView: View {
 
             reminderToggle(
                 icon: ReminderType.casco.defaultIcon,
-                title: "Kasko",
+                title: "Kasko Bitiş Tarihi",
+                subtitle: "Kaskonun biteceği tarihi gir",
                 isOn: $addCascoReminder,
                 date: $cascoDate,
                 hasOdometer: false
@@ -409,24 +442,35 @@ struct VehicleFormView: View {
                 reminderToggle(
                     icon: ReminderType.periodicService.defaultIcon,
                     title: "Son Bakım",
+                    subtitle: "Son bakımın yapıldığı tarihi gir",
                     isOn: $addLastServiceReminder,
                     date: $lastServiceDate,
                     hasOdometer: true
                 )
 
                 if addLastServiceReminder {
-                    HStack(spacing: AppSpacing.md) {
-                        Spacer().frame(width: 24)
-                        TextField("Km (isteğe bağlı)", text: $lastServiceOdometerText)
-                            .keyboardType(.decimalPad)
-                            .font(AppTypography.secondary)
-                            .foregroundColor(AppColors.textSecondary)
-                            .padding(.horizontal, AppSpacing.sm)
-                            .padding(.vertical, AppSpacing.xs)
-                            .background(
-                                RoundedRectangle(cornerRadius: AppRadius.small)
-                                    .fill(AppColors.backgroundSecondary)
-                            )
+                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                        HStack(spacing: AppSpacing.md) {
+                            Spacer().frame(width: 24)
+                            TextField("Km (isteğe bağlı)", text: $lastServiceOdometerText)
+                                .keyboardType(.decimalPad)
+                                .font(AppTypography.secondary)
+                                .foregroundColor(AppColors.textSecondary)
+                                .padding(.horizontal, AppSpacing.sm)
+                                .padding(.vertical, AppSpacing.xs)
+                                .background(
+                                    RoundedRectangle(cornerRadius: AppRadius.small)
+                                        .fill(AppColors.backgroundSecondary)
+                                )
+                        }
+                        if let n = Int(lastServiceOdometerText.sanitizedIntInput()), n > 0 {
+                            HStack(spacing: 4) {
+                                Spacer().frame(width: 24)
+                                Text("\(n.formatted(.number.locale(Locale(identifier: "tr_TR")))) km olarak kaydedilecek")
+                                    .font(AppTypography.caption)
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
+                        }
                     }
                     .padding(.leading, AppSpacing.xl)
                 }
@@ -434,7 +478,7 @@ struct VehicleFormView: View {
         } header: {
             Text("İlk Önemli Tarihler (İsteğe Bağlı)")
         } footer: {
-            Text("Bu tarihler için hatırlatıcı oluşturulur. Daha sonra istediğin zaman düzenleyebilirsin.")
+            Text("Bu tarihler için hatırlatıcı oluşturulur. 30 gün kala bildirim gönderilir. Daha sonra istediğin zaman düzenleyebilirsin.")
                 .font(AppTypography.caption)
                 .foregroundColor(AppColors.textTertiary)
         }
@@ -466,6 +510,7 @@ struct VehicleFormView: View {
     private func reminderToggle(
         icon: String,
         title: String,
+        subtitle: String,
         isOn: Binding<Bool>,
         date: Binding<Date>,
         hasOdometer: Bool
@@ -477,6 +522,12 @@ struct VehicleFormView: View {
                     .foregroundColor(AppColors.textPrimary)
             }
             .tint(AppColors.accentPrimary)
+
+            Text(subtitle)
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textTertiary)
+                .padding(.leading, AppSpacing.xl)
+                .padding(.top, -AppSpacing.xxs)
 
             if isOn.wrappedValue {
                 DatePicker(
@@ -496,18 +547,31 @@ struct VehicleFormView: View {
         icon: String,
         placeholder: String,
         text: Binding<String>,
-        keyboardType: UIKeyboardType = .default
+        keyboardType: UIKeyboardType = .default,
+        showNumberPreview: Bool = false,
+        previewSuffix: String = ""
     ) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundColor(AppColors.textTertiary)
-                .frame(width: 24)
+        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: icon)
+                    .font(.body)
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 24)
 
-            TextField(placeholder, text: text)
-                .font(AppTypography.body)
-                .foregroundColor(AppColors.textPrimary)
-                .keyboardType(keyboardType)
+                TextField(placeholder, text: text)
+                    .font(AppTypography.body)
+                    .foregroundColor(AppColors.textPrimary)
+                    .keyboardType(keyboardType)
+            }
+
+            if showNumberPreview, let n = Int(text.wrappedValue.sanitizedIntInput()), n > 0 {
+                HStack(spacing: 4) {
+                    Spacer().frame(width: 24)
+                    Text("\(n.formatted(.number.locale(Locale(identifier: "tr_TR"))))\(previewSuffix) olarak kaydedilecek")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
         }
         .padding(.vertical, AppSpacing.xxs)
     }
