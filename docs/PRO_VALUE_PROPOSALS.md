@@ -169,27 +169,109 @@
 
 ---
 
+## 7. 🤖 Akıllı Sürüş Asistanı (alışkanlık öğrenme + tahmin motoru)
+
+**Problem:** Uygulama bugün kullanıcıyı dinlemez — sadece ne girdiyse onu gösterir. Oysa kullanıcı km güncellemeyi unutuyor, alışkanlıkları bilinmiyor, bakım önerileri jenerik (kullanım tipine göre değil). "Bu app beni tanımıyor" hissi.
+
+**Çözüm:** İki katmanlı bir akıllı asistan:
+
+### Katman A — Alışkanlık Profili (kullanıcı girdisi)
+
+İlk kullanımda veya pro'ya geçiş sonrası kısa bir "tanışma" akışı:
+- **Günde ortalama kaç km yaparsın?** (slider/segment: <20, 20-50, 50-100, 100+)
+- **Genelde şehir içi mi, şehir dışı mı, karma mı?** (segment)
+- **Yakıt tüketimini biliyor musun?** (opsiyonel sayısal giriş — şehir içi / dışı)
+- **Aracı genelde kim kullanıyor?** (sadece sen / eşinle / ailenle)
+- **Tipik yolculuk türün?** (işe gidiş, tatil, hafta sonu, vs.) — çoklu seçim
+
+Bu cevaplar `VehicleUsageProfile` modeline kaydedilir (yeni SwiftData modeli). Sonradan ayarlardan düzenlenebilir.
+
+### Katman B — Tahmin Motoru (kullanıcı verisi girdikçe)
+
+Kullanıcının son 3-6 ayda girdiği masraf ve km kayıtlarından gerçek kullanım profili çıkarılır:
+- **Tahmini günlük km:** Son 90 gündeki masrafların km farklarından ortalama
+- **Tahmini tüketim:** Yakıt masrafları + km farklarından L/100km
+- **Yol tipi dağılımı:** Km değişim hızına göre (ani yükselişler = uzun yol)
+
+### Katman C — Proaktif Etkileşim
+
+**A) Tahmini km sorgulaması:** Kullanıcı 30+ gündür km güncellemediyse Garaj → Bugün Garajında'da yeni bir insight tipi:
+> "Aracının şu an yaklaşık **52.400 km** olmalı (günde ortalama 47 km × son güncellemeden bugüne). Bu doğru mu, yoksa güncellemek ister misin?"
+> [Doğru, devam et]  [Güncelle]
+
+**B) Bakım önerisi adaptasyonu:** Kullanıcının yol tipi ve km ortalamasına göre bakım önerileri:
+- "Senin aracın ortalama 47 km/gün yapıyor. Triger kontrolü 90.000 km'de öneriliyor — senin kullanımınla bu **5.5 yıl** sonra."
+- Şehir dışı ağırlıklı kullanımda motor yağı değişim sıklığı farklı önerilir.
+- Elektrikli araçta batarya sağlığı takibi öne çıkar.
+
+**C) Mevsimsel+alışkanlık kombine tahmin:** "Yaz aylarında gezi yapıyorsan Temmuz'da 2.500 km'ye ulaşabilirsin. Yaz öncesi klima kontrolü eklemeyi düşün."
+
+### AI opsiyonu (sonraya)
+
+İlk aşamada **AI olmadan** çalışır (rule-based + ortalama). İleride:
+- Masraf açıklamalarından ("yaz tatili yol", "işe gidiş") NLP ile yol tipi çıkarma
+- LLM ile "kullanıcı tarzına göre" kişiselleştirilmiş bakım planı
+- Kullanıcının kendi ses tonuyla konuşan mini-asistan
+
+İlk sürüm AI olmadan güçlü olabilir — veri zaten mevcut (masraflar, km kayıtları, reminder'lar).
+
+**UI/UX:**
+- **Onboarding sonrası (Pro'ya geçiş):** Kısa tanışma akışı (4-5 soru, slider/segment ağırlıklı, her biri 1 ekran)
+- **Garaj → Bugün Garajında:** Yeni insight tipi `.predictiveAssistance` (iconu `brain.head.profile`, contentKind `.info`)
+- **Ayarlar → "Kullanım Profilim":** Düzenleme ekranı (cevapları güncelle)
+- **Insight'lar:** Tek satır, doğal ton — "Aracının şu an ~52.400 km olmalı, doğru mu?"
+
+**Teknik:**
+- `Models/VehicleUsageProfile.swift` — yeni SwiftData modeli (vehicleId, dailyKmAverage, routeType, fuelConsumptionCity, fuelConsumptionHighway, primaryUser, tripTypes, updatedAt)
+- `Services/UsageProfileService.swift` — onboarding'den sonra tetiklenir, sonradan ayarlardan güncellenebilir
+- `Services/PredictiveOdometerService.swift` — son masraf/km kayıtlarından tahmin (background-friendly, lazy compute)
+- `Services/MaintenanceAdvisorService.swift` — kullanım profili + araç tipi + mevcut km → kişiselleştirilmiş bakım önerileri
+- Yeni `VehicleInsightType.predictiveAssistance` + `predictiveMaintenance` enum case'leri
+- Faz 1.1 rehberiyle entegre (VehicleInsightCard)
+- Mevcut #1 (Akıllı Hatırlatıcı km pattern) bu büyük yapının alt özelliği olur
+
+**Fayda:**
+- "Bu app beni tanıyor" hissi — kullanıcıyı dinleyen, hatırlatan, öğrenen bir asistan
+- Km güncelleme unutulsa bile tahmin çalışır — veri kaybı azalır
+- Bakım önerileri kişiselleşir — "jenerik tavsiye" yerine "senin kullanımına göre"
+- Retention: her insight "bu app beni anlıyor" hissi verir
+- **En güçlü Pro değer adayı** — diğer tüm özellikler tek başına somut bir değer sunar ama bu katman uygulamayı "araç yönetim aracı"ndan "kişisel araç asistanına" taşır
+
+**Pro değeri:** ⭐⭐⭐⭐⭐ En yüksek — diğer tüm öneriler tekil değer sunar, bu katman onları birleştirip "deneyim"e dönüştürür.
+
+**Efor:** 5-7 gün
+- 1 gün: VehicleUsageProfile modeli + SwiftData migration
+- 1-2 gün: Onboarding tanışma akışı (4-5 soru, sonradan ayarlardan düzenlenebilir)
+- 1-2 gün: PredictiveOdometerService (tahmini km) + insight entegrasyonu
+- 2-3 gün: MaintenanceAdvisorService (kullanım profili + araç tipi → bakım önerisi adaptasyonu)
+
+---
+
 ## Özet Tablo
 
 | # | Öneri | Pro Değeri | Efor | Somutluk |
 |---|---|---|---|---|
-| 1 | 🧠 Akıllı Hatırlatıcı (km pattern) | ⭐⭐⭐⭐⭐ | 1-2 gün | Yüksek |
+| 1 | 🧠 Akıllı Hatırlatıcı (km pattern) | ⭐⭐⭐⭐⭐ | 1-2 gün | Yüksek — #7'nin alt özelliği |
 | 2 | 📈 Yıllık Derin Rapor | ⭐⭐⭐⭐ | 3-4 gün | Yüksek |
 | 3 | 🔗 Sınırlı Süreli Satış Linki | ⭐⭐⭐⭐ | 4-5 gün | Çok yüksek |
 | 4 | 📊 CSV/PDF Export | ⭐⭐⭐ | 1-2 gün | Yüksek |
 | 5 | 📱 Home Screen Widget | ⭐⭐⭐ | 3-4 gün | Orta |
 | 6 | 💱 Çoklu Para Birimi | ⭐⭐⭐ | 2-3 gün | Niş ama gerçek |
+| 7 | 🤖 **Akıllı Sürüş Asistanı** | ⭐⭐⭐⭐⭐ | 5-7 gün | Çok yüksek — katman özellik |
 
 ---
 
 ## Önerilen Sıralama (kullanıcı verisi gelene kadar)
 
-1. **#1 Akıllı Hatırlatıcı** — en hızlı ROI, mevcut rehberi uzatır
+1. **#1 Akıllı Hatırlatıcı** (hızlı kazanç) — en hızlı ROI, mevcut rehberi uzatır. Veya doğrudan #7'ye başlanabilir
 2. **#4 CSV/PDF Export** — düşük efor, yüksek değer
 3. **#6 Çoklu Para Birimi** — küçük kitle için fark yaratır
 4. **#2 Yıllık Rapor** — yeni ekran + chart'lar
 5. **#3 Satış Linki** — Faz 4.2 ile çakışıyor (usta QR), ama sadece okuma amaçlı, daha erken yapılabilir
-6. **#5 Widget** — teknik setup ağır, sona kalmalı
+6. **#7 Akıllı Sürüş Asistanı** — en yüksek değer, en yüksek efor. Doğru temel yapıyı kurar (UsageProfile, PredictiveEngine) — sonra #1, #2'yi de emer
+7. **#5 Widget** — teknik setup ağır, sona kalmalı
+
+**Alternatif strateji:** Doğrudan #7'ye başla — UsageProfile ve PredictiveEngine temelini kur, sonra rehberi (#1) ve raporları (#2) bu temelin üstüne inşa et. **Daha büyük ama daha tutarlı mimari.**
 
 ---
 
@@ -199,3 +281,5 @@
 - Kullanıcı geri bildirimi geldikçe sıralama değişebilir mi?
 - #3 Satış Linki için Faz 4.2 (Usta) ile ortak QR altyapısı kurulabilir mi?
 - #5 Widget için bütçe var mı (extension target setup + App Group provisioning)?
+- **#7 Akıllı Sürüş Asistanı AI'sız başlayıp sonradan AI eklensin mi, yoksa AI ile mi başlasın?** (Kullanıcı: "belki AI dahil edebiliriz ama etmeden de olabilir, bakacağız")
+- **#7 onboarding tanışma akışı Pro'ya geçişte mi gösterilsin, yoksa ilk araç eklemede mi?**
