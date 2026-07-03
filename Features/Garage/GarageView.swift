@@ -596,7 +596,7 @@ struct GarageView: View {
                     RoundedRectangle(cornerRadius: AppRadius.card)
                         .fill(Color.appSurface)
                 )
-                .subtleShadow()
+                .cardShadow()
                 .padding(.horizontal, AppSpacing.screenMarginH)
             }
         )

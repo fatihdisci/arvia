@@ -80,7 +80,7 @@ struct DosyaniTamamlaChecklist: View {
             RoundedRectangle(cornerRadius: AppRadius.card)
                 .fill(Color.appSurface)
         )
-        .subtleShadow()
+        .cardShadow()
         .padding(.horizontal, AppSpacing.screenMarginH)
         .sheet(isPresented: $showReminderForm) {
             ReminderFormView(preselectedVehicleId: vehicle.id)

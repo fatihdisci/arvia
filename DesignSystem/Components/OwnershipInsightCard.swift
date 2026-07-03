@@ -57,7 +57,7 @@ struct OwnershipInsightCard: View {
             RoundedRectangle(cornerRadius: AppRadius.card)
                 .fill(Color.appSurface)
         )
-        .subtleShadow()
+        .cardShadow()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(value)\(subtitle.map { ". \($0)" } ?? "")")
     }

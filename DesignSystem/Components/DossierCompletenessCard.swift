@@ -60,7 +60,7 @@ struct DossierCompletenessCard: View {
             RoundedRectangle(cornerRadius: AppRadius.card)
                 .fill(Color.appSurface)
         )
-        .subtleShadow()
+        .cardShadow()
         .onAppear {
             if !reduceMotion {
                 withAnimation(.easeOut(duration: 0.8)) {

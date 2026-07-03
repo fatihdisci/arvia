@@ -188,7 +188,7 @@ struct ReminderDetailView: View {
             .background(
                 RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface)
             )
-            .subtleShadow()
+            .cardShadow()
         }
         .padding(.horizontal, AppSpacing.screenMarginH)
     }
@@ -230,7 +230,7 @@ struct ReminderDetailView: View {
         .background(
             RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface)
         )
-        .subtleShadow()
+        .cardShadow()
         .padding(.horizontal, AppSpacing.screenMarginH)
     }
 

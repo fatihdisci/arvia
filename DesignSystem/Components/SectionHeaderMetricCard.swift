@@ -130,7 +130,7 @@ struct MetricCard: View {
             RoundedRectangle(cornerRadius: AppRadius.card)
                 .fill(Color.appSurface)
         )
-        .subtleShadow()
+        .cardShadow()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(Text(title)): \(value)")
     }

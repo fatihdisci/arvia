@@ -13,7 +13,7 @@ enum AppShadows {
         func body(content: Content) -> some View {
             content
                 .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.small)
+                    RoundedRectangle(cornerRadius: AppRadius.medium)
                         .stroke(Color.appBorder, lineWidth: 0.5)
                 )
         }
