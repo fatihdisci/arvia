@@ -138,6 +138,10 @@ struct PaywallView: View {
                 }
             }
         }
+        // Sheet yüksekliği: medium ile başla, kullanıcı isterse large'a çeksin.
+        // Pro özellikleri arttıkça buraya yeni detent eklenir (örn. .height(720)).
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 
     // MARK: - Compact Hero (80pt)
