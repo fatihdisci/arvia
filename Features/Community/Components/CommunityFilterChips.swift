@@ -83,7 +83,7 @@ struct FilterChip: View {
                 Capsule()
                     .stroke(isSelected ? Color.clear : AppColors.border, lineWidth: 1)
             )
-            .foregroundColor(isSelected ? .white : AppColors.textSecondary)
+            .foregroundColor(isSelected ? AppColors.textOnAccent : AppColors.textSecondary)
         }
         .accessibilityLabel(label)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
