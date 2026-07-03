@@ -330,6 +330,17 @@ struct GarageView: View {
                         .padding(.horizontal, AppSpacing.screenMarginH)
                     }
 
+                    // 1.5. Dosya Skoru — tek metrik olarak (Karar 3.1)
+                    // Hero altında, checklist üstünde. Circular progress + eksik kriterler.
+                    if let vehicle = currentVehicle {
+                        DossierCompletenessCard(
+                            score: computeFileScore(for: vehicle),
+                            criteriaMet: criteriaMet(for: vehicle),
+                            criteriaMissing: criteriaMissing(for: vehicle)
+                        )
+                        .padding(.horizontal, AppSpacing.screenMarginH)
+                    }
+
                     // 2. Bugün Garajında
                     if let vehicle = currentVehicle {
                         todayGarageSection(vehicle: vehicle)
