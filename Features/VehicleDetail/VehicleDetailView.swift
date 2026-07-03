@@ -2002,20 +2002,21 @@ struct VehicleDetailMilestoneCard: View {
 
             Spacer(minLength: 0)
         }
-        .padding(AppSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .fill(Color.appSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(accent.opacity(0.3), lineWidth: 1.5)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(kind.displayLabel): \(title), \(formattedDate)")
+.padding(AppSpacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .fill(Color.appSurface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .stroke(accent.opacity(0.4), lineWidth: 1)
+            )
+            .cardShadow()
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(kind.displayLabel): \(title), \(formattedDate)")
+        }
     }
-}
 
 // MARK: - Preview
 #Preview("Araç Detay — Dolu Veri") {
