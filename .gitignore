@@ -35,3 +35,6 @@ build/
 # Configuration (production secrets)
 Config.xcconfig
 Configuration/Config.xcconfig
+
+# Local AI assistant settings (kişisel)
+.claude/
