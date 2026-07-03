@@ -138,10 +138,10 @@ struct PaywallView: View {
                 }
             }
         }
-        // Sheet yüksekliği: ekranın %65'i ile başla (~555pt), kullanıcı isterse
-        // large'a çeksin. Pro özellikleri arttıkça fraction büyütülür.
-        .presentationDetents([.fraction(0.65), .large])
-        .presentationDragIndicator(.visible)
+        // Sheet yüksekliği: ekranın %65'i (~555pt). Tek detent — swipe kapalı.
+        // Pro özellikleri arttıkça fraction büyütülür.
+        .presentationDetents([.fraction(0.65)])
+        .presentationDragIndicator(.hidden)
     }
 
     // MARK: - Compact Hero (80pt)
