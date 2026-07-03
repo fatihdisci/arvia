@@ -267,7 +267,7 @@ struct VehicleInsightService {
                 priority: .warning,
                 contentKind: .softQuestion,
                 title: "Kilometren güncel mi?",
-                body: "Km bilgisi girilmediğinde bakım ve masraf takibi doğru çalışmaz. Güncel km eklemek hatırlatıcıları daha anlamlı hale getirir.",
+                body: "Km bilgisi olmadan bakım ve masraf takibi istenen kadar doğru çalışmaz. Güncel km girildiğinde hatırlatıcılar daha anlamlı hale gelir.",
                 action: .updateOdometer,
                 snoozeDays: 30
             )
@@ -278,7 +278,7 @@ struct VehicleInsightService {
                 priority: .info,
                 contentKind: .softQuestion,
                 title: "Kilometren güncel mi?",
-                body: "Son km kaydının üzerinden zaman geçmiş görünüyor. Güncel km eklemek hatırlatıcıların doğru çalışmasına yardımcı olur.",
+                body: "Son km kaydının üzerinden zaman geçmiş. Güncel km girildiğinde hatırlatıcılar daha doğru çalışır.",
                 action: .updateOdometer,
                 snoozeDays: 30
             )
@@ -445,7 +445,7 @@ struct VehicleInsightService {
             priority: .warning,
             contentKind: .warning,
             title: "Bakım geçmişin eksik",
-            body: "Kayıtlarına göre bakım geçmişi henüz görünmüyor. İlk bakım kaydını eklemek faydalı olabilir.",
+            body: "Bakım geçmişin henüz görünmüyor. İlk bakım kaydı, gelecek hatırlatıcılar için referans oluşturabilir.",
             action: .addServiceRecord,
             snoozeDays: 14
         )
@@ -457,7 +457,7 @@ struct VehicleInsightService {
             priority: .warning,
             contentKind: .warning,
             title: "Bakım geçmişini gözden geçir",
-            body: "Son bakım kaydının üzerinden uzun süre geçmiş. Bakım geçmişini kontrol etmek faydalı olabilir.",
+            body: "Son bakım kaydının üzerinden uzun süre geçmiş. Yeni bir kayıt, geçmiş takibini canlı tutar.",
             action: .addServiceRecord,
             snoozeDays: 14
         )
