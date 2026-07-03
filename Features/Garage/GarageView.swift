@@ -311,15 +311,14 @@ struct GarageView: View {
     // MARK: - Main Garage Content
     private var garageContent: some View {
         VStack(spacing: 0) {
-            // 0. Çoklu araç picker — ScrollView DIŞINDA, sabit
+            // 0. Araç plaka picker — ScrollView DIŞINDA, sabit
             // NavigationLink + ScrollView'in gesture'ı chevron tıklamasını
             // yiyordu. Sabit alanda bağımsız Button olarak çalışıyor.
-            if activeVehicles.count > 1 {
-                vehiclePicker
-                    .padding(.horizontal, AppSpacing.screenMarginH)
-                    .padding(.top, AppSpacing.md)
-                    .padding(.bottom, AppSpacing.sm)
-            }
+            // Tek araçta chevron'lar disabled, plaka label ortada görünür.
+            vehiclePicker
+                .padding(.horizontal, AppSpacing.screenMarginH)
+                .padding(.top, AppSpacing.md)
+                .padding(.bottom, AppSpacing.sm)
 
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
