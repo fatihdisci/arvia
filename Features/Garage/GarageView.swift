@@ -335,11 +335,11 @@ struct GarageView: View {
                     }
 
                     // 1.5. Dosya Skoru — tek metrik olarak (Karar 3.1)
-                    // Hero altında, checklist üstünde. Circular progress + eksik kriterler.
+                    // Hero altında, checklist üstünde. Circular progress + skor aralığına
+                    // göre yumuşak/teşvik edici mesaj + eksik kriterler.
                     if let vehicle = currentVehicle {
                         DossierCompletenessCard(
                             score: computeFileScore(for: vehicle),
-                            criteriaMet: criteriaMet(for: vehicle),
                             criteriaMissing: criteriaMissing(for: vehicle)
                         )
                         .padding(.horizontal, AppSpacing.screenMarginH)
@@ -822,16 +822,6 @@ struct GarageView: View {
         if !recentExpenses(for: vehicle).isEmpty || !recentServices(for: vehicle).isEmpty { count += 1 }
         if !recentDocuments(for: vehicle).isEmpty { count += 1 }
         return count
-    }
-
-    private func criteriaMet(for vehicle: Vehicle) -> [String] {
-        var met: [String] = []
-        if !vehicle.brand.isEmpty { met.append("Marka") }
-        if !vehicle.model.isEmpty { met.append("Model") }
-        if vehicle.year != nil { met.append("Yıl") }
-        if vehicle.currentOdometer > 0 { met.append("Km") }
-        if vehicle.transmissionType != nil { met.append("Vites") }
-        return met
     }
 
     private func criteriaMissing(for vehicle: Vehicle) -> [String] {
