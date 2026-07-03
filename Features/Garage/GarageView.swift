@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import PhotosUI
 
 // MARK: - Garaj (Garage) Tab
 // Kullanıcının araçlarını gösteren ana ekran.
@@ -23,6 +24,10 @@ struct GarageView: View {
     @State private var showPaywall = false
     @State private var showSettings = false
     @State private var showArchivedVehicles = false
+
+    // Garaj hero card — fotoğraf yokken tıklayınca sistem fotoğraf seçici açılır
+    // (önce fotoğraf eklensin, sonra detaya gidilsin).
+    @State private var garagePhotoItem: PhotosPickerItem?
 
     // Faz 2.6 — Arvia Rehber tanıtım banner'ı snooze'u.
     // 0 = hiç dismiss edilmedi, aksi halde dismiss zamanı (epoch seconds).
@@ -345,14 +350,21 @@ struct GarageView: View {
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
                     // 1. Hero Vehicle Card — tek, currentVehicle'a göre
+                    // Fotoğraf varsa → tıklayınca VehicleDetail açılır.
+                    // Fotoğraf yoksa → tıklayınca önce sistem fotoğraf seçici açılır.
                     if let vehicle = currentVehicle {
-                        NavigationLink {
-                            VehicleDetailView(vehicle: vehicle)
-                        } label: {
-                            heroCardContent(vehicle: vehicle)
+                        if vehicle.photoFileName != nil {
+                            NavigationLink {
+                                VehicleDetailView(vehicle: vehicle)
+                            } label: {
+                                heroCardContent(vehicle: vehicle)
+                            }
+                            .buttonStyle(PlainCardButtonStyle())
+                            .padding(.horizontal, AppSpacing.screenMarginH)
+                        } else {
+                            heroPhotoPicker(for: vehicle)
+                                .padding(.horizontal, AppSpacing.screenMarginH)
                         }
-                        .buttonStyle(PlainCardButtonStyle())
-                        .padding(.horizontal, AppSpacing.screenMarginH)
                     }
 
                     // 1.5. Dosya Skoru — tek metrik olarak (Karar 3.1)
@@ -404,6 +416,42 @@ struct GarageView: View {
             guard newCount > 0 else { return }
             if let id = activeVehicleId, !activeVehicles.contains(where: { $0.id == id }) {
                 activeVehicleId = activeVehicles.first?.id
+            }
+        }
+    }
+
+    // MARK: - Hero Card Content
+    /// Fotoğrafsız hero — tıklayınca sistem fotoğraf seçici açılır.
+    /// Kullanıcı önce fotoğraf ekler, sonra detaya gider.
+    @ViewBuilder
+    private func heroPhotoPicker(for vehicle: Vehicle) -> some View {
+        PhotosPicker(selection: $garagePhotoItem, matching: .images) {
+            heroCardContent(vehicle: vehicle)
+        }
+        .buttonStyle(PlainCardButtonStyle())
+        .onChange(of: garagePhotoItem) { _, newItem in
+            if let item = newItem { loadGaragePhoto(item, for: vehicle) }
+        }
+    }
+
+    /// Garaj'dan seçilen fotoğrafı kaydet, vehicle'a bağla.
+    private func loadGaragePhoto(_ item: PhotosPickerItem, for vehicle: Vehicle) {
+        Task {
+            do {
+                guard let data = try await item.loadTransferable(type: Data.self) else { return }
+                guard let image = UIImage(data: data) else { return }
+                let fileName = try VehiclePhotoStorageService.shared.savePhoto(image)
+                await MainActor.run {
+                    vehicle.photoFileName = fileName
+                    try? modelContext.save()
+                    garagePhotoItem = nil
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                }
+            } catch {
+                await MainActor.run {
+                    garagePhotoItem = nil
+                }
             }
         }
     }
