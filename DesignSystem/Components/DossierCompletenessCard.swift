@@ -37,9 +37,6 @@ struct DossierCompletenessCard: View {
                     Text("%\(score)")
                         .font(AppTypography.cardTitleSmall)
                         .foregroundColor(scoreColor)
-                    Text("tam")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundColor(AppColors.textTertiary)
                 }
             }
 
