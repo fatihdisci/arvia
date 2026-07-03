@@ -138,9 +138,9 @@ struct PaywallView: View {
                 }
             }
         }
-        // Sheet yüksekliği: medium ile başla, kullanıcı isterse large'a çeksin.
-        // Pro özellikleri arttıkça buraya yeni detent eklenir (örn. .height(720)).
-        .presentationDetents([.medium, .large])
+        // Sheet yüksekliği: ekranın %65'i ile başla (~555pt), kullanıcı isterse
+        // large'a çeksin. Pro özellikleri arttıkça fraction büyütülür.
+        .presentationDetents([.fraction(0.65), .large])
         .presentationDragIndicator(.visible)
     }
 
