@@ -1868,28 +1868,7 @@ struct UpcomingTaskCard: View {
 }
 
 // MARK: - Vehicle Detail Guide Card
-struct VehicleDetailGuideCard: View {
-    let insight: VehicleInsight; let primaryAction: () -> Void; let dismissAction: () -> Void
-    var body: some View {
-        HStack(alignment: .top, spacing: AppSpacing.sm) {
-            Image(systemName: icon).font(.system(size: 14, weight: .semibold)).foregroundColor(color).frame(width: 28, height: 28).background(Circle().fill(color.opacity(0.1)))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(insight.title).font(AppTypography.bodyMedium).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
-                Text(insight.body).font(AppTypography.caption).foregroundColor(AppColors.textSecondary).lineLimit(3).fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: AppSpacing.xs) {
-                    Button(action: primaryAction) { HStack(spacing: 4) { Text(insight.action?.title ?? "").font(AppTypography.captionMedium); Image(systemName: "arrow.right").font(.caption2.weight(.semibold)) }.foregroundColor(color) }.buttonStyle(.plain)
-                    Spacer()
-                    Button(action: dismissAction) { Text("Daha sonra").font(AppTypography.caption).foregroundColor(AppColors.textTertiary) }.buttonStyle(.plain).accessibilityLabel("Öneriyi gizle")
-                }.frame(minHeight: 32)
-            }
-        }
-        .padding(AppSpacing.md).background(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).fill(Color.appSurface))
-        .overlay(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).stroke(AppColors.border, lineWidth: 0.5))
-        .accessibilityElement(children: .combine).accessibilityLabel("\(insight.title). \(insight.body)")
-    }
-    private var color: Color { switch insight.priority { case .important: AppColors.critical; case .warning: AppColors.warning; case .info: AppColors.accentPrimary } }
-    private var icon: String { switch insight.type { case .overdueReminder: "exclamationmark.triangle.fill"; case .upcomingReminder: "bell.badge"; case .calendarPeriod: "calendar.badge.clock"; case .odometerUpdate: "gauge.with.needle"; case .seasonalGuidance: "sun.max"; case .missingDocument: "doc.text"; case .monthlyExpensePrompt: "turkishlirasign.circle"; case .fuelTypeGuidance: "fuelpump"; case .transmissionGuidance: "gearshape.2"; case .odometerMilestone: "flag.checkered"; case .maintenance: "wrench.and.screwdriver"; case .quietGoodState: "checkmark.seal"; case .saleFileReadiness: "doc.richtext" } }
-}
+// Faz 1.1: VehicleDetailGuideCard kaldırıldı — yerini VehicleInsightCard aldı.
 
 // MARK: - Contextual Insight Compact Card
 struct ContextualInsightCompactCard: View {

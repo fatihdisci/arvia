@@ -662,7 +662,7 @@ final class VehicleInsightServiceTests: XCTestCase {
             maxVisible: 10
         )
 
-        XCTAssertTrue(insights.contains { $0.type == .upcomingReminder && $0.action == .openTodos })
+        XCTAssertTrue(insights.contains { $0.type == .upcomingReminder && $0.action == .addReminder })
     }
 
     func testMonthlySummaryTotalCalculationIsCorrect() {
@@ -706,7 +706,7 @@ final class VehicleInsightServiceTests: XCTestCase {
 
         let diesel = insights.first { $0.type == .fuelTypeGuidance }
         XCTAssertNotNil(diesel)
-        XCTAssertTrue(diesel?.body.contains("takip etmek faydalı olabilir") == true)
+        XCTAssertTrue(diesel?.body.contains("DPF") == true, "Diesel body should explain DPF acronym per Faz 1.1 ton kuralları")
         XCTAssertFalse(diesel?.body.localizedCaseInsensitiveContains("kesin") == true)
     }
 
@@ -723,7 +723,10 @@ final class VehicleInsightServiceTests: XCTestCase {
         )
 
         let transmission = insights.first { $0.type == .transmissionGuidance }
-        XCTAssertEqual(transmission?.body, "Otomatik vitesli araçlarda şanzıman bakım geçmişini kayıt altında tutmak faydalı olabilir.")
+        XCTAssertNotNil(transmission)
+        // Faz 1.1: transmission body artık uyarı tonunda, kritik bilgi veriyor.
+        XCTAssertTrue(transmission?.body.contains("şanzıman yağı") == true)
+        XCTAssertTrue(transmission?.contentKind == .warning)
     }
 
     func testCurrentSeasonCreatesSafeSeasonalInsight() {
@@ -829,8 +832,8 @@ final class VehicleInsightServiceTests: XCTestCase {
             for: vehicle, reminders: [], expenses: [], serviceRecords: [], documents: [], inspectionReports: [], maxVisible: 10
         ).first { $0.type == .calendarPeriod }
 
-        XCTAssertEqual(januaryInsight?.title, "MTV 1. taksit dönemindesin")
-        XCTAssertEqual(julyInsight?.title, "MTV 2. taksit dönemindesin")
+        XCTAssertEqual(januaryInsight?.title, "MTV 1. taksit dönemi")
+        XCTAssertEqual(julyInsight?.title, "MTV 2. taksit dönemi")
         XCTAssertNotEqual(januaryInsight?.body, julyInsight?.body)
     }
 
@@ -982,9 +985,20 @@ final class VehicleInsightServiceTests: XCTestCase {
     }
 
     func testInsightActionsMapToValidDestinations() {
+        // Faz 1.1: meta-aksiyonlar (acknowledge/dismissAndSnooze/markAsRead/noAction)
+        // navigasyon yapmaz — destinationKey boş olabilir.
+        let navigationActions: Set<VehicleInsightAction> = [
+            .addServiceRecord, .addDocument, .openSaleFile, .updateOdometer,
+            .openTodos, .addInspectionReport, .addReminder, .addMTVReminder,
+            .addExpense, .addFuelExpense
+        ]
         for action in VehicleInsightAction.allCases {
-            XCTAssertFalse(action.title.isEmpty)
-            XCTAssertFalse(action.destinationKey.isEmpty)
+            // title her zaman anlamlı olmalı (boş olabilir sadece dismiss-tipi meta için)
+            if !navigationActions.contains(action) {
+                continue  // meta-aksiyonların title'ı boş olabilir
+            }
+            XCTAssertFalse(action.title.isEmpty, "\(action.rawValue) title should not be empty")
+            XCTAssertFalse(action.destinationKey.isEmpty, "\(action.rawValue) destinationKey should not be empty")
         }
     }
 
@@ -1003,7 +1017,7 @@ final class VehicleInsightServiceTests: XCTestCase {
         let blockedFragments = ["yakında", "gelecek", "ileride", "roadmap", "pro yakında"]
 
         for insight in insights {
-            let copy = "\(insight.title) \(insight.body) \(insight.action.title)".lowercased()
+            let copy = "\(insight.title) \(insight.body) \(insight.action?.title ?? "")".lowercased()
             for fragment in blockedFragments {
                 XCTAssertFalse(copy.contains(fragment), "Unexpected future-facing copy: \(fragment)")
             }

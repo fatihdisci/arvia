@@ -326,6 +326,13 @@ enum DemoDataSeeder {
         case busyState       // yoğun state (5 hatırlatıcı)
         case quietGood       // sessiz iyi hal (tüm reminders completed)
 
+        // Faz 1.1 — 5 içerik tipi senaryoları (Karar 4.2 test amaçlı)
+        case criticalAction    // A. CTA — overdueReminder
+        case seasonalInfo      // B. Bilgi — seasonalGuidance (BEV kış)
+        case mechanicalWarning // C. Uyarı — transmissionGuidance (DSG 60K)
+        case passiveReminder   // D. Hatırlatma — calendarPeriod (MTV)
+        case softQuestion      // E. Soru — odometerUpdate
+
         var id: String { rawValue }
 
         var displayName: String {
@@ -335,6 +342,11 @@ enum DemoDataSeeder {
             case .overdueState: return "Gecikmiş hatırlatıcı"
             case .busyState: return "Yoğun state (5 hatırlatıcı)"
             case .quietGood: return "Sessiz iyi hal"
+            case .criticalAction: return "A. Kritik Eylem (gecikmiş muayene)"
+            case .seasonalInfo: return "B. Sezonluk Bilgi (BEV kış)"
+            case .mechanicalWarning: return "C. Mekanik Uyarı (otomatik şanzıman)"
+            case .passiveReminder: return "D. Pasif Hatırlatma (MTV)"
+            case .softQuestion: return "E. Yumuşak Soru (km güncel mi?)"
             }
         }
 
@@ -345,6 +357,11 @@ enum DemoDataSeeder {
             case .overdueState: return "exclamationmark.triangle.fill"
             case .busyState: return "bell.badge.fill"
             case .quietGood: return "checkmark.seal.fill"
+            case .criticalAction: return "exclamationmark.triangle.fill"
+            case .seasonalInfo: return "snowflake"
+            case .mechanicalWarning: return "exclamationmark.octagon.fill"
+            case .passiveReminder: return "calendar"
+            case .softQuestion: return "questionmark.bubble.fill"
             }
         }
 
@@ -355,6 +372,11 @@ enum DemoDataSeeder {
             case .overdueState: return "Kırmızı primary insight üstte."
             case .busyState: return "Çakışan insight'lar, öncelik sıralaması."
             case .quietGood: return "Sessiz iyi hal, 'tamam' mesajı."
+            case .criticalAction: return "A. CTA — zorunlu CTA butonu, dismiss yok."
+            case .seasonalInfo: return "B. Bilgi — sadece dismiss butonu."
+            case .mechanicalWarning: return "C. Uyarı — inline CTA + dismiss."
+            case .passiveReminder: return "D. Hatırlatma — MTV, dismiss ile kapanır."
+            case .softQuestion: return "E. Soru — çift buton (Ekle + Şimdi Değil)."
             }
         }
     }
@@ -475,6 +497,82 @@ enum DemoDataSeeder {
             )
             reminder.addedToHistoryAt = now
             context.insert(reminder)
+
+        // MARK: - Faz 1.1 — 5 içerik tipi senaryoları (Karar 4.2)
+        // Her senaryo tek bir insight tipini ön plana çıkarır.
+
+        case .criticalAction:
+            // A. CTA — overdueReminder (zorunlu CTA, dismiss yok)
+            let vehicle = makeDemoCar(
+                plate: "34 ACT 001",
+                brand: "Honda",
+                model: "Civic",
+                year: 2020,
+                odometer: 78_000
+            )
+            context.insert(vehicle)
+            // Gecikmiş muayene → overdueReminder üretir
+            context.insert(Reminder(
+                vehicleId: vehicle.id,
+                type: .inspection,
+                title: "Periyodik Muayene",
+                dueDate: calendar.date(byAdding: .day, value: -10, to: now) ?? now,
+                priority: .critical
+            ))
+
+        case .seasonalInfo:
+            // B. Bilgi — seasonalGuidance (BEV kış, sadece dismiss)
+            let vehicle = Vehicle(
+                plate: "34 BEV 002",
+                brand: "Tesla",
+                model: "Model 3",
+                year: 2023,
+                vehicleType: .car,
+                fuelType: .electric,
+                transmissionType: .automatic,
+                currentOdometer: 22_000
+            )
+            context.insert(vehicle)
+            // fuelTypeGuidance + seasonalGuidance üretir
+            // (kış ayındaysa seasonalGuidance da görünür)
+
+        case .mechanicalWarning:
+            // C. Uyarı — transmissionGuidance (otomatik şanzıman)
+            let vehicle = makeDemoCar(
+                plate: "34 MEC 003",
+                brand: "Volkswagen",
+                model: "Passat",
+                year: 2019,
+                odometer: 62_000
+            )
+            context.insert(vehicle)
+            // transmissionGuidance + fuelTypeGuidance üretir
+
+        case .passiveReminder:
+            // D. Hatırlatma — calendarPeriod (MTV, dismiss ile kapanır)
+            let vehicle = makeDemoCar(
+                plate: "34 MTV 004",
+                brand: "Renault",
+                model: "Clio",
+                year: 2024,
+                odometer: 8_000
+            )
+            context.insert(vehicle)
+            // MTV reminder yoksa → calendarPeriod üretir
+            // (Ocak/Temmuz dışındaysa bu senaryo yine de profil rehberi gösterir)
+
+        case .softQuestion:
+            // E. Soru — odometerUpdate (çift buton)
+            let vehicle = makeDemoCar(
+                plate: "34 KMQ 005",
+                brand: "Hyundai",
+                model: "i20",
+                year: 2022,
+                odometer: 35_000
+            )
+            context.insert(vehicle)
+            // Masraf + servis kayıtları yoksa odometerUpdate + monthlyExpensePrompt üretir
+            // monthlyExpense için mevcut ayda expense olmamalı
         }
 
         try? context.save()
