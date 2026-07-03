@@ -351,7 +351,7 @@ struct ReportsView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
         .padding(.horizontal, AppSpacing.screenMarginH)
     }
@@ -395,7 +395,7 @@ struct ReportsView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
         .padding(.horizontal, AppSpacing.screenMarginH)
     }
@@ -478,7 +478,7 @@ struct ReportsView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
         .padding(.horizontal, AppSpacing.screenMarginH)
     }
@@ -565,7 +565,7 @@ struct ReportsView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                    .stroke(AppColors.border, lineWidth: 0.5)
             )
             .padding(.horizontal, AppSpacing.screenMarginH)
         }
@@ -599,7 +599,6 @@ struct ReportsView: View {
 #Preview("Raporlar — Dark Mode") {
     ReportsView()
         .modelContainer(MockDataProvider.previewContainer)
-        .preferredColorScheme(.dark)
 }
 
 #Preview("Raporlar — Dynamic Type") {

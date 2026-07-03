@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FB01FB01FB01FB01FB01FB01 /* JetBrainsMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F001F001F001F001F001F001 /* JetBrainsMono-Bold.ttf */; };
+		FB02FB02FB02FB02FB02FB02 /* JetBrainsMono-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F002F002F002F002F002F002 /* JetBrainsMono-Light.ttf */; };
+		FB03FB03FB03FB03FB03FB03 /* JetBrainsMono-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F003F003F003F003F003F003 /* JetBrainsMono-Regular.ttf */; };
+		FB04FB04FB04FB04FB04FB04 /* JetBrainsMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F004F004F004F004F004F004 /* JetBrainsMono-SemiBold.ttf */; };
+
 		0377C4DD607644008D0C299D /* VehicleDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 784379DB91C841BAB44BFC71 /* VehicleDocument.swift */; };
 		05773851B83041A798E299FA /* VehicleDossierApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C87E51626764955980F08F2 /* VehicleDossierApp.swift */; };
 		07860DC6FB685B472A228BB6 /* CommunityProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F2CC53672C2CCEFA92B275 /* CommunityProfileView.swift */; };
@@ -123,6 +128,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F001F001F001F001F001F001 /* JetBrainsMono-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fonts/JetBrainsMono-Bold.ttf"; sourceTree = "<group>"; };
+		F002F002F002F002F002F002 /* JetBrainsMono-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fonts/JetBrainsMono-Light.ttf"; sourceTree = "<group>"; };
+		F003F003F003F003F003F003 /* JetBrainsMono-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fonts/JetBrainsMono-Regular.ttf"; sourceTree = "<group>"; };
+		F004F004F004F004F004F004 /* JetBrainsMono-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fonts/JetBrainsMono-SemiBold.ttf"; sourceTree = "<group>"; };
+
 		0046A94CE11C4AACAB946053 /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
 		057834D6DB120B50E147467B /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
 		0755C274CE09437F9EE817AA /* VehicleEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleEditView.swift; sourceTree = "<group>"; };
@@ -424,7 +434,11 @@
 				1B18C91C35FE4D8F85FF26AE /* Base.lproj */,
 				AAAA0001AAAA0001AAAA0001 /* PrivacyInfo.xcprivacy */,
 				CCAT0005CCAT0005CCAT0005 /* CarCatalog.tr.json */,
-			);
+			
+				F001F001F001F001F001F001 /* JetBrainsMono-Bold.ttf */,
+				F002F002F002F002F002F002 /* JetBrainsMono-Light.ttf */,
+				F003F003F003F003F003F003 /* JetBrainsMono-Regular.ttf */,
+				F004F004F004F004F004F004 /* JetBrainsMono-SemiBold.ttf */,);
 			path = Resources;
 			sourceTree = "<group>";
 		};
@@ -680,7 +694,11 @@
 				F1458ECF64EE45EBB6C42667 /* LaunchScreen.storyboard in Resources */,
 				BBBB0001BBBB0001BBBB0001 /* PrivacyInfo.xcprivacy in Resources */,
 				CCAT0006CCAT0006CCAT0006 /* CarCatalog.tr.json in Resources */,
-			);
+			
+				FB01FB01FB01FB01FB01FB01 /* JetBrainsMono-Bold.ttf in Resources */,
+				FB02FB02FB02FB02FB02FB02 /* JetBrainsMono-Light.ttf in Resources */,
+				FB03FB03FB03FB03FB03FB03 /* JetBrainsMono-Regular.ttf in Resources */,
+				FB04FB04FB04FB04FB04FB04 /* JetBrainsMono-SemiBold.ttf in Resources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */

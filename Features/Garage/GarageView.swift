@@ -77,9 +77,15 @@ struct GarageView: View {
                     Button {
                         handleAddVehicle()
                     } label: {
-                        Image(systemName: "plus")
-                            .font(.body)
-                            .foregroundColor(AppColors.accentPrimary)
+                        Label("Araç Ekle", systemImage: "plus")
+                            .font(AppTypography.bodySecondary)
+                            .foregroundColor(AppColors.textOnAccent)
+                            .padding(.horizontal, AppSpacing.sm)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(AppColors.accentPrimary)
+                            )
                     }
                     .accessibilityLabel("Araç Ekle")
                 }
@@ -330,12 +336,7 @@ struct GarageView: View {
                         dosyaniTamamlaSection(vehicle: vehicle)
                     }
 
-                    // 3. Quick Actions — Hızlı İşlemler
-                    if let vehicle = currentVehicle {
-                        quickActionsSection(vehicle: vehicle)
-                    }
-
-                    // 4. Lightweight garage summary
+                    // 3. Lightweight garage summary
                     garageSummaryStrip
 
                     // 5. Archived vehicles
@@ -421,7 +422,7 @@ struct GarageView: View {
         }
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
     }
 
@@ -465,8 +466,8 @@ struct GarageView: View {
 
                 // Plaka pill — sağ üstte
                 Text(vehicle.plate.isEmpty ? "—" : vehicle.plate)
-                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                    .tracking(1)
+                    .font(.custom("JetBrainsMono-SemiBold", size: 14))
+                    .tracking(1.5)
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
@@ -478,7 +479,7 @@ struct GarageView: View {
                     )
                     .overlay(
                         Capsule()
-                            .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                            .stroke(AppColors.border, lineWidth: 0.5)
                     )
                     .frame(maxWidth: 130, alignment: .trailing)
             }
@@ -515,7 +516,7 @@ struct GarageView: View {
         .cardShadow()
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
     }
 
@@ -539,8 +540,8 @@ struct GarageView: View {
     private func heroIdentityBlock(vehicle: Vehicle) -> some View {
         HStack(alignment: .center, spacing: AppSpacing.sm) {
             Text(vehicle.plate.isEmpty ? "Plaka yok" : vehicle.plate)
-                .font(.system(size: 17, weight: .semibold, design: .monospaced))
-                .tracking(0.8)
+                .font(.custom("JetBrainsMono-Bold", size: 17))
+                .tracking(1.5)
                 .foregroundColor(AppColors.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
@@ -598,7 +599,7 @@ struct GarageView: View {
                     .foregroundColor(AppColors.textTertiary)
                 Spacer(minLength: 0)
                 Text("%\(score)")
-                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .font(AppTypography.labelMono)
                     .foregroundColor(barColor)
             }
             GeometryReader { geo in
@@ -643,86 +644,78 @@ struct GarageView: View {
         )
     }
 
-    // MARK: - Quick Action Rail
-    private var quickActionRail: some View {
-        QuickActionRail(actions: [
-            .init(icon: "gauge.with.needle", label: "Km", color: AppColors.vehicle) {
-                showQuickKmUpdate = true
-            },
-            .init(icon: "turkishlirasign.circle", label: "Masraf", color: AppColors.accentPrimary) {
-                showAddExpense = true
-            },
-            .init(icon: "fuelpump", label: "Yakıt", color: AppColors.warning) {
-                showAddFuelExpense = true
-            },
-            .init(icon: "doc.text.viewfinder", label: "Belge", color: AppColors.document) {
-                showAddDocument = true
-            },
-            .init(icon: "bell.badge", label: "Hatırlatıcı", color: AppColors.success) {
-                showAddReminder = true
-            },
-        ], style: .compact)
-    }
-
-    private func quickActionsSection(vehicle: Vehicle) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Hızlı İşlemler")
-                        .font(AppTypography.cardTitle)
-                        .foregroundColor(AppColors.textPrimary)
-                    Text(vehicle.plate.isEmpty ? "Seçili araç" : vehicle.plate)
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textTertiary)
-                }
-                Spacer()
-            }
-            .padding(.horizontal, AppSpacing.screenMarginH)
-
-            quickActionRail
-        }
-        .padding(.vertical, AppSpacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .fill(Color.appSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
-        )
-        .padding(.horizontal, AppSpacing.screenMarginH)
-        .accessibilityElement(children: .contain)
-    }
-
     private var garageSummaryStrip: some View {
-        HStack(spacing: AppSpacing.sm) {
-            miniSummary(icon: "car.2", title: "\(activeVehicles.count)", subtitle: "aktif araç")
-            miniSummary(icon: "bell.badge", title: "\(activeReminders.filter { reminder in activeVehicles.contains { $0.id == reminder.vehicleId } }.count)", subtitle: "açık iş")
-            miniSummary(icon: "archivebox", title: "\(archivedVehicles.count)", subtitle: "arşiv")
+        let activeReminderCount = activeReminders.filter { r in activeVehicles.contains { $0.id == r.vehicleId } }.count
+        let thisMonth = Calendar.current.component(.month, from: Date())
+        let thisYear = Calendar.current.component(.year, from: Date())
+        let thisMonthExpenses = allExpenses.filter {
+            let comps = Calendar.current.dateComponents([.month, .year], from: $0.date)
+            return comps.month == thisMonth && comps.year == thisYear
+        }
+        let monthlyTotal = thisMonthExpenses.reduce(0) { $0 + $1.amount }
+
+        let upcomingReminder = activeReminders
+            .filter { r in activeVehicles.contains { $0.id == r.vehicleId } && r.dueDate != nil }
+            .min(by: { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) })
+
+        return VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.sm) {
+                miniSummary(
+                    icon: "car.2",
+                    value: "\(activeVehicles.count)",
+                    label: "Aktif Araç",
+                    color: AppColors.accentPrimary
+                )
+                miniSummary(
+                    icon: "bell.badge",
+                    value: "\(activeReminderCount)",
+                    label: "Açık İş",
+                    color: activeReminderCount > 3 ? AppColors.warning : AppColors.success
+                )
+                miniSummary(
+                    icon: "turkishlirasign.circle",
+                    value: monthlyTotal > 0 ? formatCurrency(monthlyTotal) : "—",
+                    label: "Bu Ay",
+                    color: AppColors.accentSecondary
+                )
+                if let next = upcomingReminder, let nextDue = next.dueDate {
+                    miniSummary(
+                        icon: "calendar.badge.clock",
+                        value: nextDue.formatted(.dateTime.day().month(.abbreviated)),
+                        label: next.type.displayName,
+                        color: next.isOverdue ? AppColors.critical : AppColors.accentPrimary
+                    )
+                }
+            }
         }
         .padding(.horizontal, AppSpacing.screenMarginH)
     }
 
-    private func miniSummary(icon: String, title: String, subtitle: String) -> some View {
-        HStack(spacing: AppSpacing.xs) {
+    private func formatCurrency(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: value)) ?? "₺0"
+    }
+
+    private func miniSummary(icon: String, value: String, label: String, color: Color) -> some View {
+        VStack(spacing: 2) {
             Image(systemName: icon)
                 .font(.caption)
-                .foregroundColor(AppColors.accentPrimary)
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(AppColors.accentPrimary.opacity(0.09)))
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(AppTypography.bodyMedium)
-                    .foregroundColor(AppColors.textPrimary)
-                Text(subtitle)
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            Spacer(minLength: 0)
+                .foregroundColor(color)
+                .frame(height: 20)
+            Text(value)
+                .font(.custom("JetBrainsMono-SemiBold", size: 15))
+                .foregroundColor(AppColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(label)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(AppColors.textTertiary)
+                .lineLimit(1)
         }
-        .padding(AppSpacing.sm)
+        .padding(.vertical, AppSpacing.sm)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: AppRadius.medium)
@@ -730,7 +723,7 @@ struct GarageView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.medium)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
     }
 
@@ -756,12 +749,6 @@ struct GarageView: View {
                         .font(AppTypography.caption)
                         .foregroundColor(AppColors.textSecondary)
                 }
-
-                Spacer()
-
-                Text(vehicle.plate.isEmpty ? "Bugün" : vehicle.plate)
-                    .font(AppTypography.captionMedium)
-                    .foregroundColor(AppColors.accentPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
                     .padding(.horizontal, AppSpacing.xs)
@@ -1181,8 +1168,8 @@ struct PlainCardButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .opacity(configuration.isPressed ? 0.85 : 1.0)
-            .animation(reduceMotion ? .none : .easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.92 : 1.0)
+            .animation(reduceMotion ? .none : .easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 
@@ -1206,7 +1193,6 @@ struct PlainCardButtonStyle: ButtonStyle {
         .modelContainer(MockDataProvider.previewContainer)
         .environmentObject(PaywallService.shared)
         .environmentObject(AppNavigationRouter.shared)
-        .preferredColorScheme(.dark)
 }
 
 #Preview("Garaj — Dynamic Type") {

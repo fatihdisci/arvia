@@ -63,45 +63,29 @@ struct VehicleDossierApp: App {
     }
 
     // MARK: - UIKit Appearance Configuration
-    /// Tab bar ve segmented control için light/dark mode adaptive
-    /// UIKit appearance proxy ayarları.
+    /// Tab bar ve segmented control için dark-only luxury görünüm.
+    /// Mat altın vurgu, glassmorphism tab bar.
     private static func configureAppearance() {
-        // Tab bar
+        // Altın rengi
+        let goldColor = UIColor(red: 0xE6/255, green: 0xC4/255, blue: 0x79/255, alpha: 1.0)
+        let goldBorderColor = UIColor(red: 0xC9/255, green: 0xA9/255, blue: 0x61/255, alpha: 0.15)
+        let secondaryTextColor = UIColor(red: 0x8B/255, green: 0x95/255, blue: 0xA8/255, alpha: 1.0)
+        let surfaceColor = UIColor(red: 0x0F/255, green: 0x13/255, blue: 0x1F/255, alpha: 0.85)
+
+        // Tab bar — glassmorphism + gold accent
         let tabBarAppearance = UITabBarAppearance()
-        tabBarAppearance.configureWithDefaultBackground()
-        tabBarAppearance.backgroundColor = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark
-                ? UIColor(red: 0.067, green: 0.094, blue: 0.153, alpha: 1.0)  // #111827
-                : UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)         // #FFFFFF
-        }
+        tabBarAppearance.configureWithTransparentBackground()
+        tabBarAppearance.backgroundColor = surfaceColor
+        tabBarAppearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+        tabBarAppearance.shadowColor = goldBorderColor // Üst kenar altın çizgi
 
         let tabBarItemAppearance = UITabBarItemAppearance()
-        // Selected
-        tabBarItemAppearance.selected.iconColor = UIColor { trait in
-            trait.userInterfaceStyle == .dark
-                ? UIColor(red: 0.176, green: 0.831, blue: 0.749, alpha: 1.0)   // #2DD4BF
-                : UIColor(red: 0.059, green: 0.463, blue: 0.431, alpha: 1.0)   // #0F766E
-        }
-        tabBarItemAppearance.selected.titleTextAttributes = [
-            .foregroundColor: UIColor { trait in
-                trait.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.176, green: 0.831, blue: 0.749, alpha: 1.0)
-                    : UIColor(red: 0.059, green: 0.463, blue: 0.431, alpha: 1.0)
-            }
-        ]
-        // Unselected
-        tabBarItemAppearance.normal.iconColor = UIColor { trait in
-            trait.userInterfaceStyle == .dark
-                ? UIColor(red: 0.580, green: 0.639, blue: 0.722, alpha: 1.0)   // #94A3B8
-                : UIColor(red: 0.392, green: 0.455, blue: 0.545, alpha: 1.0)   // #64748B
-        }
-        tabBarItemAppearance.normal.titleTextAttributes = [
-            .foregroundColor: UIColor { trait in
-                trait.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.580, green: 0.639, blue: 0.722, alpha: 1.0)
-                    : UIColor(red: 0.392, green: 0.455, blue: 0.545, alpha: 1.0)
-            }
-        ]
+        // Selected — mat altın
+        tabBarItemAppearance.selected.iconColor = goldColor
+        tabBarItemAppearance.selected.titleTextAttributes = [.foregroundColor: goldColor]
+        // Unselected — secondary text
+        tabBarItemAppearance.normal.iconColor = secondaryTextColor
+        tabBarItemAppearance.normal.titleTextAttributes = [.foregroundColor: secondaryTextColor]
 
         tabBarAppearance.stackedLayoutAppearance = tabBarItemAppearance
         tabBarAppearance.inlineLayoutAppearance = tabBarItemAppearance
@@ -110,24 +94,14 @@ struct VehicleDossierApp: App {
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
 
-        // Segmented control
+        // Segmented control — dark-only
         let segmentedAppearance = UISegmentedControl.appearance()
-        // Normal state: light mode slate, dark mode light-slate
         segmentedAppearance.setTitleTextAttributes(
-            [.foregroundColor: UIColor { trait in
-                trait.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.580, green: 0.639, blue: 0.722, alpha: 1.0)   // #94A3B8
-                    : UIColor(red: 0.392, green: 0.455, blue: 0.545, alpha: 1.0)   // #64748B
-            }],
+            [.foregroundColor: secondaryTextColor],
             for: .normal
         )
-        // Selected state: light mode dark-accent (visible on white capsule), dark mode white
         segmentedAppearance.setTitleTextAttributes(
-            [.foregroundColor: UIColor { trait in
-                trait.userInterfaceStyle == .dark
-                    ? UIColor.white
-                    : UIColor(red: 0.059, green: 0.463, blue: 0.431, alpha: 1.0)   // #0F766E
-            }],
+            [.foregroundColor: goldColor],
             for: .selected
         )
     }
@@ -171,6 +145,7 @@ struct VehicleDossierApp: App {
                         VehicleFormView()
                     }
                 }
+                .preferredColorScheme(.dark)
             }
         }
     }

@@ -105,8 +105,8 @@ struct VehicleHeroHeader: View {
                 Spacer()
 
                 Text(vehicle.plate.isEmpty ? "Plaka yok" : vehicle.plate)
-                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                    .tracking(0.8)
+                    .font(.custom("JetBrainsMono-SemiBold", size: 15))
+                    .tracking(1.5)
                     .foregroundColor(AppColors.textPrimary)
                     .padding(.horizontal, AppSpacing.xs)
                     .padding(.vertical, 7)
@@ -191,5 +191,4 @@ struct VehicleHeroHeader: View {
         .padding(.vertical, AppSpacing.lg)
     }
     .background(Color.appBackground)
-    .preferredColorScheme(.dark)
 }

@@ -630,5 +630,4 @@ struct SettingsView: View {
         .modelContainer(MockDataProvider.previewContainer)
         .environmentObject(PaywallService.shared)
         .environmentObject(CommunityAuthService.shared)
-        .preferredColorScheme(.dark)
 }

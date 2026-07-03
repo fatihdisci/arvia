@@ -1,8 +1,9 @@
-# DESIGN.md — Araç Dijital Dosyası Tasarım Anayasası
+# DESIGN.md — Arvia Premium Tasarım Anayasası
 
 ## 1. Ürün karakteri
 
 Bu uygulama premium, güvenilir, sakin ve profesyonel görünmelidir.
+Tasarım konsepti: **"Aracın Dijital Pasaportu"** — aracının finansal ve teknik dosyası.
 
 Uygulama dili:
 
@@ -11,21 +12,26 @@ Uygulama dili:
 - Galeri ilan uygulaması değil.
 - AI wrapper gibi görünmeyecek.
 - Aşırı neon, 3D, emoji, mavi-mor gradyan, generic SaaS kartları yok.
-- Apple-native, düzenli, güven veren, “aracımın resmi olmayan dijital dosyası” hissi verecek.
+- Premium fintech + automotive estetiğinde, prestijli bir dijital dosya hissi verecek.
 
 Ana his:
 
-> Cebindeki premium araç dosyası.
+> Aracının dijital pasaportu.
 
 ## 2. Tasarım felsefesi
 
-Vibe-coded uygulamaların amatör görünmesinin nedeni genellikle yaratıcı kısıt eksikliğidir. Bu projede coding agent boş prompttan UI üretmeyecek. Her ekran bu dosyadaki token, hiyerarşi, spacing, motion ve native iOS kurallarına göre yapılacak.
+**Corporate Minimalism with Tactile Accents.** Dark luxury estetik; mat altın vurgulu deep navy zemin.
+
+- **Minimalism:** Ağır negatif alan, kısıtlı renk paleti, finansal veriye odak.
+- **High-Contrast Accents:** Derin lacivert-siyah tuval üzerinde mat altın vurgular değer ve önem belirtir.
+- **Technical Precision:** Monospaced tipografi (JetBrains Mono) veri noktalarında hassasiyet ve mekanik güvenilirlik hissi verir.
+- **Subtle Depth:** 1px altın border'lar ve iç highlight'lar, flat/modern profili bozmadan fiziksel katman hissi yaratır.
 
 Ana kural:
 
-> AI varsayılanını öldür, native iOS güvenini koru, ürünün kendi imzasını ekle.
+> AI varsayılanını öldür, native iOS güvenini koru, aracın dijital pasaportu kimliğini ekle.
 
-## 3. Yasaklı “AI-slop” işaretleri
+## 3. Yasaklı "AI-slop" işaretleri
 
 Aşağıdakiler üretimde kullanılmayacak:
 
@@ -35,119 +41,121 @@ Aşağıdakiler üretimde kullanılmayacak:
 - Inter / Roboto / Arial gibi web/SaaS default hissi veren font dayatması.
 - Rastgele emoji ikonları.
 - Rastgele 3D araba illüstrasyonu.
-- Gereksiz cam/glassmorphism.
-- Aşırı gölge.
-- Opacity çorbası.
+- Aşırı gölge (shadow kullanılmaz; border-based elevasyon).
 - Her ekranın aynı kart yığını gibi görünmesi.
 - Boş durum, hata durumu ve loading durumu olmayan ekranlar.
-- “Something went wrong” gibi güven kıran hata mesajları.
+- "Something went wrong" gibi güven kıran hata mesajları.
 - Renklerin anlam taşımadan kullanılması.
 - Sadece güzel görünen ama gerçek veriyle dağılan layout.
+- Light/dark mode adaptive renk karmaşası.
 
-## 4. Görsel hiyerarşi
+## 4. Tema
 
-Her ekranda tek bir ana görsel çapa olmalı.
+**Dark-only.** Sistem görünümünden bağımsız, her zaman dark tema.
 
-Örnek:
-
-- Garaj ekranında: seçili/ana araç kartı.
-- Araç detayında: yaklaşan en kritik iş.
-- İşler ekranında: geciken/kritik görevler.
-- Belgeler ekranında: eksik veya süresi yaklaşan belge.
-- Satış dosyasında: dosya tamlık skoru.
-- Raporlar ekranında: yıllık toplam masraf veya km başı maliyet.
-
-Her şey aynı önem seviyesinde gösterilmeyecek.
+- UIUserInterfaceStyle = Dark (launch flash önlenir).
+- `.preferredColorScheme(.dark)` root WindowGroup'ta.
+- Asset catalog'da light varyant yok. Tüm renkler code-based hex.
 
 ## 5. Renk sistemi
 
-Renkler semantik olacak. Ham hex doğrudan view içinde kullanılmayacak.
+Renkler semantik token üzerinden kullanılır. Ham hex doğrudan view içinde kullanılmaz.
+Kaynak: `DesignSystem/AppColors.swift` (code-based, asset catalog kullanılmaz).
 
-### Önerilen ana palet
+### Ana palet
 
-- Background Primary: near white / near black adaptive
-- Surface Primary: sistem arka planından hafif ayrışan yüzey
-- Text Primary: yüksek kontrast
-- Text Secondary: sakin açıklama
-- Accent Primary: güven veren petrol/mavi ton
-- Success: yeşil
-- Warning: amber
-- Critical: kırmızı
-- Document: gümüş/gri
-- Vehicle: koyu lacivert/grafit
+**Background / Surface:**
+| Token | Hex | Kullanım |
+|---|---|---|
+| backgroundPrimary | #0A0E1A | En derin arka plan (surface-container-lowest) |
+| backgroundSecondary | #0F131F | Ana arka plan / surface |
+| surfacePrimary | #171B28 | Kart yüzeyleri (surface-container-low) |
+| surfaceSecondary | #1B1F2C | Hafif elevasyonlu yüzey (surface-container) |
 
-### Önerilen hex yönü
+**Text:**
+| Token | Hex | Kullanım |
+|---|---|---|
+| textPrimary | #F5F0E8 | Cream-white (saf beyaz değil, düşük glare) |
+| textSecondary | #8B95A8 | Gri-mavi secondary text |
+| textTertiary | #999080 | Muted outline rengi |
+| textOnAccent | #3F2E00 | Gold buton üstünde koyu metin |
 
-Light mode:
+**Accent (Mat Altın + Şampanya):**
+| Token | Hex | Kullanım |
+|---|---|---|
+| accentPrimary | #E6C479 | Mat altın — birincil vurgu, CTA, aktif durum |
+| accentSecondary | #D8C594 | Şampanya — ikincil vurgu, gradient |
+| accentMuted | #E6C479 @ 12% | Gold tinted arka plan |
 
-- `#F8FAFC` ana zemin
-- `#FFFFFF` surface
-- `#111827` primary text
-- `#64748B` secondary text
-- `#0F766E` accent
-- `#2563EB` secondary accent
-- `#F59E0B` warning
-- `#DC2626` critical
-- `#10B981` success
+**Semantic:**
+| Token | Hex | Kullanım |
+|---|---|---|
+| success | #2D5F3F | Koyu yeşil — başarı/tamamlandı |
+| warning | #D4A017 | Amber/altın — yaklaşan tarih/uyarı |
+| critical | #8B2C2C | Koyu kırmızı — gecikmiş/kritik |
 
-Dark mode:
-
-- `#0B1220` ana zemin
-- `#111827` surface
-- `#F8FAFC` primary text
-- `#94A3B8` secondary text
-- `#2DD4BF` accent
-- `#60A5FA` secondary accent
-- `#FBBF24` warning
-- `#F87171` critical
-- `#34D399` success
+**Functional:**
+| Token | Hex | Kullanım |
+|---|---|---|
+| border | #C9A961 @ 15% | 1px altın kart çerçevesi |
+| divider | #FFFFFF @ 5% | Subtitle divider |
 
 ### Renk kullanımı
 
-- Accent tek ana aksiyon için kullanılacak.
-- Warning yalnızca yaklaşan önemli tarihler için.
-- Critical yalnızca geçmiş/gecikmiş/kritik durum için.
-- Success yalnızca tamamlandı/aktif/güvenli durum için.
-- Gradyan yalnızca anlamlı yerde kullanılabilir:
-  - Araç fotoğrafı placeholder.
-  - Satış dosyası kapak alanı.
-  - Premium paywall hero.
-  - Asla rutin liste arka planında dekorasyon olarak kullanılmaz.
+- Primary (Mat Altın): Yalnızca CTA, aktif durum ve kritik finansal metrikler için.
+- Secondary (Şampanya): Gradient ve ikincil vurgular için.
+- Neutral (Deep Space): UI'ın temeli; #0A0E1A ana canvas, #171B28 elevated surface.
+- Functional: Success, Warning, Critical koyu temaya entegre olacak şekilde desatüre.
+- Border: Altın border %15 opacity ile "dağlanmış" (etched) görünüm.
 
 ## 6. Tipografi
 
-Native SF Pro hissi korunacak. SwiftUI sistem text style kullanılacak.
+SF Pro (UI metinleri) + JetBrains Mono (teknik/finansal veri). Dynamic Type desteklenir.
 
-### Tip ölçeği
+Kaynak: `DesignSystem/AppTypography.swift`
 
-- Large Hero Number: 38-44pt, light/medium weight
-- Screen Title: `.largeTitle` veya 28-34pt bold
-- Section Title: 20-22pt semibold
-- Card Title: 17-18pt semibold
-- Body: 16-17pt regular
-- Secondary: 14-15pt regular
-- Caption: 12-13pt medium/regular
+### SF Pro Display — Başlıklar
+| Token | Font | Size | Weight |
+|---|---|---|---|
+| heroMetric | SF Pro Display | 64px | Light (300) |
+| screenTitle | SF Pro Display | 28px | Bold (700) |
+| sectionTitle | SF Pro Display | 18px | Semibold (600) |
+
+### SF Pro Text — Gövde
+| Token | Font | Size | Weight |
+|---|---|---|---|
+| cardTitle | SF Pro Text | 16px | Semibold (600) |
+| bodyMain | SF Pro Text | 16px | Regular (400) |
+| bodySecondary | SF Pro Text | 14px | Regular (400) |
+| labelCaps | SF Pro Text | 11px | Medium (500) |
+
+### JetBrains Mono — Teknik Veri
+| Token | Font | Size | Weight | Kullanım |
+|---|---|---|---|---|
+| plateDisplay | JetBrains Mono | 24px | Bold (700) | Plaka gösterimi |
+| amountLg | JetBrains Mono | 32px | Light (300) | Büyük tutar |
+| amountMd | JetBrains Mono | 20px | SemiBold (600) | Orta tutar/km |
+| labelMono | JetBrains Mono | 11px | Regular (400) | Mono etiket |
 
 ### Kurallar
 
-- Dynamic Type desteklenecek.
+- Tüm tutar, plaka, km okumaları JetBrains Mono kullanır.
+- Büyük display metrikler (Hero Numbers) Light weight ile elegance hissi verir.
+- Body metin cream-white (#F5F0E8) kullanır, saf beyaz değil.
+- `.monospacedDigit()` yerine JetBrains Mono (doğal monospaced).
 - Metinler kırpılmadan gerçek veriyle test edilecek.
-- Plaka, tutar ve tarih gibi kritik bilgiler okunaklı olacak.
-- Büyük tutarlar, uzun araç isimleri ve uzun usta/servis isimleri test edilecek.
+- Dynamic Type otomatik desteklenir (sistem font'ları ile).
 
 ## 7. Spacing sistemi
 
 8pt grid.
 
+Kaynak: `DesignSystem/AppSpacing.swift`
+
 Tokenlar:
 
-- `xxs = 4`
-- `xs = 8`
-- `sm = 12`
-- `md = 16`
-- `lg = 24`
-- `xl = 32`
-- `xxl = 48`
+- `xxs = 4`, `xs = 8`, `sm = 12`, `md = 16`, `lg = 24`, `xl = 32`, `xxl = 48`
+- `gutter = 16`, `marginScreen = 16`
 
 Kurallar:
 
@@ -155,38 +163,43 @@ Kurallar:
 - Kart içi padding: 16-20pt
 - Bölümler arası: 24-32pt
 - Ana CTA çevresi: 24-48pt
-- Ekran yatay margin: 16-20pt
+- Ekran yatay margin: 16pt
 - Liste satır yüksekliği: minimum 52pt
 - Tap target: minimum 44pt
 
 ## 8. Radius sistemi
 
-Her şey aynı radius olmayacak.
+Kaynak: `DesignSystem/AppRadius.swift`
 
-Tokenlar:
-
-- `small = 8`
-- `medium = 12`
-- `large = 18`
-- `xlarge = 24`
-- `capsule = 999`
+| Token | Değer | Kullanım |
+|---|---|---|
+| small | 4 | İnce kenar detayı |
+| medium | 8 | Kontroller (buton, input) |
+| large | 16 | Kart container'ları |
+| xlarge | 24 | Hero/medya kartları |
+| capsule | 9999 | Status chip/pill |
 
 Kullanım:
 
-- Küçük chip: capsule
-- Liste/satır: 12
-- Ana kart: 18
-- Hero card: 24
-- Modal/sheet: native radius
+- Container'lar (kartlar): 16px — modern ve premium.
+- Kontroller (buton/input): 8px — daha keskin, fonksiyonel.
+- Status element'ler (chip/pill): tam yuvarlak (9999).
+- Hero medya: "full-bleed" header'da sadece üst köşeler 16px.
 
-## 9. Gölge sistemi
+## 9. Elevasyon sistemi (Border-based)
 
-Gölge az ve anlamlı kullanılacak.
+**Gölge kullanılmaz.** Derinlik 1px altın border (%15 opacity) ile sağlanır.
 
-- Rutin kartlarda ağır gölge yok.
-- Surface ayrımı çoğunlukla renk/border ile yapılacak.
-- Hero/satış dosyası gibi premium anlarda yumuşak gölge olabilir.
-- Dark mode’da gölge yerine border/surface contrast kullanılacak.
+Kaynak: `DesignSystem/AppShadows.swift`
+
+| Modifier | Kullanım |
+|---|---|
+| `.subtleShadow()` | Hafif elevasyon — ince altın çerçeve (4px radius) |
+| `.cardShadow()` | Kart elevasyonu — altın çerçeve (16px radius) |
+| `.elevatedShadow()` | Yüksek elevasyon — altın çerçeve + üst kenar 1px white @ 5% highlight |
+
+- Hero/elevated kartlarda üst kenarda 1px beyaz highlight (0 1px 0 rgba(255,255,255,0.05)) fiziksel kalınlık hissi verir.
+- Tab bar glassmorphism: background blur + surface color, 1px altın üst border.
 
 ## 10. İkonografi
 
@@ -204,7 +217,6 @@ Kurallar:
 - Muayene için `checkmark.seal`.
 - Bakım için `wrench.and.screwdriver`.
 - Yakıt için `fuelpump`.
-- Lastik için custom icon gerekebilir ama MVP’de SF Symbol yeterli değilse sade custom asset yapılır.
 - Satış dosyası için `doc.richtext` / `qrcode` / `square.and.arrow.up`.
 
 ## 11. Motion ve haptik
@@ -217,7 +229,7 @@ Kullanılacak yerler:
 - Bakım kaydı eklendi.
 - Hatırlatıcı tamamlandı.
 - Satış dosyası oluşturuldu.
-- Paywall’dan Pro açıldı.
+- Paywall'dan Pro açıldı.
 - Dosya tamlık skoru yükseldi.
 
 Kurallar:
@@ -228,35 +240,39 @@ Kurallar:
 - Haptik başarı/uyarı/kritik ayrımına göre kullanılacak.
 - Her butona haptik koyma; önemli state değişimlerine koy.
 
-Örnek his:
-
-- Kaydetme: hafif success haptic.
-- Gecikmiş işi tamamlama: success haptic + küçük check animasyonu.
-- Belge silme: destructive confirmation, gereksiz animasyon yok.
-
 ## 12. Component sistemi
 
-Merkezi komponentler:
+Merkezi komponentler (`DesignSystem/Components/`):
 
-- `VehicleCard`
-- `VehicleHeroHeader`
-- `UpcomingTaskCard`
-- `ReminderRow`
-- `ExpenseRow`
-- `ServiceTimelineItem`
-- `DocumentCard`
-- `DocumentCategoryPill`
-- `SaleFileScoreCard`
-- `MetricCard`
-- `EmptyStateView`
-- `ErrorStateView`
-- `PrimaryButtonStyle`
-- `SecondaryButtonStyle`
-- `DestructiveButtonStyle`
+- `VehicleCard` — Ana garaj kartı (plaka, bilgi, durum)
+- `VehicleHeroHeader` — Araç detay hero (fotoğraf, plaka, info badge'ler)
+- `QuickActionTile` / `QuickActionRail` — Hızlı işlem butonları
+- `SectionHeaderMetricCard` — Bölüm başlığı + metrik kartı
+- `OwnershipInsightCard` / `PremiumMetricHero` — Rapor metrikleri
+- `DossierCompletenessCard` — Dosya tamlık skoru (progress ring)
+- `DosyaniTamamlaChecklist` — Onboarding checklist
+- `EmptyStateView` / `ErrorStateView` — Boş/hata durumu
+- `ArviaGuideCard` — Kontekst rehber kartı
+- `ContextualTipBanner` — İpucu banner'ı
+- `BrandIntroView` — İlk açılış marka animasyonu
+- `PrimaryButtonStyle` / `SecondaryButtonStyle` / `DestructiveButtonStyle`
 
 Kart yalnızca gerçekten anlamlıysa kullanılacak. Her veri parçası kart olmak zorunda değil.
 
-## 13. Empty state kuralları
+## 13. Form elemanları
+
+- **Input:** Surface'ten daha koyu (#0A0E1A), 1px altın border (idle %15, focus %100). 52pt yükseklik.
+- **Primary Button:** Solid altın fill (#C9A961), koyu text. 8px radius, minimum 44pt.
+- **Secondary Button:** 1px altın border (%100 opacity), transparan arka plan, cream text.
+- **Destructive Button:** Koyu kırmızı fill (#8B2C2C), cream text.
+
+## 14. Navigasyon
+
+- **Floating Tab Bar:** 16px yatay margin, 8px alt margin. 1px altın üst border. Aktif ikon altın renginde.
+- **Tab Bar Background:** Glassmorphism — `systemUltraThinMaterialDark` blur + surface color.
+- **Segmented Control:** Normal #8B95A8, Selected #E6C479.
+
+## 15. Empty state kuralları
 
 Boş durum çıkmaz sokak olmayacak. Her boş durumda:
 
@@ -264,27 +280,7 @@ Boş durum çıkmaz sokak olmayacak. Her boş durumda:
 2. Neden önemli olduğu anlatılacak.
 3. Tek net CTA verilecek.
 
-Örnek:
-
-### Araç yok
-
-Başlık: `İlk aracının dosyasını oluşturalım`  
-Açıklama: `Muayene, sigorta, bakım ve belgeleri tek yerde takip etmek için aracını ekle.`  
-CTA: `Araç Ekle`
-
-### Belge yok
-
-Başlık: `Belgelerini burada saklayabilirsin`  
-Açıklama: `Poliçe, muayene, ekspertiz ve faturaları aracının dijital dosyasına ekle.`  
-CTA: `Belge Ekle`
-
-### Masraf yok
-
-Başlık: `İlk masraf kaydını ekle`  
-Açıklama: `Yakıt, bakım, parça ve sigorta giderlerini kaydederek aracının yıllık maliyetini gör.`  
-CTA: `Masraf Ekle`
-
-## 14. Hata mesajları
+## 16. Hata mesajları
 
 Hata mesajı formatı:
 
@@ -292,34 +288,17 @@ Hata mesajı formatı:
 2. Kullanıcı ne yapabilir?
 3. Veri kaybı var mı?
 
-Kötü:
-
-> Bir hata oluştu.
-
-İyi:
-
-> Belge kaydedilemedi. İnternet bağlantını kontrol edip tekrar deneyebilirsin. Seçtiğin dosya cihazından silinmedi.
-
-## 15. Signature interaction
-
-Bu uygulamanın “AI’ın kolay kolay düşünemeyeceği” imza detayı:
+## 17. Signature interaction
 
 ### Araç Yaşam Çizgisi
 
-Araç detay ekranında aracın kronolojik timeline’ı premium bir “yaşam çizgisi” olarak gösterilir.
+Araç detay ekranında aracın kronolojik timeline'ı premium bir "yaşam çizgisi" olarak gösterilir.
 
-- Satın alma
-- İlk kayıt
-- Bakımlar
-- Parça değişimleri
-- Sigorta/kasko
-- Muayene
-- Ekspertiz
-- Satış dosyası
+- Satın alma, ilk kayıt, bakımlar, parça değişimleri, sigorta/kasko, muayene, ekspertiz, satış dosyası.
 
 Bu timeline, uygulamanın ruhunu taşır. Sıradan gider listesi değil, aracın hafızasıdır.
 
-## 16. Erişilebilirlik
+## 18. Erişilebilirlik
 
 - Dynamic Type zorunlu.
 - VoiceOver label zorunlu.
@@ -328,19 +307,8 @@ Bu timeline, uygulamanın ruhunu taşır. Sıradan gider listesi değil, aracın
 - Büyük metinde 3:1.
 - Tap target minimum 44pt.
 - Reduce Motion desteklenecek.
-- Dark mode gerçek tasarlanacak, sadece otomatik invert değil.
 
-## 17. Dark mode
-
-Dark mode premium ve okunaklı olacak.
-
-- Pure black her yerde kullanılmayacak.
-- Desatüre lacivert/grafit zemin.
-- Kartlar hafif ayrışacak.
-- Warning/critical renkler karanlıkta aşırı bağırmayacak.
-- Belge/PDF preview ekranları okunabilir kalacak.
-
-## 18. Paywall tasarım ilkeleri
+## 19. Paywall tasarım ilkeleri
 
 Paywall güven kırmayacak.
 
@@ -354,16 +322,7 @@ Zorunlu:
 - CTA gizli/aldatıcı olmayacak.
 - Free limit neden var açık anlatılacak.
 
-Paywall zamanı:
-
-- Uygulama açılır açılmaz hard paywall yok.
-- Kullanıcı değer gördükten sonra:
-  - 2. araç eklemek istediğinde.
-  - Satış dosyası PDF/link oluşturmak istediğinde.
-  - Sınırsız belge kullanmak istediğinde.
-  - Gelişmiş rapor açtığında.
-
-## 19. Design review skoru
+## 20. Design review skoru
 
 Her major ekran şu 5 başlıkta en az 7/10 almalı:
 
@@ -375,10 +334,9 @@ Her major ekran şu 5 başlıkta en az 7/10 almalı:
 
 Ek kontroller:
 
-- Grayscale testi
+- Tek tema (dark-only) testi
 - Kontrast testi
 - Gerçek veri testi
 - Uzun metin testi
 - Boş/hata/loading testi
-- Dark mode testi
-
+- JetBrains Mono render testi

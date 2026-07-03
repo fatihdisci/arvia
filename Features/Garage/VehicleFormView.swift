@@ -829,7 +829,6 @@ enum VehiclePhotoSelectionError: LocalizedError {
 
 #Preview("Araç Ekleme Formu — Dark Mode") {
     VehicleFormView()
-        .preferredColorScheme(.dark)
 }
 
 // MARK: - Vehicle Form Wizard View (Karar 3.5)
@@ -1459,5 +1458,4 @@ struct VehicleFormWizardView: View {
 #Preview("Araç Ekleme Sihirbazı — Dark") {
     VehicleFormWizardView()
         .modelContainer(MockDataProvider.emptyPreviewContainer)
-        .preferredColorScheme(.dark)
 }

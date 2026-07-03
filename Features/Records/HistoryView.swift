@@ -341,9 +341,8 @@ struct HistoryView: View {
                         Spacer()
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(expense.amountCompactDisplay)
-                                .font(AppTypography.bodyMedium)
+                                .font(.custom("JetBrainsMono-SemiBold", size: 16))
                                 .foregroundColor(AppColors.textPrimary)
-                                .monospacedDigit()
                             Text(expense.dateDisplay)
                                 .font(AppTypography.caption)
                                 .foregroundColor(AppColors.textTertiary)
@@ -678,5 +677,4 @@ struct HistoryView: View {
 #Preview("Geçmiş — Dark") {
     HistoryView()
         .modelContainer(MockDataProvider.previewContainer)
-        .preferredColorScheme(.dark)
 }

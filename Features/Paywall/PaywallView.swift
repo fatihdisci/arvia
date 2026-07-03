@@ -26,7 +26,6 @@ extension Product.SubscriptionPeriod {
 
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var paywallService: PaywallService
 
     let feature: PaywallFeature
@@ -195,11 +194,9 @@ struct PaywallView: View {
                         )
                     )
 
-                // Dark mode scrim: gradyan kartın koyulaşmasını ve metin okunabilirliğini artırır
-                if colorScheme == .dark {
-                    RoundedRectangle(cornerRadius: AppRadius.large)
-                        .fill(Color.black.opacity(0.35))
-                }
+                // Dark-only scrim: gradyan kartın koyulaşmasını ve metin okunabilirliğini artırır
+                RoundedRectangle(cornerRadius: AppRadius.large)
+                    .fill(Color.black.opacity(0.35))
 
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     HStack(spacing: AppSpacing.md) {
@@ -565,5 +562,4 @@ struct PaywallView: View {
 #Preview("Paywall — Dark") {
     PaywallView(feature: .secondVehicle)
         .environmentObject(PaywallService.shared)
-        .preferredColorScheme(.dark)
 }

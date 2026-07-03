@@ -164,7 +164,6 @@ struct TodosView: View {
     TodosView()
         .modelContainer(MockDataProvider.previewContainer)
         .environmentObject(AppNavigationRouter.shared)
-        .preferredColorScheme(.dark)
 }
 
 #Preview("Yapılacaklar — Dynamic Type") {

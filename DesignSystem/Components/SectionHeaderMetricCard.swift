@@ -200,5 +200,4 @@ struct MetricCard: View {
     }
     .padding()
     .background(Color.appBackground)
-    .preferredColorScheme(.dark)
 }

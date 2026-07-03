@@ -280,11 +280,7 @@ struct VehicleDetailView: View {
         .frame(height: 200)
         .frame(maxWidth: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
-        )
-        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .elevatedShadow()
     }
 
     private var detailHeroInfoCard: some View {
@@ -351,14 +347,14 @@ struct VehicleDetailView: View {
         .cardShadow()
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
     }
 
     private var detailPlateBadge: some View {
         Text(vehicle.plate.isEmpty ? "Plaka yok" : vehicle.plate)
-            .font(.system(size: 15, weight: .semibold, design: .monospaced))
-            .tracking(0.6)
+            .font(.custom("JetBrainsMono-SemiBold", size: 15))
+            .tracking(1.5)
             .foregroundColor(AppColors.textPrimary)
             .lineLimit(1)
             .minimumScaleFactor(0.78)
@@ -394,7 +390,7 @@ struct VehicleDetailView: View {
                     .foregroundColor(AppColors.textTertiary)
                 Spacer(minLength: 0)
                 Text("%\(score)")
-                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .font(AppTypography.labelMono)
                     .foregroundColor(barColor)
             }
             GeometryReader { geo in
@@ -479,7 +475,7 @@ struct VehicleDetailView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                        .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                        .stroke(AppColors.border, lineWidth: 0.5)
                 )
             } else {
                 VStack(spacing: AppSpacing.xs) {
@@ -573,7 +569,7 @@ struct VehicleDetailView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
     }
 
@@ -690,7 +686,7 @@ struct VehicleDetailView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
         .accessibilityElement(children: .combine)
     }
@@ -774,7 +770,7 @@ struct VehicleDetailView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
     }
 
@@ -921,7 +917,7 @@ struct VehicleDetailView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
     }
 
@@ -1045,6 +1041,12 @@ struct VehicleDetailView: View {
 
             Spacer()
 
+            // Önizleme göstergesi — kullanıcıya tıklanabilir olduğunu belirtir
+            Image(systemName: "eye")
+                .font(.caption)
+                .foregroundColor(AppColors.textTertiary)
+                .padding(.trailing, 2)
+
             if doc.includeInSaleFile {
                 Image(systemName: "doc.richtext.fill")
                     .font(.caption)
@@ -1055,6 +1057,14 @@ struct VehicleDetailView: View {
         .padding(.vertical, AppSpacing.sm)
         .frame(minHeight: AppSpacing.minimumTapTarget)
         .contentShape(Rectangle())
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.small)
+                .fill(Color.appSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.small)
+                .stroke(AppColors.border, lineWidth: 0.5)
+        )
         .onTapGesture {
             previewDocument(doc)
         }
@@ -1255,7 +1265,7 @@ struct VehicleDetailView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                        .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                        .stroke(AppColors.border, lineWidth: 0.5)
                 )
                 .padding(.horizontal, AppSpacing.screenMarginH)
             }
@@ -1410,7 +1420,7 @@ struct VehicleDetailView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                    .stroke(AppColors.border, lineWidth: 0.5)
             )
             .padding(.horizontal, AppSpacing.screenMarginH)
 
@@ -1864,7 +1874,7 @@ struct VehicleDetailGuideCard: View {
             }
         }
         .padding(AppSpacing.md).background(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).fill(Color.appSurface))
-        .overlay(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).stroke(AppColors.border.opacity(0.85), lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).stroke(AppColors.border, lineWidth: 0.5))
         .accessibilityElement(children: .combine).accessibilityLabel("\(insight.title). \(insight.body)")
     }
     private var color: Color { switch insight.priority { case .important: AppColors.critical; case .warning: AppColors.warning; case .info: AppColors.accentPrimary } }
@@ -2035,7 +2045,6 @@ struct VehicleDetailMilestoneCard: View {
             .modelContainer(MockDataProvider.previewContainer)
             .environmentObject(AppNavigationRouter.shared)
     }
-    .preferredColorScheme(.dark)
 }
 
 #Preview("Araç Detay — Dinamik Tip") {

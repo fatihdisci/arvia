@@ -103,7 +103,7 @@ final class PDFExportService {
         y += 35
 
         // Plate
-        drawCenteredText(v.plate, at: y, font: UIFont.monospacedSystemFont(ofSize: 32, weight: .bold), color: UIColor(red: 0.06, green: 0.47, blue: 0.43, alpha: 1))
+        drawCenteredText(v.plate, at: y, font: UIFont(name: "JetBrainsMono-Bold", size: 32) ?? UIFont.monospacedSystemFont(ofSize: 32, weight: .bold), color: UIColor(red: 0xE6/255, green: 0xC4/255, blue: 0x79/255, alpha: 1))
         y += 45
 
         // Date
@@ -265,7 +265,7 @@ final class PDFExportService {
     /// Son sayfa — Arvia markası + App Store placeholder linki.
     private func drawArviaBrandingPage(context: UIGraphicsPDFRendererContext) {
         // Arvia brand rengi — accentPrimary
-        let brandColor = UIColor(red: 0.06, green: 0.47, blue: 0.43, alpha: 1)
+        let brandColor = UIColor(red: 0xE6/255, green: 0xC4/255, blue: 0x79/255, alpha: 1)
 
         // Üstte Arvia wordmark — emoji icon + kalın text
         let iconFont = UIFont.systemFont(ofSize: 56, weight: .light)
@@ -367,7 +367,7 @@ final class PDFExportService {
     // MARK: - Drawing Helpers
     private func drawSectionHeader(_ title: String, at yPos: CGFloat) -> CGFloat {
         var y = yPos
-        drawText(title, at: CGPoint(x: margin, y: y), font: .systemFont(ofSize: 20, weight: .light), color: UIColor(red: 0.06, green: 0.47, blue: 0.43, alpha: 1))
+        drawText(title, at: CGPoint(x: margin, y: y), font: .systemFont(ofSize: 20, weight: .light), color: UIColor(red: 0xE6/255, green: 0xC4/255, blue: 0x79/255, alpha: 1))
         y += 35
 
         // Divider

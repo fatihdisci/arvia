@@ -86,7 +86,7 @@ struct CommunityEmptyStateView: View {
                         .font(AppTypography.captionMedium)
                         .foregroundColor(AppColors.textSecondary)
                     Text(SupabaseConfig.debugState())
-                        .font(.system(.caption, design: .monospaced))
+                        .font(AppTypography.labelMono)
                         .foregroundColor(AppColors.textTertiary)
                 }
                 .padding(AppSpacing.md)

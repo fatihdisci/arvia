@@ -32,7 +32,7 @@ struct OwnershipInsightCard: View {
 
             // Value
             Text(value)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.custom("JetBrainsMono-SemiBold", size: 18))
                 .foregroundColor(AppColors.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.65)
@@ -117,7 +117,7 @@ struct PremiumMetricHero: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
         .padding(.horizontal, AppSpacing.screenMarginH)
         .opacity(appeared ? 1 : 0)
@@ -198,5 +198,4 @@ struct PremiumMetricHero: View {
         .padding(.vertical, AppSpacing.lg)
     }
     .background(Color.appBackground)
-    .preferredColorScheme(.dark)
 }

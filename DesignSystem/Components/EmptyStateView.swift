@@ -182,5 +182,4 @@ extension String {
         actionTitle: "Belge Ekle",
         action: {}
     )
-    .preferredColorScheme(.dark)
 }

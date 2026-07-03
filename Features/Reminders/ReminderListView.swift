@@ -112,7 +112,7 @@ struct ReminderListView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
-                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
+                .stroke(AppColors.border, lineWidth: 0.5)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Önümüzdeki 30 gün: \(next30DaysCount) hatırlatıcı. Geciken: \(overdueCount). Bugün: \(todayCount).")
@@ -439,7 +439,6 @@ struct ReminderRow: View {
 #Preview("Hatırlatıcı Listesi — Dark Mode") {
     ReminderListView()
         .modelContainer(MockDataProvider.previewContainer)
-        .preferredColorScheme(.dark)
 }
 
 #Preview("Hatırlatıcı Listesi — Dinamik Tip") {

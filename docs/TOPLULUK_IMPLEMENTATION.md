@@ -669,7 +669,7 @@ Tüm topluluk görünümleri mevcut Design System token'larını kullanır:
 | `AppTypography` | Tüm metin stilleri (cardTitle, body, secondary, caption, captionMedium) |
 | `AppSpacing` | 8pt grid (xs=8, sm=12, md=16, lg=24) |
 | `AppRadius` | small(8), medium(12), card(18), capsule(999) |
-| `AppShadows` | `.cardShadow()` → dark mode'da border stroke |
+| `AppShadows` | `.cardShadow()` → 1px altın border overlay |
 | `ButtonStyles` | `.primary` (dolu teal), `.secondary` (çerçeveli), `.text` (link) |
 | **SF Symbols** | Tüm ikonlar — emoji kullanılmaz |
 | **Renk gradyanı** | Toplulukta gradyan kullanılmaz |

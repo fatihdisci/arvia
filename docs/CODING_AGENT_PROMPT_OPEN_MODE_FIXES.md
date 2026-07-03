@@ -37,7 +37,7 @@ Sonuç: Açık modda tüm card'lar subtle ama net biçimde zeminden ayrılacak, 
 - Her değişiklik sonrası `xcodebuild test` çalıştır, 151 test geçmeli.
 - Tek commit, açıklayıcı mesaj: `fix(open-mode): subtle card fill + stronger border (karar 4.1)`.
 - Bu prompt tek PR'da tamamlanacak. Branch'e gerek yok, doğrudan `main`'e.
-- Build'de light + dark preview ile son kontrol yap.
+- Build'de dark-only preview ile son kontrol yap.
 
 ---
 
@@ -153,28 +153,20 @@ VehicleDetailView.swift
 
 1. **Test çalıştır:** `xcodebuild test -scheme Garajim -destination 'platform=iOS Simulator,name=iPhone 15'`. 151 test geçmeli.
 
-2. **Görsel smoke test:** Simulator'da light mode + dark mode preview. Şu sayfalara bak:
+2. **Görsel smoke test:** Simulator'da dark-only preview. Şu sayfalara bak:
    - **Garaj** (`Features/Garage/GarageView.swift`) → hero card, bugün section, rehber kartları
    - **Araç Detay** (`Features/VehicleDetail/VehicleDetailView.swift`) → hero, sıradaki işler, timeline, rehber
    - **Raporlar** (`Features/Reports/ReportsView.swift`) → özet kartları
 
-3. **Kontrol listesi (light mode):**
-   - [ ] Hero card beyaz zeminden subtle ayrılıyor
+3. **Kontrol listesi (dark-only):**
+   - [ ] Hero card altın border ile ayrılıyor
    - [ ] "Satış Dosyası" CTA kartı border görünür
-   - [ ] Rehber kartları (3'lü liste) border görünür
+   - [ ] Rehber kartları border görünür
    - [ ] Dosya Skoru kartı border görünür
-   - [ ] Milestone timeline dot'ları (varsa) stroke görünür
-   - [ ] Empty state satırları (henüz kayıt yok vb.) hâlâ açık/borderless — bunlar zaten açık alan olmalı
-
-4. **Kontrol listesi (dark mode):**
-   - [ ] Hiçbir şey görsel olarak değişmedi (asset'ler korundu)
-   - [ ] Card'lar koyu zeminde hâlâ okunabilir
-
-**Acceptance criteria:**
-- Tüm 151 test geçti.
-- Light mode kontrol listesinin tamamı ✓.
-- Dark mode kontrol listesinin tamamı ✓.
-- `git diff` sadece: 2 asset catalog + 22 stroke satırı + 1 commit. Başka dosya değişmedi.
+   - [ ] Milestone timeline dot'ları stroke görünür
+   - [ ] Empty state satırları (henüz kayıt yok vb.) borderless
+   - [ ] Tüm kartlar koyu zeminde okunabilir
+   - [ ] Gold accent tutarlı
 
 ---
 

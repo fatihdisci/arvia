@@ -625,7 +625,7 @@ func seedGuideScenarios(modelContext: ModelContext) {
    - **151+ test geçmeli** (yeni testler eklendiyse daha fazla)
    - Migration testleri eklensin: `VehicleInsightMigrationTests.swift`
 
-2. **Görsel smoke test (light + dark mode):**
+2. **Görsel smoke test (dark-only):**
    - Garaj daily summary → 1-3 rehber kartı görünür
    - Araç Detay rehber → tüm 13 insight tipi simüle edilebilir
    - Dismiss butonu → sonraki açılışta kart yok
@@ -636,7 +636,7 @@ func seedGuideScenarios(modelContext: ModelContext) {
    - [ ] `seasonalGuidance` kartı: dismiss butonu var, CTA yok
    - [ ] `monthlyExpensePrompt` kartı: çift buton (Masraf Ekle + Şimdi Değil)
    - [ ] Snooze edilmiş kart `insights(...)` çıktısında yok
-   - [ ] Koyu modda ikon renkleri doğru (critical/warning/accent)
+   - [ ] İkon renkleri doğru (critical/warning/accent)
    - [ ] Başlık ≤ 30 karakter, gövde ≤ 120 karakter
    - [ ] "yap/et/gir/yükle" emri yok
 

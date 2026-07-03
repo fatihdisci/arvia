@@ -817,5 +817,4 @@ enum ModerationConfirmAction: Identifiable {
     CommunityFeedView(previewPosts: MockDataProvider.previewCommunityPosts())
         .environmentObject(CommunityAuthService.shared)
         .environmentObject(PaywallService.shared)
-        .preferredColorScheme(.dark)
 }

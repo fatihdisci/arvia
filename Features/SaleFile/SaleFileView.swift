@@ -101,7 +101,7 @@ struct SaleFileView: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
                     Text(vehicle.plate)
-                        .font(.system(size: 28, weight: .bold, design: .monospaced))
+                        .font(.custom("JetBrainsMono-Bold", size: 28))
                         .foregroundColor(.white.opacity(0.9))
                 }
             }

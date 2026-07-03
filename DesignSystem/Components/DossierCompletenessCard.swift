@@ -111,5 +111,4 @@ struct DossierCompletenessCard: View {
     )
     .padding()
     .background(Color.appBackground)
-    .preferredColorScheme(.dark)
 }

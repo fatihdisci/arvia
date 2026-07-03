@@ -1,105 +1,66 @@
 import SwiftUI
 
-// MARK: - Shadow System
-// Gölge az ve anlamlı kullanılır.
-// Surface ayrımı çoğunlukla renk/border ile yapılır.
-// Hero/satış dosyası gibi premium anlarda yumuşak gölge olabilir.
-// Dark mode'da gölge yerine border/surface contrast kullanılır.
+// MARK: - Border System
+// Dark-only luxury tasarımda gölge kullanılmaz.
+// Derinlik, 1px altın çerçeve ve tonal yüzey farkı ile sağlanır.
+// Hero/elevated kartlarda üst kenarda hafif beyaz highlight olur.
 
 enum AppShadows {
-    // MARK: Shadow parameters
-    static let subtleColor = Color.black.opacity(0.04)
-    static let subtleRadius: CGFloat = 4
-    static let subtleX: CGFloat = 0
-    static let subtleY: CGFloat = 2
-
-    static let cardColor = Color.black.opacity(0.06)
-    static let cardRadius: CGFloat = 8
-    static let cardX: CGFloat = 0
-    static let cardY: CGFloat = 4
-
-    static let elevatedColor = Color.black.opacity(0.08)
-    static let elevatedRadius: CGFloat = 16
-    static let elevatedX: CGFloat = 0
-    static let elevatedY: CGFloat = 6
-
     // MARK: - ViewModifiers
+
+    /// Hafif elevasyon — ince altın çerçeve
     struct SubtleShadow: ViewModifier {
-        @Environment(\.colorScheme) var colorScheme
-
         func body(content: Content) -> some View {
-            if colorScheme == .dark {
-                content
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppRadius.medium)
-                            .stroke(Color.appBorder, lineWidth: 0.5)
-                    )
-            } else {
-                content
-                    .shadow(
-                        color: AppShadows.subtleColor,
-                        radius: AppShadows.subtleRadius,
-                        x: AppShadows.subtleX,
-                        y: AppShadows.subtleY
-                    )
-            }
+            content
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.small)
+                        .stroke(Color.appBorder, lineWidth: 0.5)
+                )
         }
     }
 
+    /// Kart elevasyonu — altın çerçeve, kart radius'unda
     struct CardShadow: ViewModifier {
-        @Environment(\.colorScheme) var colorScheme
-
         func body(content: Content) -> some View {
-            if colorScheme == .dark {
-                content
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppRadius.card)
-                            .stroke(Color.appBorder, lineWidth: 0.5)
-                    )
-            } else {
-                content
-                    .shadow(
-                        color: AppShadows.cardColor,
-                        radius: AppShadows.cardRadius,
-                        x: AppShadows.cardX,
-                        y: AppShadows.cardY
-                    )
-            }
+            content
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.card)
+                        .stroke(Color.appBorder, lineWidth: 0.5)
+                )
         }
     }
 
+    /// Yüksek elevasyon — altın çerçeve + üst kenar highlight'ı
     struct ElevatedShadow: ViewModifier {
-        @Environment(\.colorScheme) var colorScheme
-
         func body(content: Content) -> some View {
-            if colorScheme == .dark {
-                content
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppRadius.heroCard)
-                            .stroke(Color.appBorder, lineWidth: 0.5)
-                    )
-            } else {
-                content
-                    .shadow(
-                        color: AppShadows.elevatedColor,
-                        radius: AppShadows.elevatedRadius,
-                        x: AppShadows.elevatedX,
-                        y: AppShadows.elevatedY
-                    )
-            }
+            content
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.heroCard)
+                        .stroke(Color.appBorder, lineWidth: 0.5)
+                )
+                .overlay(
+                    // Üst kenarda 1px physicial thickness hissi
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(.white.opacity(0.05)),
+                    alignment: .top
+                )
         }
     }
 }
 
 extension View {
+    /// Hafif elevasyonlu görünüm — ince altın çerçeve
     func subtleShadow() -> some View {
         modifier(AppShadows.SubtleShadow())
     }
 
+    /// Kart elevasyonlu görünüm — altın çerçeve
     func cardShadow() -> some View {
         modifier(AppShadows.CardShadow())
     }
 
+    /// Yüksek elevasyonlu görünüm — altın çerçeve + üst highlight
     func elevatedShadow() -> some View {
         modifier(AppShadows.ElevatedShadow())
     }

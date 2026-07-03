@@ -121,5 +121,4 @@ struct RemindersView: View {
 #Preview("İşler — Dark Mode") {
     RemindersView()
         .modelContainer(MockDataProvider.previewContainer)
-        .preferredColorScheme(.dark)
 }

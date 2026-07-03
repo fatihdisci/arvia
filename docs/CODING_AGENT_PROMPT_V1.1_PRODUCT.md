@@ -32,7 +32,7 @@ Tasarım anayasası `01_DESIGN.md` kanundur. Token-only. AI-slop yasak.
 ## Soft constraints
 
 - Her değişiklik sonrası `xcodebuild test` çalıştır, 89+ test geçmeli.
-- Her yeni view için `#Preview` ekle (en az 1 normal + 1 dark mode).
+- Her yeni view için `#Preview` ekle (dark-only tema).
 - Magic number YOK. Spacing/renk/radius hep token üzerinden.
 - Bu prompt'taki her madde ayrı PR/branch olabilir. Birleştirmek zorunda değilsin.
 

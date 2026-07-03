@@ -256,5 +256,4 @@ struct ExpenseListView: View {
 #Preview("Masraf Listesi — Dark") {
     ExpenseListView()
         .modelContainer(MockDataProvider.previewContainer)
-        .preferredColorScheme(.dark)
 }

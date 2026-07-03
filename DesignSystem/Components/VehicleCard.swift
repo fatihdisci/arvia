@@ -209,5 +209,4 @@ struct VehicleCard: View {
         .padding(.vertical, AppSpacing.lg)
     }
     .background(Color.appBackground)
-    .preferredColorScheme(.dark)
 }
