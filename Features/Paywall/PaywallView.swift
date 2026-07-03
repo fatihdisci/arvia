@@ -20,9 +20,14 @@ extension Product.SubscriptionPeriod {
 }
 
 // MARK: - Paywall View
-// Etik freemium paywall. Karanlık desen yok.
-// Değer anlarında gösterilir, ilk açılışta değil.
-// Düzen: kritik öğeler (fiyat, CTA, restore, terms, privacy) ilk ekranda.
+// Apple Review uyumlu kompakt paywall.
+// İlk ekranda (scroll olmadan) görünmesi gerekenler:
+//   - Fiyat seçenekleri (3 plan)
+//   - Satın al / Pro'ya Geç CTA
+//   - Restore Purchases
+//   - Privacy Policy + Terms + EULA + Destek linkleri
+//   - Otomatik yenileme açıklaması
+// Etik freemium: dark pattern yok, fiyat net, koşullar görünür.
 
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
@@ -47,53 +52,13 @@ struct PaywallView: View {
             }
         }
 
-        var subtitle: String {
+        var shortPitch: String {
             switch self {
-            case .secondVehicle:
-                return "Arvia tek araç için ücretsiz ve reklamsızdır. Arvia Pro ile ailedeki veya işletmendeki tüm araçların bakım, belge, masraf ve hatırlatıcılarını ayrı ayrı takip edebilirsin."
-            case .documentLimit:
-                return "Aracın tüm belgelerini — ruhsat, poliçe, fatura, ekspertiz — tek kasada sakla. Arvia Pro ile sınır olmadan ekle."
-            case .saleFileExport:
-                return "Aracını satarken bakım ve belge geçmişini paylaşılabilir PDF olarak hazırla. Arvia Pro ile sınırsız kez oluştur."
-            case .advancedReports:
-                return "Yıllık, aylık ve km bazlı maliyet analizleriyle aracının gerçek sahiplik maliyetini gör."
-            case .inspectionReport:
-                return "TÜVTÜRK veya bağımsız ekspertiz raporlarını aracının dosyasına ekle. Arvia Pro ile sınırsız."
-            }
-        }
-
-        var topBenefits: [(icon: String, title: String)] {
-            switch self {
-            case .secondVehicle:
-                return [
-                    ("car.2", "Sınırsız araç"),
-                    ("rectangle.grid.2x2", "Çoklu araç garajı"),
-                    ("bell.badge", "Tüm araçlar için hatırlatıcılar"),
-                ]
-            case .documentLimit:
-                return [
-                    ("doc.text", "Sınırsız belge"),
-                    ("folder", "Araç bazlı belge kasası"),
-                    ("doc.text.magnifyingglass", "Hızlı belge önizleme"),
-                ]
-            case .saleFileExport:
-                return [
-                    ("doc.richtext", "Sınırsız satış dosyası"),
-                    ("square.and.arrow.up", "Hızlı paylaşım"),
-                    ("checkmark.seal", "Güvenilir araç geçmişi"),
-                ]
-            case .advancedReports:
-                return [
-                    ("chart.bar", "Gelişmiş raporlar"),
-                    ("chart.line.uptrend.xyaxis", "Trend analizi"),
-                    ("tablecells", "Kategori dağılımı"),
-                ]
-            case .inspectionReport:
-                return [
-                    ("magnifyingglass", "Sınırsız ekspertiz kaydı"),
-                    ("doc.text.magnifyingglass", "Rapor doğrulama"),
-                    ("checkmark.shield", "Güvenilir geçmiş"),
-                ]
+            case .secondVehicle: return "Pro ile sınırsız araç ekle."
+            case .documentLimit: return "Pro ile sınırsız belge."
+            case .saleFileExport: return "Pro ile sınırsız satış dosyası."
+            case .advancedReports: return "Pro ile gelişmiş raporlar."
+            case .inspectionReport: return "Pro ile sınırsız ekspertiz."
             }
         }
     }
@@ -115,7 +80,6 @@ struct PaywallView: View {
     private var pricingOptions: [PricingOption] {
         if paywallService.products.isEmpty {
             #if DEBUG
-            // Dev mode fallback — ürün ID'lerine göre sıralı
             return [
                 PricingOption(id: "com.ruhsatim.pro.monthly", title: "Aylık", price: "₺79,99", period: "/ay", badge: nil, sortOrder: 0),
                 PricingOption(id: "com.ruhsatim.pro.yearly", title: "Yıllık", price: "₺599,99", period: "/yıl", badge: "En Avantajlı", sortOrder: 1),
@@ -144,30 +108,25 @@ struct PaywallView: View {
     private let supportURL = URL(string: "https://fatihdisci.github.io/arvia/support.html")!
     private let eulaURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
 
+    // MARK: - Body (scroll'suz, her şey ilk ekranda)
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: AppSpacing.lg) {
-                    // Kompakt hero
-                    heroSection
+            VStack(spacing: AppSpacing.sm) {
+                // Üst — kompakt hero
+                heroCompact
+                    .padding(.top, AppSpacing.xs)
+                    .padding(.bottom, AppSpacing.xs)
 
-                    // Fiyatlandırma — ilk ekranda görünür
+                // Orta — fiyatlar + CTA + yasal (scroll gerektirmeyen içerik)
+                VStack(spacing: AppSpacing.sm) {
                     pricingSection
-
-                    // CTA
                     ctaSection
-
-                    // Geri yükle + yasal linkler + güven — ilk ekranda görünür
                     restoreAndLegalSection
-                    trustSection
-
-                    // Aşağıda: Pro özellik listesi
-                    proBenefits
-
-                    // Aşağıda: Free/Pro karşılaştırması
-                    planComparison
+                    autoRenewalDisclosure
                 }
-                .padding(.vertical, AppSpacing.lg)
+                .padding(.horizontal, AppSpacing.screenMarginH)
+
+                Spacer(minLength: 0)
             }
             .background(Color.appBackground)
             .navigationTitle("Pro'ya Geç")
@@ -181,336 +140,201 @@ struct PaywallView: View {
         }
     }
 
-    // MARK: - Hero
-    private var heroSection: some View {
-        VStack(spacing: AppSpacing.sm) {
+    // MARK: - Compact Hero (80pt)
+    private var heroCompact: some View {
+        HStack(spacing: AppSpacing.sm) {
             ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.large)
-                    .fill(
-                        LinearGradient(
-                            colors: [AppColors.vehicle, AppColors.accentPrimary],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-
-                // Dark-only scrim: gradyan kartın koyulaşmasını ve metin okunabilirliğini artırır
-                RoundedRectangle(cornerRadius: AppRadius.large)
-                    .fill(Color.black.opacity(0.35))
-
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    HStack(spacing: AppSpacing.md) {
-                        Image(systemName: "crown.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(.white.opacity(0.9))
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(feature.title)
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.white)
-                            Text(feature.subtitle)
-                                .font(AppTypography.caption)
-                                .foregroundColor(.white.opacity(0.85))
-                                .lineLimit(3)
-                        }
-                    }
-
-                    // Top benefits spotlight
-                    VStack(spacing: AppSpacing.xs) {
-                        ForEach(feature.topBenefits, id: \.title) { benefit in
-                            HStack(spacing: AppSpacing.sm) {
-                                Image(systemName: benefit.icon)
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .frame(width: 20)
-                                Text(benefit.title)
-                                    .font(AppTypography.caption)
-                                    .foregroundColor(.white.opacity(0.9))
-                                Spacer()
-                            }
-                        }
-                    }
-                    .padding(.top, AppSpacing.xxs)
-                }
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.vertical, AppSpacing.md)
+                Circle()
+                    .fill(AppColors.accentPrimary.opacity(0.12))
+                    .frame(width: 40, height: 40)
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(AppColors.accentPrimary)
             }
-            .padding(.horizontal, AppSpacing.screenMarginH)
-        }
-    }
-
-    // MARK: - Benefits (aşağıda, scroll ile)
-    private var proBenefits: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            SectionHeader(title: "Pro ile Gelenler")
-
-            VStack(spacing: 0) {
-                ForEach(PaywallService.proFeatures, id: \.title) { feature in
-                    HStack(spacing: AppSpacing.sm) {
-                        Image(systemName: feature.icon)
-                            .font(.body)
-                            .foregroundColor(AppColors.accentPrimary)
-                            .frame(width: 28)
-
-                        Text(feature.title)
-                            .font(AppTypography.body)
-                            .foregroundColor(AppColors.textPrimary)
-
-                        Spacer()
-
-                        Image(systemName: "checkmark")
-                            .font(.caption)
-                            .foregroundColor(AppColors.success)
-                    }
-                    .padding(.horizontal, AppSpacing.md)
-                    .padding(.vertical, AppSpacing.sm)
-
-                    if feature.title != PaywallService.proFeatures.last?.title {
-                        Divider().padding(.leading, 44)
-                    }
-                }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Arvia Pro")
+                    .font(AppTypography.bodyMedium)
+                    .foregroundColor(AppColors.textPrimary)
+                Text(feature.shortPitch)
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(1)
             }
-            .background(
-                RoundedRectangle(cornerRadius: AppRadius.medium)
-                    .fill(Color.appSurface)
-            )
+            Spacer()
         }
         .padding(.horizontal, AppSpacing.screenMarginH)
     }
 
-
-
-    // MARK: - Free / Pro Comparison (aşağıda, scroll ile)
-    private var planComparison: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            SectionHeader(title: "Free ve Pro")
-
-            HStack(alignment: .top, spacing: AppSpacing.sm) {
-                planColumn(title: "Free", features: PaywallService.freeFeatures, accent: AppColors.textSecondary)
-                planColumn(title: "Pro", features: PaywallService.proFeatures, accent: AppColors.accentPrimary)
-            }
-        }
-        .padding(.horizontal, AppSpacing.screenMarginH)
-    }
-
-    private func planColumn(title: String, features: [(icon: String, title: String)], accent: Color) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(title)
-                .font(AppTypography.bodyMedium)
-                .foregroundColor(accent)
-
-            ForEach(features, id: \.title) { feature in
-                HStack(alignment: .top, spacing: AppSpacing.xs) {
-                    Image(systemName: feature.icon)
-                        .font(.caption)
-                        .foregroundColor(accent)
-                        .frame(width: 16)
-                    Text(feature.title)
+    // MARK: - Pricing (3 plan, kompakt kartlar)
+    private var pricingSection: some View {
+        VStack(spacing: AppSpacing.xs) {
+            if pricingOptions.isEmpty {
+                VStack(spacing: AppSpacing.xs) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundColor(AppColors.warning)
+                    Text("Fiyat bilgisi yüklenemedi.")
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("Lütfen tekrar dene.")
                         .font(AppTypography.caption)
                         .foregroundColor(AppColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(AppSpacing.md)
+                .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+                .cardShadow()
+            } else {
+                ForEach(pricingOptions) { option in
+                    pricingRow(option, isSelected: selectedProductId == option.id)
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .padding(AppSpacing.sm)
-        .background(RoundedRectangle(cornerRadius: AppRadius.medium).fill(Color.appSurface))
     }
 
-
-    // MARK: - Pricing (ilk ekranda)
-    private var pricingSection: some View {
-        VStack(spacing: AppSpacing.sm) {
-            SectionHeader(title: "Plan Seç")
-
-            VStack(spacing: AppSpacing.sm) {
-                if pricingOptions.isEmpty {
-                    VStack(spacing: AppSpacing.xs) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .foregroundColor(AppColors.warning)
-                        Text("Fiyat bilgisi yüklenemedi.")
-                            .font(AppTypography.bodyMedium)
-                            .foregroundColor(AppColors.textPrimary)
-                        Text("Lütfen tekrar dene.")
-                            .font(AppTypography.caption)
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(AppSpacing.md)
-                    .background(RoundedRectangle(cornerRadius: AppRadius.medium).fill(Color.appSurface))
-                } else {
-                    ForEach(pricingOptions) { option in
-                        pricingOption(option, isSelected: selectedProductId == option.id)
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, AppSpacing.screenMarginH)
-    }
-
-    private func pricingOption(_ option: PricingOption, isSelected: Bool) -> some View {
+    private func pricingRow(_ option: PricingOption, isSelected: Bool) -> some View {
         Button {
             selectedProductId = option.id
         } label: {
             HStack(spacing: AppSpacing.sm) {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: AppSpacing.xxs) {
-                        Text(option.title)
-                            .font(AppTypography.bodyMedium)
-                            .foregroundColor(AppColors.textPrimary)
-
-                        if let badge = option.badge {
-                            Text(badge)
-                                .font(.system(size: 9, weight: .medium))
-                                .foregroundColor(AppColors.success)
-                                .padding(.horizontal, AppSpacing.xxs)
-                                .padding(.vertical, 2)
-                                .background(
-                                    Capsule().fill(AppColors.successBackground)
-                                )
-                        }
+                // Radio indicator
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? AppColors.accentPrimary : AppColors.border, lineWidth: 1.5)
+                        .frame(width: 18, height: 18)
+                    if isSelected {
+                        Circle()
+                            .fill(AppColors.accentPrimary)
+                            .frame(width: 10, height: 10)
                     }
+                }
+                .accessibilityHidden(true)
 
-                    HStack(alignment: .firstTextBaseline, spacing: 2) {
-                        Text(option.price)
-                            .font(AppTypography.amount)
-                            .foregroundColor(AppColors.textPrimary)
-                        if !option.period.isEmpty {
-                            Text(option.period)
-                                .font(AppTypography.caption)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
+                // Title + badge
+                HStack(spacing: AppSpacing.xxs) {
+                    Text(option.title)
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    if let badge = option.badge {
+                        Text(badge)
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(AppColors.textOnAccent)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule().fill(AppColors.accentPrimary)
+                            )
                     }
                 }
 
                 Spacer()
 
-                ZStack {
-                    Circle()
-                        .stroke(isSelected ? AppColors.accentPrimary : AppColors.border, lineWidth: 2)
-                        .frame(width: 24, height: 24)
-                    if isSelected {
-                        Circle()
-                            .fill(AppColors.accentPrimary)
-                            .frame(width: 14, height: 14)
+                // Price + period
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(option.price)
+                        .font(AppTypography.amountMd)
+                        .foregroundColor(AppColors.textPrimary)
+                    if !option.period.isEmpty {
+                        Text(option.period)
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textSecondary)
                     }
                 }
             }
-            .padding(AppSpacing.md)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm + 2)
+            .frame(maxWidth: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: AppRadius.medium)
+                RoundedRectangle(cornerRadius: AppRadius.card)
                     .fill(Color.appSurface)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppRadius.medium)
-                            .stroke(isSelected ? AppColors.accentPrimary : Color.clear, lineWidth: 2)
-                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.card)
+                    .stroke(isSelected ? AppColors.accentPrimary : AppColors.border, lineWidth: isSelected ? 1.5 : 0.5)
             )
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(option.title), \(option.price)\(option.period.isEmpty ? "" : option.period)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    // MARK: - CTA (ilk ekranda)
+    // MARK: - CTA
     private var ctaSection: some View {
         Button {
             performPurchase()
         } label: {
             HStack {
                 if isPurchasing {
-                    ProgressView().tint(.white)
+                    ProgressView().tint(AppColors.textOnAccent)
                 }
                 Text(isPurchasing ? "İşlem yapılıyor..." : "Pro'ya Geç")
+                    .font(AppTypography.bodyMedium)
             }
             .frame(maxWidth: .infinity)
+            .frame(height: AppSpacing.minimumTapTarget + 8)
         }
         .buttonStyle(.primary)
         .disabled(isPurchasing || isRestoring || pricingOptions.isEmpty)
-        .padding(.horizontal, AppSpacing.screenMarginH)
     }
 
-    // MARK: - Restore + Yasal Linkler (ilk ekranda)
+    // MARK: - Restore + Legal (compact, 2 satır)
     private var restoreAndLegalSection: some View {
-        VStack(spacing: AppSpacing.sm) {
-            // Satın almaları geri yükle
+        VStack(spacing: AppSpacing.xs) {
+            // Yasal linkler — tek satırda 4 link
+            HStack(spacing: AppSpacing.xs) {
+                linkButton("Gizlilik", url: privacyURL)
+                bulletDot
+                linkButton("Koşullar", url: termsURL)
+                bulletDot
+                linkButton("EULA", url: eulaURL)
+                bulletDot
+                linkButton("Destek", url: supportURL)
+            }
+
+            // Restore Purchases — Apple zorunlu
             Button {
                 performRestore()
             } label: {
-                HStack {
+                HStack(spacing: 4) {
                     if isRestoring {
                         ProgressView()
+                            .scaleEffect(0.8)
                     }
                     Text(isRestoring ? "Kontrol ediliyor..." : "Satın Almaları Geri Yükle")
+                        .underline()
                 }
-                .font(AppTypography.secondary)
+                .font(AppTypography.caption)
                 .foregroundColor(AppColors.accentPrimary)
             }
             .disabled(isPurchasing || isRestoring)
+            .padding(.top, AppSpacing.xxs)
+        }
+        .frame(maxWidth: .infinity)
+    }
 
-            // Yasal linkler
-            HStack(spacing: AppSpacing.sm) {
-                Link(destination: privacyURL) {
-                    Text("Gizlilik Politikası")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                Text("•")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
-
-                Link(destination: termsURL) {
-                    Text("Kullanım Koşulları")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                Text("•")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
-
-                Link(destination: supportURL) {
-                    Text("Destek")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                Text("•")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
-
-                Link(destination: eulaURL) {
-                    Text("Apple EULA")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-            }
+    private func linkButton(_ title: String, url: URL) -> some View {
+        Link(destination: url) {
+            Text(title)
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textSecondary)
+                .underline()
         }
     }
 
-    // MARK: - Trust (ilk ekranda, yasal linklerin hemen altında)
-    private var trustSection: some View {
-        VStack(spacing: AppSpacing.xs) {
-            HStack(spacing: 4) {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.caption2)
-                Text("Tek araç kullanımı ücretsiz ve reklamsızdır.")
-            }
+    private var bulletDot: some View {
+        Text("•")
             .font(AppTypography.caption)
-            .foregroundColor(AppColors.success)
+            .foregroundColor(AppColors.textTertiary)
+    }
 
-            HStack(spacing: 4) {
-                Image(systemName: "lock.fill")
-                    .font(.caption2)
-                Text("İstediğin zaman iptal edebilirsin.")
-            }
-            .font(AppTypography.caption)
-            .foregroundColor(AppColors.textSecondary)
-
-            Text("Bu otomatik yenilenen aboneliktir. Satın alma onayından sonra ödeme Apple Hesabına yansıtılır. Cari dönem bitmeden en az 24 saat kala iptal etmezsen abonelik otomatik olarak yenilenir. Satın alımlar Apple hesabın üzerinden yönetilir. Kullanmadığın süre için ücret iadesi Apple politikalarına tabidir.")
-                .font(AppTypography.caption)
-                .foregroundColor(AppColors.textTertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, AppSpacing.xxl)
-        }
+    // MARK: - Auto-Renewal Disclosure (Apple zorunlu, kısa)
+    private var autoRenewalDisclosure: some View {
+        Text("Otomatik yenilenen abonelik. Satın alma onayından sonra ödeme Apple Hesabına yansıtılır. Cari dönem bitmeden en az 24 saat kala iptal etmezsen abonelik otomatik yenilenir. İstediğin zaman iptal edebilirsin.")
+            .font(.system(size: 10))
+            .foregroundColor(AppColors.textTertiary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, AppSpacing.xxs)
     }
 
     // MARK: - Actions
@@ -554,12 +378,13 @@ struct PaywallView: View {
 }
 
 // MARK: - Preview
+
 #Preview("Paywall — 2. Araç") {
     PaywallView(feature: .secondVehicle)
         .environmentObject(PaywallService.shared)
 }
 
-#Preview("Paywall — Dark") {
-    PaywallView(feature: .secondVehicle)
+#Preview("Paywall — Belge") {
+    PaywallView(feature: .documentLimit)
         .environmentObject(PaywallService.shared)
 }
