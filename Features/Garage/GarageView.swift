@@ -501,7 +501,7 @@ struct GarageView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
         .overlay(alignment: .bottomTrailing) {
             HStack(spacing: 4) {
-                Text(vehicle.photoFileName != nil ? "Detay" : "Düzenle")
+                Text("Detay")
                     .font(.system(size: 12, weight: .semibold))
                 Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .bold))
