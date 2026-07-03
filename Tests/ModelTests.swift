@@ -662,7 +662,7 @@ final class VehicleInsightServiceTests: XCTestCase {
             maxVisible: 10
         )
 
-        XCTAssertTrue(insights.contains { $0.type == .upcomingReminder && $0.action == .addReminder })
+        XCTAssertTrue(insights.contains { $0.type == .upcomingReminder && $0.action == .openTodos })
     }
 
     func testMonthlySummaryTotalCalculationIsCorrect() {

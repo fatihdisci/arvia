@@ -8,7 +8,7 @@ struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(AppTypography.bodyMedium)
-            .foregroundColor(.white)
+            .foregroundColor(AppColors.textOnAccent)
             .frame(maxWidth: .infinity)
             .frame(height: AppSpacing.minimumTapTarget + 8)
             .padding(.horizontal, AppSpacing.lg)
@@ -35,7 +35,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             .padding(.horizontal, AppSpacing.lg)
             .background(
                 RoundedRectangle(cornerRadius: AppRadius.button)
-                    .stroke(isEnabled ? AppColors.accentPrimary : AppColors.border, lineWidth: 1.5)
+                    .stroke(isEnabled ? AppColors.accentPrimary.opacity(0.6) : AppColors.border, lineWidth: 1)
             )
             .scaleEffect(!reduceMotion && configuration.isPressed ? 0.97 : 1.0)
             .animation(reduceMotion ? .none : .easeOut(duration: 0.15), value: configuration.isPressed)

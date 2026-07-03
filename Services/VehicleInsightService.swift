@@ -248,8 +248,8 @@ struct VehicleInsightService {
             priority: .warning,
             contentKind: .warning,
             title: "Yaklaşan iş var",
-            body: "\(subject) için \(relativeDueText(for: reminder, vehicleOdometer: vehicleOdometer)). Hatırlatıcı eklemek istersen buradan ilerleyebilirsin.",
-            action: .addReminder,
+            body: "\(subject) için \(relativeDueText(for: reminder, vehicleOdometer: vehicleOdometer)). Yapılacaklar üzerinden takip edebilirsin.",
+            action: .openTodos,
             snoozeDays: 14,
             relatedReminderId: reminder.id
         )
