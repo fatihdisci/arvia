@@ -141,7 +141,7 @@ struct CommunityCreatePostView: View {
                                     RoundedRectangle(cornerRadius: AppRadius.medium)
                                         .fill(postType == type ? AppColors.accentPrimary : AppColors.surfaceSecondary)
                                 )
-                                .foregroundColor(postType == type ? .white : AppColors.textSecondary)
+                                .foregroundColor(postType == type ? AppColors.textOnAccent : AppColors.textSecondary)
                             }
                             .buttonStyle(.plain)
                         }
@@ -169,7 +169,7 @@ struct CommunityCreatePostView: View {
                                         Capsule()
                                             .fill(selectedTags.contains(tag) ? AppColors.accentPrimary : AppColors.surfaceSecondary)
                                     )
-                                    .foregroundColor(selectedTags.contains(tag) ? .white : AppColors.textSecondary)
+                                    .foregroundColor(selectedTags.contains(tag) ? AppColors.textOnAccent : AppColors.textSecondary)
                             }
                             .buttonStyle(.plain)
                         }

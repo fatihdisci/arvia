@@ -308,7 +308,7 @@ struct CommunityPostDetailView: View {
                             } else {
                                 Image(systemName: "paperplane.fill")
                                     .font(.body)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppColors.textOnAccent)
                                     .frame(width: 36, height: 36)
                                     .background(
                                         Circle()

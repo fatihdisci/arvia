@@ -389,7 +389,7 @@ struct CommunityFeedView: View {
                     HStack {
                         if isCreatingProfile {
                             ProgressView()
-                                .tint(.white)
+                                .tint(AppColors.textOnAccent)
                         }
                         Text("Profili Oluştur")
                     }
