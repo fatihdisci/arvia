@@ -96,8 +96,10 @@ struct DossierCompletenessCard: View {
     }
 
     private var scoreColor: Color {
+        // Kırmızı sadece gerçekten başlanmamış durumda (0-29) — skor
+        // geliştikçe amber'a geçer, "kritik" hissi vermez. 80+ yeşil.
         if score >= 80 { return AppColors.success }
-        if score >= 50 { return AppColors.warning }
+        if score >= 30 { return AppColors.warning }
         return AppColors.critical
     }
 
