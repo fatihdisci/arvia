@@ -226,10 +226,33 @@ struct GarageView: View {
     }
 
     // MARK: - Vehicle Picker
-    /// Çoklu araç varken aktif aracı değiştirmek için chevron pagination.
+    /// Aktif araç plakasını üstte gösterir. Tek araçta sadece plaka label
+    /// (chevron ve "1/1" yok), çoklu araçta chevron pagination + "N/M".
+    private var vehiclePicker: some View {
+        Group {
+            if activeVehicles.count > 1 {
+                multiVehiclePicker
+            } else {
+                singleVehicleLabel
+            }
+        }
+        .padding(.horizontal, AppSpacing.xs)
+    }
+
+    /// Tek araç — sadece plaka label, ortada hizalı.
+    private var singleVehicleLabel: some View {
+        Text(currentVehicle.flatMap { vehiclePickerLabel(for: $0) } ?? "Araç")
+            .font(AppTypography.bodyMedium)
+            .foregroundColor(AppColors.textPrimary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity)
+    }
+
+    /// Çoklu araç — chevron pagination + plaka + "N/M" göstergesi.
     /// Apple Music playlist header gibi — kaç araç olursa olsun sıkışmaz,
     /// çünkü ortadaki label değişir, kenar butonlar sabit kalır.
-    private var vehiclePicker: some View {
+    private var multiVehiclePicker: some View {
         HStack(spacing: AppSpacing.md) {
             chevronButton(systemName: "chevron.left", enabled: canGoPrevious) {
                 goToPreviousVehicle()
@@ -257,7 +280,6 @@ struct GarageView: View {
                 goToNextVehicle()
             }
         }
-        .padding(.horizontal, AppSpacing.xs)
     }
 
     private func chevronButton(systemName: String, enabled: Bool, action: @escaping () -> Void) -> some View {
