@@ -114,6 +114,13 @@ final class VehicleWizardDraft {
 // MARK: - Vehicle Wizard View (Container)
 // 3 step'li NavigationStack. Üstte step indicator, altta İleri/Geri/Kaydet bar.
 
+/// Tüm focusable alanlar — klavye yönetimi ve otomatik scroll için.
+enum WizardField: Hashable {
+    case plate, year
+    case odometer, engineCC, nickname
+    case purchaseOdometer, purchasePrice
+}
+
 struct VehicleWizardView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -125,6 +132,10 @@ struct VehicleWizardView: View {
     @State private var showModelPicker: Bool = false
     @State private var showErrors: Bool = false
     @State private var showPaywall: Bool = false
+
+    /// Aktif TextField. Picker seçimleri ve step geçişlerinde nil yapılır
+    /// (klavye kapanır). ScrollViewReader onChange ile aktif field'a scroll eder.
+    @FocusState private var focusedField: WizardField?
 
     private let totalSteps = 3
     private let maxPhotoBytes = 20 * 1024 * 1024
@@ -138,25 +149,8 @@ struct VehicleWizardView: View {
                     .padding(.top, AppSpacing.sm)
                     .padding(.bottom, AppSpacing.md)
 
-                // Orta — aktif step içeriği
-                ScrollView {
-                    Group {
-                        switch currentStep {
-                        case 1:
-                            WizardIdentifyStep(draft: draft, showBrandPicker: $showBrandPicker, showModelPicker: $showModelPicker)
-                        case 2:
-                            WizardStatusStep(draft: draft)
-                        case 3:
-                            WizardNextStepsStep(draft: draft)
-                        default:
-                            EmptyView()
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.screenMarginH)
-                    .padding(.bottom, AppSpacing.xl)
-                }
-                .scrollDismissesKeyboard(.immediately)
-                .background(Color.appBackground)
+                // Orta — aktif step içeriği (ScrollViewReader extracted)
+                scrollableStepContent
 
                 // Alt — navigation bar (İleri / Geri / Kaydet)
                 WizardNavBar(
@@ -164,8 +158,14 @@ struct VehicleWizardView: View {
                     totalSteps: totalSteps,
                     canGoBack: currentStep > 1,
                     canGoForward: canGoForward,
-                    onBack: { withAnimation(.easeInOut(duration: 0.25)) { currentStep -= 1 } },
-                    onForward: { withAnimation(.easeInOut(duration: 0.25)) { currentStep += 1 } },
+                    onBack: {
+                        focusedField = nil
+                        withAnimation(.easeInOut(duration: 0.25)) { currentStep -= 1 }
+                    },
+                    onForward: {
+                        focusedField = nil
+                        withAnimation(.easeInOut(duration: 0.25)) { currentStep += 1 }
+                    },
                     onSave: saveVehicle
                 )
             }
@@ -177,6 +177,12 @@ struct VehicleWizardView: View {
                     Button("İptal") { dismiss() }
                         .foregroundColor(AppColors.textSecondary)
                 }
+                // Klavyenin üstünde "Kapat" — hızlı erişim
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Kapat") { focusedField = nil }
+                        .foregroundColor(AppColors.accentPrimary)
+                }
             }
             .sheet(isPresented: $showBrandPicker) {
                 CarBrandPickerSheet(service: CarCatalogService.shared, selectedBrand: draft.brand) { selectedBrand in
@@ -187,6 +193,8 @@ struct VehicleWizardView: View {
                         draft.brand = ""
                         draft.model = ""
                     }
+                    // Picker seçildi → klavye kapansın
+                    focusedField = nil
                 }
             }
             .sheet(isPresented: $showModelPicker) {
@@ -194,6 +202,8 @@ struct VehicleWizardView: View {
                     CarModelPickerSheet(service: CarCatalogService.shared, brand: catalogBrand, selectedModel: draft.model) { selectedModel in
                         draft.model = selectedModel?.displayName ?? ""
                     }
+                    // Sheet kapandığında klavye kapansın
+                    .onDisappear { focusedField = nil }
                 }
             }
             .sheet(isPresented: $showPaywall) {
@@ -202,6 +212,51 @@ struct VehicleWizardView: View {
             .onChange(of: draft.selectedPhotoItem) { _, newItem in
                 if let item = newItem { loadPhotoItem(item) }
             }
+        }
+    }
+
+    /// Orta alan — step içeriği ScrollViewReader içinde. Aktif TextField'a
+    /// otomatik scroll; klavye açıkken alan klavyenin altında kalmaz.
+    @ViewBuilder
+    private var scrollableStepContent: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                activeStepView
+                    .padding(.horizontal, AppSpacing.screenMarginH)
+                    .padding(.bottom, AppSpacing.xl)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .background(Color.appBackground)
+            .onChange(of: focusedField) { _, newValue in
+                guard let newValue else { return }
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    proxy.scrollTo(newValue, anchor: .bottom)
+                }
+            }
+            .onChange(of: currentStep) { _, _ in
+                // Step değişince klavyeyi kapat (alan kalmayabilir).
+                focusedField = nil
+            }
+        }
+    }
+
+    /// Aktif step'in view içeriği — extracted (type-check hızı için).
+    @ViewBuilder
+    private var activeStepView: some View {
+        switch currentStep {
+        case 1:
+            WizardIdentifyStep(
+                draft: draft,
+                focusedField: $focusedField,
+                showBrandPicker: $showBrandPicker,
+                showModelPicker: $showModelPicker
+            )
+        case 2:
+            WizardStatusStep(draft: draft, focusedField: $focusedField)
+        case 3:
+            WizardNextStepsStep(draft: draft)
+        default:
+            EmptyView()
         }
     }
 
@@ -401,6 +456,7 @@ struct WizardStepIndicator: View {
 
 struct WizardIdentifyStep: View {
     let draft: VehicleWizardDraft
+    @FocusState.Binding var focusedField: WizardField?
     @Binding var showBrandPicker: Bool
     @Binding var showModelPicker: Bool
 
@@ -430,7 +486,11 @@ struct WizardIdentifyStep: View {
                         get: { draft.plate },
                         set: { draft.plate = $0 }
                     ))
+                    .id(WizardField.plate)
+                    .focused($focusedField, equals: .plate)
                     .textInputAutocapitalization(.characters)
+                    .submitLabel(.next)
+                    .onSubmit { focusedField = .year }
                     .font(AppTypography.plateDisplay)
                     .tracking(3)
                     .foregroundColor(AppColors.textPrimary)
@@ -449,6 +509,7 @@ struct WizardIdentifyStep: View {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     sectionLabel("Marka")
                     Button {
+                        focusedField = nil
                         showBrandPicker = true
                     } label: {
                         HStack {
@@ -477,6 +538,7 @@ struct WizardIdentifyStep: View {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         sectionLabel("Model")
                         Button {
+                            focusedField = nil
                             showModelPicker = true
                         } label: {
                             HStack {
@@ -508,7 +570,11 @@ struct WizardIdentifyStep: View {
                         get: { draft.yearText },
                         set: { draft.yearText = $0 }
                     ))
+                    .id(WizardField.year)
+                    .focused($focusedField, equals: .year)
                     .keyboardType(.numberPad)
+                    .submitLabel(.done)
+                    .onSubmit { focusedField = nil }
                     .font(AppTypography.bodyMedium)
                     .foregroundColor(AppColors.textPrimary)
                     .padding(AppSpacing.sm)
@@ -550,6 +616,7 @@ struct WizardIdentifyStep: View {
 
 struct WizardStatusStep: View {
     let draft: VehicleWizardDraft
+    @FocusState.Binding var focusedField: WizardField?
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -562,7 +629,11 @@ struct WizardStatusStep: View {
                         get: { draft.odometerText },
                         set: { draft.odometerText = $0 }
                     ))
+                    .id(WizardField.odometer)
+                    .focused($focusedField, equals: .odometer)
                     .keyboardType(.numberPad)
+                    .submitLabel(.next)
+                    .onSubmit { focusedField = .engineCC }
                 }
 
                 // Motosiklet alanları (gerekirse)
@@ -584,7 +655,11 @@ struct WizardStatusStep: View {
                             get: { draft.engineCCText },
                             set: { draft.engineCCText = $0 }
                         ))
+                        .id(WizardField.engineCC)
+                        .focused($focusedField, equals: .engineCC)
                         .keyboardType(.numberPad)
+                        .submitLabel(.next)
+                        .onSubmit { focusedField = .nickname }
                     }
                 }
 
@@ -633,6 +708,8 @@ struct WizardStatusStep: View {
                         get: { draft.nickname },
                         set: { draft.nickname = $0 }
                     ))
+                    .id(WizardField.nickname)
+                    .focused($focusedField, equals: .nickname)
                 }
 
                 // Fotoğraf
@@ -738,7 +815,11 @@ struct WizardStatusStep: View {
                         get: { draft.purchaseOdometerText },
                         set: { draft.purchaseOdometerText = $0 }
                     ))
+                    .id(WizardField.purchaseOdometer)
+                    .focused($focusedField, equals: .purchaseOdometer)
                     .keyboardType(.numberPad)
+                    .submitLabel(.next)
+                    .onSubmit { focusedField = .purchasePrice }
                 }
 
                 vField(label: "Satın Alma Fiyatı (₺, opsiyonel)") {
@@ -746,7 +827,11 @@ struct WizardStatusStep: View {
                         get: { draft.purchasePriceText },
                         set: { draft.purchasePriceText = $0 }
                     ))
+                    .id(WizardField.purchasePrice)
+                    .focused($focusedField, equals: .purchasePrice)
                     .keyboardType(.decimalPad)
+                    .submitLabel(.done)
+                    .onSubmit { focusedField = nil }
                 }
             }
         }
