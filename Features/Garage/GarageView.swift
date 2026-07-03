@@ -118,7 +118,7 @@ struct GarageView: View {
                 }
             }
             .sheet(isPresented: $showAddVehicle) {
-                VehicleFormView()
+                VehicleWizardView()
             }
             .sheet(isPresented: $showAddExpense) {
                 ExpenseFormView(preselectedVehicleId: currentVehicle?.id)

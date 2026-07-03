@@ -69,6 +69,7 @@
 		84114D1BC01D4B9C93AC86CA /* PartChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DE97661E02C4809BA241D14 /* PartChange.swift */; };
 		85B5FB8C30734C0F854FD8C8 /* DemoDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6D76344B3F47E7AF65D4C9 /* DemoDataSeeder.swift */; };
 		85B909F0A3694236A7C09766 /* VehicleFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458CAAD1C9EE4663B24E011A /* VehicleFormView.swift */; };
+		BCB1308F27DB4AB9BCEAF2D1 /* VehicleWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC10A1A69DA8456491CCC9DC /* VehicleWizardView.swift */; };
 		8A128467B94BF543DBD633E5 /* CommunityComment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B82ED1B3C1D76EE5917AB30 /* CommunityComment.swift */; };
 		8C15C2B755734A889A5BA976 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381ADCC8AAB64013850B095C /* NotificationService.swift */; };
 		8C7FFCB7FFF845AA8EE42147 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DF8F94C1F3A4EC0962F69BD /* ShareSheet.swift */; };
@@ -164,6 +165,7 @@
 		3FA9FF5C0567498ABB33199F /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		4211CAC644864893A910F6F2 /* CommunityCreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityCreatePostView.swift; sourceTree = "<group>"; };
 		458CAAD1C9EE4663B24E011A /* VehicleFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleFormView.swift; sourceTree = "<group>"; };
+		EC10A1A69DA8456491CCC9DC /* VehicleWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleWizardView.swift; sourceTree = "<group>"; };
 		476C6456564D448AB1F6C487 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 		4D213AAFB5E2494FB14585B8 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
 		52DEE37DB37947F3807FE748 /* AppRadius.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRadius.swift; sourceTree = "<group>"; };
@@ -399,6 +401,7 @@
 			isa = PBXGroup;
 			children = (
 				458CAAD1C9EE4663B24E011A /* VehicleFormView.swift */,
+				EC10A1A69DA8456491CCC9DC /* VehicleWizardView.swift */,
 				BDF8A5FF5F314A8C897C56F4 /* GarageView.swift */,
 				CCAT0003CCAT0003CCAT0003 /* VehicleCatalogPickerViews.swift */,
 			);
@@ -733,6 +736,7 @@
 				938AB55FE3448B27D70E566C /* OnboardingView.swift in Sources */,
 				62CFD3078AB54AE98354161B /* GarageView.swift in Sources */,
 				85B909F0A3694236A7C09766 /* VehicleFormView.swift in Sources */,
+				BCB1308F27DB4AB9BCEAF2D1 /* VehicleWizardView.swift in Sources */,
 				CCAT0004CCAT0004CCAT0004 /* VehicleCatalogPickerViews.swift in Sources */,
 				C9CEF06186644426ABAE5496 /* RemindersView.swift in Sources */,
 				3697DEB15F04490FB93586F9 /* ReminderListView.swift in Sources */,
