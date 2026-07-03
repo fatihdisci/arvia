@@ -24,6 +24,10 @@ struct GarageView: View {
     @State private var showSettings = false
     @State private var showArchivedVehicles = false
 
+    // Faz 2.6 — Arvia Rehber tanıtım banner'ı snooze'u.
+    // 0 = hiç dismiss edilmedi, aksi halde dismiss zamanı (epoch seconds).
+    @AppStorage("guideIntroDismissedAt") private var guideIntroDismissedAt: Double = 0
+
     // QuickAction sheets
     @State private var showAddExpense = false
     @State private var showAddService = false
@@ -344,6 +348,13 @@ struct GarageView: View {
                     // 2. Bugün Garajında
                     if let vehicle = currentVehicle {
                         todayGarageSection(vehicle: vehicle)
+                    }
+
+                    // 2.0. Faz 2.6 — Yeni kullanıcı rehber tanıtım banner'ı.
+                    // İlk araç eklendikten sonra bir kez gösterilir, 7 gün snooze.
+                    if shouldShowRehberIntro {
+                        RehberIntroBanner(onDismiss: dismissRehberIntro)
+                            .padding(.horizontal, AppSpacing.screenMarginH)
                     }
 
                     // 2.5. Dosyani Tamamla Checklist — sadece eksik kriter varsa
@@ -674,6 +685,19 @@ struct GarageView: View {
     }
 
     // MARK: - Helpers
+    /// Faz 2.6 — İlk araç eklendikten sonra rehber tanıtım banner'ı gösterilir.
+    /// 7 günlük snooze: dismiss'ten 7 gün sonra yeniden gösterilebilir.
+    private var shouldShowRehberIntro: Bool {
+        guard !activeVehicles.isEmpty else { return false }
+        let dismissedAt = Date(timeIntervalSince1970: guideIntroDismissedAt)
+        if guideIntroDismissedAt == 0 { return true }
+        return Date().timeIntervalSince(dismissedAt) > 7 * 24 * 60 * 60
+    }
+
+    private func dismissRehberIntro() {
+        guideIntroDismissedAt = Date().timeIntervalSince1970
+    }
+
     private func upcomingReminder(for vehicle: Vehicle) -> Reminder? {
         let reminders = activeReminders.filter { $0.vehicleId == vehicle.id }
         if let overdue = reminders.first(where: { $0.isOverdue }) { return overdue }

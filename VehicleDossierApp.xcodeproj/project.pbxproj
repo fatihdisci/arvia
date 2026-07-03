@@ -69,6 +69,7 @@
 		84114D1BC01D4B9C93AC86CA /* PartChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DE97661E02C4809BA241D14 /* PartChange.swift */; };
 		85B5FB8C30734C0F854FD8C8 /* DemoDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6D76344B3F47E7AF65D4C9 /* DemoDataSeeder.swift */; };
 		85B909F0A3694236A7C09766 /* VehicleFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458CAAD1C9EE4663B24E011A /* VehicleFormView.swift */; };
+		690B9BE68E864ACA853C6948 /* RehberIntroBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C0CA2E86C24103A6F89443 /* RehberIntroBanner.swift */; };
 		BCB1308F27DB4AB9BCEAF2D1 /* VehicleWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC10A1A69DA8456491CCC9DC /* VehicleWizardView.swift */; };
 		8A128467B94BF543DBD633E5 /* CommunityComment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B82ED1B3C1D76EE5917AB30 /* CommunityComment.swift */; };
 		8C15C2B755734A889A5BA976 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381ADCC8AAB64013850B095C /* NotificationService.swift */; };
@@ -165,6 +166,7 @@
 		3FA9FF5C0567498ABB33199F /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		4211CAC644864893A910F6F2 /* CommunityCreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityCreatePostView.swift; sourceTree = "<group>"; };
 		458CAAD1C9EE4663B24E011A /* VehicleFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleFormView.swift; sourceTree = "<group>"; };
+		C8C0CA2E86C24103A6F89443 /* RehberIntroBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RehberIntroBanner.swift; sourceTree = "<group>"; };
 		EC10A1A69DA8456491CCC9DC /* VehicleWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleWizardView.swift; sourceTree = "<group>"; };
 		476C6456564D448AB1F6C487 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 		4D213AAFB5E2494FB14585B8 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
@@ -524,6 +526,7 @@
 				A11B22C33D44E55F66A77B05 /* ArviaGuideCard.swift */,
 				86FDB0BC84684A08AF49E08A /* VehicleCard.swift */,
 				AE62D7B7FDAE440B9176077B /* EmptyStateView.swift */,
+				C8C0CA2E86C24103A6F89443 /* RehberIntroBanner.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -733,6 +736,7 @@
 				E46A5A632F95865F5B6B2AFB /* ContextualTipBanner.swift in Sources */,
 				559086DD7D8C5D4B99927AA6 /* DosyaniTamamlaChecklist.swift in Sources */,
 				A11B22C33D44E55F66A77B06 /* ArviaGuideCard.swift in Sources */,
+				690B9BE68E864ACA853C6948 /* RehberIntroBanner.swift in Sources */,
 				938AB55FE3448B27D70E566C /* OnboardingView.swift in Sources */,
 				62CFD3078AB54AE98354161B /* GarageView.swift in Sources */,
 				85B909F0A3694236A7C09766 /* VehicleFormView.swift in Sources */,
