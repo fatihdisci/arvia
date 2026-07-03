@@ -2,35 +2,58 @@ import Foundation
 
 // MARK: - Arvia Rehber Insight Models
 // AI-ready surface: v1 uses only rule-based local insights.
+// Faz 1.1 (Karar 4.2): 5 içerik tipi + opsiyonel action + dismiss/snooze.
 
 struct VehicleInsight: Identifiable, Equatable {
     let id: String
     let type: VehicleInsightType
     let priority: VehicleInsightPriority
     let source: VehicleInsightSource
+    let contentKind: VehicleInsightContentKind
     let title: String
     let body: String
-    let action: VehicleInsightAction
+    let action: VehicleInsightAction?
+    let snoozeDays: Int?
     let relatedReminderId: UUID?
 
     init(
         type: VehicleInsightType,
         priority: VehicleInsightPriority,
         source: VehicleInsightSource = .ruleBased,
+        contentKind: VehicleInsightContentKind = .callToAction,
         title: String,
         body: String,
-        action: VehicleInsightAction,
+        action: VehicleInsightAction?,
+        snoozeDays: Int? = nil,
         relatedReminderId: UUID? = nil
     ) {
         self.id = relatedReminderId.map { "\(type.rawValue)-\($0.uuidString)" } ?? type.rawValue
         self.type = type
         self.priority = priority
         self.source = source
+        self.contentKind = contentKind
         self.title = title
         self.body = body
         self.action = action
+        self.snoozeDays = snoozeDays
         self.relatedReminderId = relatedReminderId
     }
+}
+
+// MARK: - Content Kind (Faz 1.1)
+// 5 içerik tipi kategorisi — Gemini raporu Bölüm 5.1.
+// Karar sınıfı: bu enum, kartın nasıl görüneceğini ve nasıl etkileşeceğini belirler.
+enum VehicleInsightContentKind: String, Codable, CaseIterable {
+    /// A. Eylem — zorunlu CTA, dismiss yok.
+    case callToAction
+    /// B. Bilgi — sadece dismiss butonu, CTA yok.
+    case info
+    /// C. Uyarı — geçmiş ekranı + dismiss.
+    case warning
+    /// D. Hatırlatma — pasif hatırlatma + dismiss.
+    case reminder
+    /// E. Yumuşak Soru — çift buton (Ekle + Şimdi Değil).
+    case softQuestion
 }
 
 enum VehicleInsightType: String, CaseIterable {
@@ -66,6 +89,7 @@ enum VehicleInsightDisplayContext {
 }
 
 enum VehicleInsightAction: String, CaseIterable {
+    // Mevcut CTA aksiyonları (korunur — geriye uyumluluk)
     case addServiceRecord
     case addDocument
     case openSaleFile
@@ -76,6 +100,12 @@ enum VehicleInsightAction: String, CaseIterable {
     case addMTVReminder
     case addExpense
     case addFuelExpense
+
+    // Faz 1.1 (Karar 4.2) — yeni meta-aksiyonlar
+    case dismissAndSnooze   // Kullanıcı dismiss + snooze
+    case markAsRead         // Sadece okundu işaretle
+    case acknowledge        // "Anlaşıldı"
+    case noAction           // Pasif, göster ama etkileşim yok
 
     var title: String {
         switch self {
@@ -99,6 +129,10 @@ enum VehicleInsightAction: String, CaseIterable {
             return "Masraf Ekle"
         case .addFuelExpense:
             return "Yakıt Ekle"
+        case .acknowledge:
+            return "Anlaşıldı"
+        case .dismissAndSnooze, .markAsRead, .noAction:
+            return ""
         }
     }
 
@@ -124,6 +158,8 @@ enum VehicleInsightAction: String, CaseIterable {
             return "expenseForm"
         case .addFuelExpense:
             return "fuelExpenseForm"
+        case .acknowledge, .dismissAndSnooze, .markAsRead, .noAction:
+            return ""
         }
     }
 }

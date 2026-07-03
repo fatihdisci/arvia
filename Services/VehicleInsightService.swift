@@ -173,7 +173,16 @@ struct VehicleInsightService {
             generated.append(quietGoodStateInsight())
         }
 
-        return deduplicated(filtered(generated, for: displayContext))
+        // Faz 1.1: Snooze edilmiş insight'ları filtrele (type-tabanlı API).
+        let snoozeStore = InsightSnoozeStore.shared
+        let activeInsights = generated.filter { insight in
+            !snoozeStore.isSnoozed(
+                insightType: insight.type,
+                forVehicle: vehicle.id
+            )
+        }
+
+        return deduplicated(filtered(activeInsights, for: displayContext))
             .sorted { lhs, rhs in
                 if insightRank(lhs) == insightRank(rhs) {
                     return lhs.title < rhs.title
@@ -212,12 +221,16 @@ struct VehicleInsightService {
             .sorted { reminderSortRank($0, vehicleOdometer: vehicleOdometer) < reminderSortRank($1, vehicleOdometer: vehicleOdometer) }
             .prefix(2)
             .map { reminder in
-                VehicleInsight(
+                let title = reminder.isKmOverdue(vehicleOdometer: vehicleOdometer) ? "Km sınırı geçen iş var" : "Gecikmiş iş var"
+                let subject = reminder.title.isEmpty ? reminder.type.displayName : reminder.title
+                return VehicleInsight(
                     type: .overdueReminder,
                     priority: .important,
-                    title: reminder.isKmOverdue(vehicleOdometer: vehicleOdometer) ? "Km sınırı geçen iş var" : "Geciken işi tamamla",
-                    body: "\(reminder.title.isEmpty ? reminder.type.displayName : reminder.title) için kayıtlarına göre aksiyon gerekebilir.",
+                    contentKind: .callToAction,
+                    title: title,
+                    body: "\(subject) için kayıtlar gecikmiş görünüyor. Yapılacaklar üzerinden takip edebilirsin.",
                     action: .openTodos,
+                    snoozeDays: nil,
                     relatedReminderId: reminder.id
                 )
             }
@@ -229,12 +242,15 @@ struct VehicleInsightService {
             .sorted(by: { reminderSortRank($0, vehicleOdometer: vehicleOdometer) < reminderSortRank($1, vehicleOdometer: vehicleOdometer) })
             .first else { return nil }
 
+        let subject = reminder.title.isEmpty ? reminder.type.displayName : reminder.title
         return VehicleInsight(
             type: .upcomingReminder,
             priority: .warning,
+            contentKind: .warning,
             title: "Yaklaşan iş var",
-            body: "\(reminder.title.isEmpty ? reminder.type.displayName : reminder.title): \(relativeDueText(for: reminder, vehicleOdometer: vehicleOdometer)).",
-            action: .openTodos,
+            body: "\(subject) için \(relativeDueText(for: reminder, vehicleOdometer: vehicleOdometer)). Hatırlatıcı eklemek istersen buradan ilerleyebilirsin.",
+            action: .addReminder,
+            snoozeDays: 14,
             relatedReminderId: reminder.id
         )
     }
@@ -249,18 +265,22 @@ struct VehicleInsightService {
             return VehicleInsight(
                 type: .odometerUpdate,
                 priority: .warning,
-                title: "Kilometre bilgisini güncelle",
-                body: "Güncel kilometre, bakım ve masraf takibini daha doğru hale getirir.",
-                action: .updateOdometer
+                contentKind: .softQuestion,
+                title: "Kilometren güncel mi?",
+                body: "Km bilgisi girilmediğinde bakım ve masraf takibi doğru çalışmaz. Güncel km eklemek hatırlatıcıları daha anlamlı hale getirir.",
+                action: .updateOdometer,
+                snoozeDays: 30
             )
         }
         if shouldSuggestOdometerUpdate(expenses: expenses, serviceRecords: serviceRecords, inspectionReports: inspectionReports) {
             return VehicleInsight(
                 type: .odometerUpdate,
                 priority: .info,
-                title: "Kilometreyi güncel tut",
-                body: "Son km kayıtların eski görünüyor. Güncel km eklemek hatırlatıcıları daha anlamlı hale getirir.",
-                action: .updateOdometer
+                contentKind: .softQuestion,
+                title: "Kilometren güncel mi?",
+                body: "Son km kaydının üzerinden zaman geçmiş görünüyor. Güncel km eklemek hatırlatıcıların doğru çalışmasına yardımcı olur.",
+                action: .updateOdometer,
+                snoozeDays: 30
             )
         }
         return nil
@@ -277,17 +297,32 @@ struct VehicleInsightService {
             isActive(reminder)
         }
         if hasActiveMTVReminder { return nil }
-        let title = (month == 1) ? "MTV 1. taksit dönemindesin" : "MTV 2. taksit dönemindesin"
+        let title = (month == 1) ? "MTV 1. taksit dönemi" : "MTV 2. taksit dönemi"
         let body = (month == 1)
-            ? "Ocak ayında 1. taksit son ödeme günü 31 Ocak. Aracının MTV durumunu kontrol etmek ve hatırlatıcı eklemek isteyebilirsin."
-            : "Temmuz ayında 2. taksit son ödeme günü 31 Temmuz. Aracının MTV durumunu kontrol etmek ve hatırlatıcı eklemek isteyebilirsin."
+            ? "Ocak ayı MTV ödemeleri başladı. Ödedikten sonra masraf olarak kaydedebilirsin."
+            : "Temmuz ayı MTV ödemeleri başladı. Ödedikten sonra masraf olarak kaydedebilirsin."
         return VehicleInsight(
             type: .calendarPeriod,
-            priority: .warning,
+            priority: .info,
+            contentKind: .reminder,
             title: title,
             body: body,
-            action: .addMTVReminder
+            action: .addMTVReminder,
+            snoozeDays: calendarPeriodSnoozeDays()
         )
+    }
+
+    /// MTV dönemi sonuna kadar kalan gün sayısı (snoozeDays için).
+    private func calendarPeriodSnoozeDays() -> Int {
+        let month = calendar.component(.month, from: now)
+        let year = calendar.component(.year, from: now)
+        let nextMonth = (month == 12) ? 1 : month + 1
+        let nextMonthYear = (month == 12) ? year + 1 : year
+        guard let firstOfNextMonth = calendar.date(from: DateComponents(year: nextMonthYear, month: nextMonth, day: 1)) else {
+            return 30
+        }
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: firstOfNextMonth).day ?? 30
+        return max(1, days)
     }
 
     private func seasonalGuidanceInsight() -> VehicleInsight? {
@@ -295,7 +330,7 @@ struct VehicleInsightService {
         let body: String
         switch season {
         case .winter:
-            body = "Kış döneminde lastik, antifriz, akü ve silecek görünürlük kontrollerini kayıt altında tutmak faydalı olabilir."
+            body = "Kış döneminde lastik, antifriz, akü ve silecek kontrollerini kayıt altında tutmak faydalı olabilir."
         case .spring:
             body = "Bahar döneminde klima, yaz öncesi genel kontrol ve süspansiyon kayıtlarını gözden geçirmek faydalı olabilir."
         case .summer:
@@ -307,9 +342,11 @@ struct VehicleInsightService {
         return VehicleInsight(
             type: .seasonalGuidance,
             priority: .info,
+            contentKind: .info,
             title: season.title,
             body: body,
-            action: .addReminder
+            action: nil,
+            snoozeDays: 90
         )
     }
 
@@ -326,22 +363,24 @@ struct VehicleInsightService {
         let body: String
         switch fuelType {
         case .diesel:
-            body = "Dizel araçlarda düzenli yağ, filtre ve yakıt filtresiyle ilgili bakım kayıtlarını takip etmek faydalı olabilir."
+            body = "Dizel motorlarda DPF (Dizel Partikül Filtresi), enjektör ve yakıt filtresi sağlığı önemlidir. Bakım geçmişini kayda almak takibi kolaylaştırır."
         case .gasoline:
-            body = "Benzinli araçlarda yağ, filtre ve bujiyle ilgili bakım kayıtlarını düzenli tutmak faydalı olabilir."
+            body = "Benzinli motorlarda yağ, filtre ve buji kontrolünün düzenli kaydı bakım takibini kolaylaştırır."
         case .lpg:
-            body = "LPG'li araçlarda LPG sistemi ve filtre kontrolünü uzman servis kaydıyla takip etmek faydalı olabilir."
+            body = "LPG'li araçlarda LPG sistemi ve filtre kontrolünün uzman servis kaydıyla takibi faydalı olabilir."
         case .hybrid:
-            body = "Hibrit araçlarda periyodik sistem ve batarya ile ilgili servis kayıtlarını ayrı tutmak faydalı olabilir."
+            body = "Hibrit araçlarda periyodik sistem ve batarya sağlığı kayıtlarını ayrı tutmak faydalı olabilir."
         case .electric:
-            body = "Elektrikli araçlarda periyodik sistem ve batarya ile ilgili servis kayıtlarını ayrı tutmak faydalı olabilir."
+            body = "Elektrikli araçlarda periyodik sistem ve batarya sağlığı kayıtlarını ayrı tutmak faydalı olabilir."
         }
         return VehicleInsight(
             type: .fuelTypeGuidance,
             priority: .info,
-            title: "\(fuelType.displayName) için kayıt önerisi",
+            contentKind: .info,
+            title: "\(fuelType.displayName) bakım takibi",
             body: body,
-            action: .addServiceRecord
+            action: nil,
+            snoozeDays: 60
         )
     }
 
@@ -349,18 +388,20 @@ struct VehicleInsightService {
         let body: String
         switch transmissionType {
         case .automatic:
-            body = "Otomatik vitesli araçlarda şanzıman bakım geçmişini kayıt altında tutmak faydalı olabilir."
+            body = "Otomatik vitesli araçlarda şanzıman yağı ve filtre değişimi mekanik ömür için kritiktir. Bakım geçmişini kontrol edebilirsin."
         case .manual:
-            body = "Manuel araçlarda debriyajla ilgili bakım ve masraf kayıtlarını ayrı tutmak kayıt düzenini güçlendirebilir."
+            body = "Manuel araçlarda debriyaj sistemi bakımı sürüş konforu için önemlidir. Bakım kayıtlarını ayrı tutmak faydalı olabilir."
         case .semiAutomatic:
-            body = "Yarı otomatik araçlarda şanzıman ve debriyaj sistemiyle ilgili kayıtları ayrı tutmak faydalı olabilir."
+            body = "Yarı otomatik şanzımanlarda kavrama ve vites mekaniği kayıtlarını ayrı tutmak faydalı olabilir."
         }
         return VehicleInsight(
             type: .transmissionGuidance,
-            priority: .info,
-            title: "\(transmissionType.displayName) vites kayıtları",
+            priority: .warning,
+            contentKind: .warning,
+            title: "Şanzıman bakım takibi",
             body: body,
-            action: .addServiceRecord
+            action: .addServiceRecord,
+            snoozeDays: 30
         )
     }
 
@@ -378,9 +419,11 @@ struct VehicleInsightService {
         return VehicleInsight(
             type: .odometerMilestone,
             priority: .info,
-            title: "\(threshold.formatted()) km çevresi",
-            body: "Bu km aralığında bakım kayıtlarını kontrol etmek faydalı olabilir.",
-            action: .addServiceRecord
+            contentKind: .info,
+            title: "\(threshold.formatted()) km eşiği",
+            body: "Bu kilometre aralığında triger seti ve ağır bakımların kontrol edilmesi mekanik ömür için faydalı olabilir.",
+            action: nil,
+            snoozeDays: nil
         )
     }
 
@@ -388,19 +431,23 @@ struct VehicleInsightService {
         VehicleInsight(
             type: .monthlyExpensePrompt,
             priority: .info,
-            title: "Bu ay masraf kaydı yok",
-            body: "Bu ay henüz masraf kaydı yok. Yakıt veya bakım masrafı eklemek istersen hızlı işlem kullanabilirsin.",
-            action: .addExpense
+            contentKind: .softQuestion,
+            title: "Bu ay masraf kaydın var mı?",
+            body: "Bu ay henüz masraf kaydın görünmüyor. Otoyol, yıkama veya küçük bakım gibi harcamalar kayda alınabilir.",
+            action: .addExpense,
+            snoozeDays: 30
         )
     }
 
     private func noServiceRecordInsight() -> VehicleInsight {
         VehicleInsight(
             type: .maintenance,
-            priority: .info,
-            title: "Bakım kayıtlarını düzenle",
-            body: "Kayıtlarına göre bakım geçmişi eksik görünüyor. Genel bakım kayıtlarını eklemek faydalı olabilir.",
-            action: .addServiceRecord
+            priority: .warning,
+            contentKind: .warning,
+            title: "Bakım geçmişin eksik",
+            body: "Kayıtlarına göre bakım geçmişi henüz görünmüyor. İlk bakım kaydını eklemek faydalı olabilir.",
+            action: .addServiceRecord,
+            snoozeDays: 14
         )
     }
 
@@ -408,19 +455,23 @@ struct VehicleInsightService {
         VehicleInsight(
             type: .maintenance,
             priority: .warning,
-            title: "Bakım geçmişini kontrol et",
-            body: "Kayıtlarında son bakımın üzerinden uzun süre geçmiş görünüyor. Bakım geçmişini gözden geçirmek faydalı olabilir.",
-            action: .addServiceRecord
+            contentKind: .warning,
+            title: "Bakım geçmişini gözden geçir",
+            body: "Son bakım kaydının üzerinden uzun süre geçmiş. Bakım geçmişini kontrol etmek faydalı olabilir.",
+            action: .addServiceRecord,
+            snoozeDays: 14
         )
     }
 
     private func noDocumentInsight() -> VehicleInsight {
         VehicleInsight(
             type: .missingDocument,
-            priority: .info,
-            title: "Dosyana belge ekle",
-            body: "Ruhsat, poliçe, muayene veya servis faturalarını ekleyerek aracının kayıtlarını daha düzenli tutabilirsin.",
-            action: .addDocument
+            priority: .important,
+            contentKind: .callToAction,
+            title: "Belge ekle",
+            body: "Olası bir kontrol veya kaza anında belgelere hızla erişebilmek için ruhsat fotoğrafını dijital dosyana ekleyebilirsin.",
+            action: .addDocument,
+            snoozeDays: nil
         )
     }
 
@@ -428,9 +479,11 @@ struct VehicleInsightService {
         VehicleInsight(
             type: .quietGoodState,
             priority: .info,
-            title: "Her şey yolunda görünüyor",
-            body: "Her şey yolunda görünüyor. Yeni masraf, belge veya km bilgisi eklemek istersen hızlı işlemleri kullanabilirsin.",
-            action: .addExpense
+            contentKind: .reminder,
+            title: "Her şey yolunda",
+            body: "Aracının kayıtları güncel görünüyor. Yeni masraf veya bakım eklersen burada görünür.",
+            action: nil,
+            snoozeDays: 7
         )
     }
 

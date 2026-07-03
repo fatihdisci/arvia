@@ -1,34 +1,27 @@
 import SwiftUI
 
-// MARK: - Arvia Guide Card
-// Calm, local guidance card for the rule-based Rehber foundation.
-
-struct ArviaGuideCard: View {
+// MARK: - Vehicle Insight Card
+// Arvia Rehber 5 içerik tipi (CTA/Bilgi/Uyarı/Hatırlatma/Soru) için birleşik kart.
+// Karar 4.2 + Gemini raporu Bölüm 5.4.
+// - .callToAction dışındaki tüm tipler için sağ üstte dismiss butonu
+// - .softQuestion çift buton (Ekle + Şimdi Değil)
+// - .warning inline CTA + dismiss
+// - .info / .reminder sadece dismiss
+struct VehicleInsightCard: View {
     let insight: VehicleInsight
-    let primaryAction: () -> Void
-    let dismissAction: (() -> Void)?
-
-    init(
-        insight: VehicleInsight,
-        primaryAction: @escaping () -> Void,
-        dismissAction: (() -> Void)? = nil
-    ) {
-        self.insight = insight
-        self.primaryAction = primaryAction
-        self.dismissAction = dismissAction
-    }
+    let vehicleId: UUID
+    var onAction: (VehicleInsightAction) -> Void
+    var onDismiss: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            // Üst satır: ikon + başlık/gövde + (varsa) dismiss butonu
             HStack(alignment: .top, spacing: AppSpacing.sm) {
                 Image(systemName: iconName)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(priorityColor)
-                    .frame(width: 34, height: 34)
-                    .background(
-                        Circle()
-                            .fill(priorityColor.opacity(0.1))
-                    )
+                    .foregroundColor(iconColor)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(iconColor.opacity(0.12)))
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
@@ -36,125 +29,128 @@ struct ArviaGuideCard: View {
                         .font(AppTypography.bodyMedium)
                         .foregroundColor(AppColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
-
                     Text(insight.body)
                         .font(AppTypography.secondarySmall)
                         .foregroundColor(AppColors.textSecondary)
-                        .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: AppSpacing.xs)
-            }
 
-            HStack(spacing: AppSpacing.xs) {
-                Button(action: primaryAction) {
-                    Label(insight.action.title, systemImage: actionIconName)
-                        .font(AppTypography.captionMedium)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
-                }
-                .buttonStyle(.plain)
-                .foregroundColor(AppColors.accentPrimary)
-                .frame(minHeight: AppSpacing.minimumTapTarget, alignment: .leading)
-
-                Spacer()
-
-                if let dismissAction {
-                    Button(action: dismissAction) {
-                        Text("Daha sonra")
-                            .font(AppTypography.captionMedium)
+                if insight.contentKind != .callToAction {
+                    Button(action: onDismiss) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(AppColors.textTertiary)
+                            .font(.title3)
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(AppColors.textTertiary)
-                    .frame(minHeight: AppSpacing.minimumTapTarget)
+                    .accessibilityLabel("Öneriyi kapat")
                 }
             }
+
+            // Alt satır: içerik tipine göre CTA buton(lar)ı
+            actionButtons
         }
-        .padding(AppSpacing.sm)
+        .padding(AppSpacing.md)
         .background(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.appSurface,
-                            priorityColor.opacity(0.04),
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .fill(Color.appSurface)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(priorityColor.opacity(insight.priority == .info ? 0.1 : 0.2), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .stroke(AppColors.border.opacity(0.85), lineWidth: 0.5)
         )
+        .cardShadow()
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(insight.title). \(insight.body). \(insight.action.title)")
+        .accessibilityLabel(accessibilityLabel)
     }
+
+    // MARK: - Action Buttons (per content kind)
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        switch insight.contentKind {
+        case .callToAction:
+            // Tek zorunlu buton
+            if let action = insight.action {
+                Button { onAction(action) } label: {
+                    HStack(spacing: AppSpacing.xs) {
+                        Text(action.title)
+                        Spacer()
+                        Image(systemName: "arrow.right")
+                            .font(.caption2.weight(.semibold))
+                    }
+                }
+                .buttonStyle(.primary)
+                .frame(minHeight: AppSpacing.minimumTapTarget)
+            }
+
+        case .softQuestion:
+            // Çift buton: action + "Şimdi Değil"
+            HStack(spacing: AppSpacing.sm) {
+                if let action = insight.action {
+                    Button { onAction(action) } label: {
+                        Text(action.title)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.primary)
+                }
+                Button(action: onDismiss) {
+                    Text("Şimdi Değil")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.secondary)
+            }
+            .frame(minHeight: AppSpacing.minimumTapTarget)
+
+        case .warning:
+            // Inline CTA + dismiss butonu (dismiss zaten üstte, ek satır)
+            if let action = insight.action {
+                Button { onAction(action) } label: {
+                    HStack(spacing: AppSpacing.xs) {
+                        Text(action.title)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.weight(.semibold))
+                    }
+                }
+                .buttonStyle(.text)
+                .frame(minHeight: AppSpacing.minimumTapTarget)
+            }
+
+        case .info, .reminder:
+            // Sadece dismiss (zaten üstte)
+            EmptyView()
+        }
+    }
+
+    // MARK: - Icon / Color per content kind
 
     private var iconName: String {
-        switch insight.type {
-        case .maintenance:
-            return "wrench.and.screwdriver"
-        case .missingDocument:
-            return "doc.text"
-        case .saleFileReadiness:
-            return "doc.richtext"
-        case .odometerUpdate:
-            return "gauge.with.needle"
-        case .overdueReminder:
-            return "bell.badge"
-        case .monthlyExpensePrompt:
-            return "turkishlirasign.circle"
-        case .upcomingReminder:
-            return "calendar.badge.clock"
-        case .fuelTypeGuidance:
-            return "fuelpump"
-        case .transmissionGuidance:
-            return "gearshape.2"
-        case .odometerMilestone:
-            return "flag.checkered"
-        case .seasonalGuidance:
-            return "sun.max"
-        case .calendarPeriod:
-            return "calendar"
-        case .quietGoodState:
-            return "checkmark.seal"
+        switch insight.contentKind {
+        case .callToAction: return "exclamationmark.triangle.fill"
+        case .info:         return "info.circle.fill"
+        case .warning:      return "exclamationmark.octagon.fill"
+        case .reminder:     return "bell.fill"
+        case .softQuestion: return "questionmark.bubble.fill"
         }
     }
 
-    private var actionIconName: String {
-        switch insight.action {
-        case .addServiceRecord:
-            return "plus.circle"
-        case .addDocument:
-            return "doc.badge.plus"
-        case .openSaleFile:
-            return "doc.richtext"
-        case .updateOdometer:
-            return "gauge.with.needle"
-        case .openTodos:
-            return "checklist"
-        case .addInspectionReport:
-            return "magnifyingglass"
-        case .addReminder, .addMTVReminder:
-            return "bell.badge"
-        case .addExpense:
-            return "turkishlirasign.circle"
-        case .addFuelExpense:
-            return "fuelpump"
+    private var iconColor: Color {
+        switch insight.contentKind {
+        case .callToAction: return AppColors.critical
+        case .info:         return AppColors.accentPrimary
+        case .warning:      return AppColors.warning
+        case .reminder:     return AppColors.accentSecondary
+        case .softQuestion: return AppColors.accentPrimary
         }
     }
 
-    private var priorityColor: Color {
-        switch insight.priority {
-        case .info:
-            return AppColors.accentPrimary
-        case .warning:
-            return AppColors.warning
-        case .important:
-            return AppColors.critical
+    private var accessibilityLabel: String {
+        var parts = [insight.title, insight.body]
+        if let action = insight.action, insight.contentKind != .callToAction, !action.title.isEmpty {
+            parts.append(action.title)
         }
+        return parts.joined(separator: ". ")
     }
 }

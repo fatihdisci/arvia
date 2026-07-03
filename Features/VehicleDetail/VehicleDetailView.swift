@@ -480,11 +480,19 @@ struct VehicleDetailView: View {
             } else {
                 VStack(spacing: AppSpacing.xs) {
                     ForEach(guideInsights.prefix(3)) { insight in
-                        VehicleDetailGuideCard(
+                        VehicleInsightCard(
                             insight: insight,
-                            primaryAction: { handleGuideAction(insight.action) },
-                            dismissAction: {
+                            vehicleId: vehicle.id,
+                            onAction: { handleGuideAction($0) },
+                            onDismiss: {
                                 dismissedGuideInsightIDs.insert(insight.id)
+                                if let days = insight.snoozeDays, days > 0 {
+                                    InsightSnoozeStore.shared.snooze(
+                                        insightType: insight.type,
+                                        forVehicle: vehicle.id,
+                                        days: days
+                                    )
+                                }
                                 snoozeStore.snooze(vehicleId: vehicle.id, insight: insight)
                             }
                         )
@@ -532,6 +540,8 @@ struct VehicleDetailView: View {
             showAddExpense = true
         case .addFuelExpense:
             showAddFuelExpense = true
+        case .dismissAndSnooze, .markAsRead, .acknowledge, .noAction:
+            break // Meta-aksiyonlar — ArviaGuideCard tarafından handle edilir
         }
     }
 
@@ -1867,7 +1877,7 @@ struct VehicleDetailGuideCard: View {
                 Text(insight.title).font(AppTypography.bodyMedium).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                 Text(insight.body).font(AppTypography.caption).foregroundColor(AppColors.textSecondary).lineLimit(3).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: AppSpacing.xs) {
-                    Button(action: primaryAction) { HStack(spacing: 4) { Text(insight.action.title).font(AppTypography.captionMedium); Image(systemName: "arrow.right").font(.caption2.weight(.semibold)) }.foregroundColor(color) }.buttonStyle(.plain)
+                    Button(action: primaryAction) { HStack(spacing: 4) { Text(insight.action?.title ?? "").font(AppTypography.captionMedium); Image(systemName: "arrow.right").font(.caption2.weight(.semibold)) }.foregroundColor(color) }.buttonStyle(.plain)
                     Spacer()
                     Button(action: dismissAction) { Text("Daha sonra").font(AppTypography.caption).foregroundColor(AppColors.textTertiary) }.buttonStyle(.plain).accessibilityLabel("Öneriyi gizle")
                 }.frame(minHeight: 32)
@@ -1895,7 +1905,7 @@ struct ContextualInsightCompactCard: View {
                 }
                 Spacer(minLength: 0)
             }
-            Button { action() } label: { HStack(spacing: AppSpacing.xs) { Text(insight.action.title).font(AppTypography.captionMedium); Image(systemName: "arrow.right").font(.caption2.weight(.semibold)) }.foregroundColor(prominence == .primary ? AppColors.textOnAccent : AppColors.accentPrimary).padding(.horizontal, prominence == .primary ? AppSpacing.sm : 0).frame(minHeight: AppSpacing.minimumTapTarget, alignment: .leading).background(Capsule().fill(prominence == .primary ? color : Color.clear)) }.buttonStyle(.plain)
+            Button { action() } label: { HStack(spacing: AppSpacing.xs) { Text(insight.action?.title ?? "").font(AppTypography.captionMedium); Image(systemName: "arrow.right").font(.caption2.weight(.semibold)) }.foregroundColor(prominence == .primary ? AppColors.textOnAccent : AppColors.accentPrimary).padding(.horizontal, prominence == .primary ? AppSpacing.sm : 0).frame(minHeight: AppSpacing.minimumTapTarget, alignment: .leading).background(Capsule().fill(prominence == .primary ? color : Color.clear)) }.buttonStyle(.plain)
         }
         .padding(prominence == .primary ? AppSpacing.md : AppSpacing.sm).background(RoundedRectangle(cornerRadius: prominence == .primary ? AppRadius.heroCard : AppRadius.card).fill(backgroundFill))
         .overlay(RoundedRectangle(cornerRadius: prominence == .primary ? AppRadius.heroCard : AppRadius.card).stroke(color.opacity(prominence == .primary ? 0.2 : 0.12), lineWidth: 1))

@@ -77,15 +77,19 @@ struct GarageView: View {
                     Button {
                         handleAddVehicle()
                     } label: {
-                        Label("Araç Ekle", systemImage: "plus")
-                            .font(AppTypography.bodySecondary)
-                            .foregroundColor(AppColors.textOnAccent)
-                            .padding(.horizontal, AppSpacing.sm)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(AppColors.accentPrimary)
-                            )
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus")
+                                .font(.caption)
+                            Text("Araç Ekle")
+                                .font(AppTypography.captionMedium)
+                        }
+                        .foregroundColor(AppColors.textOnAccent)
+                        .padding(.horizontal, AppSpacing.sm)
+                        .padding(.vertical, 7)
+                        .background(
+                            Capsule()
+                                .fill(AppColors.accentPrimary)
+                        )
                     }
                     .accessibilityLabel("Araç Ekle")
                 }
@@ -362,18 +366,8 @@ struct GarageView: View {
     }
 
     // MARK: - Hero Card Content
-    /// İki ayrı card: fotoğraf (üstte) + bilgi card'ı (altta).
-    /// NavigationLink ve screen margin ayrı ayrı sarılır.
+    /// Sadece araç fotoğrafı. Fotoğraf yoksa eklemeye teşvik eden placeholder.
     private func heroCardContent(vehicle: Vehicle) -> some View {
-        VStack(spacing: AppSpacing.md) {
-            heroImageArea(vehicle: vehicle)
-            heroMetadataCard(vehicle: vehicle)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(vehicle.plate), \(vehicle.fullName), \(vehicle.odometerDisplay)")
-    }
-
-    private func heroImageArea(vehicle: Vehicle) -> some View {
         ZStack {
             if let photoFileName = vehicle.photoFileName,
                let image = VehiclePhotoStorageService.shared.loadPhoto(fileName: photoFileName) {
@@ -383,30 +377,40 @@ struct GarageView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
             } else {
-                LinearGradient(
-                    colors: [
-                        AppColors.vehicle.opacity(0.92),
-                        AppColors.vehicle.opacity(0.7),
-                        AppColors.accentPrimary.opacity(0.42)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                // Fotoğraf eklemeye teşvik eden placeholder
+                VStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 36, weight: .light))
+                        .foregroundColor(AppColors.accentPrimary.opacity(0.55))
+                    VStack(spacing: 4) {
+                        Text("Aracının fotoğrafını ekle")
+                            .font(AppTypography.bodySecondary)
+                            .foregroundColor(AppColors.textSecondary)
+                        Text("Garajını kişiselleştirmek için dokun")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    LinearGradient(
+                        colors: [
+                            AppColors.backgroundSecondary,
+                            AppColors.surfacePrimary,
+                            AppColors.accentPrimary.opacity(0.08)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
-
-                Image(systemName: vehicle.vehicleType.heroSymbol)
-                    .font(.system(size: 64, weight: .ultraLight))
-                    .foregroundColor(.white.opacity(0.32))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
         }
-        .frame(height: 200)
+        .frame(height: 220)
         .frame(maxWidth: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
         .overlay(alignment: .bottomTrailing) {
-            // Tıklanabilirlik affordance'i — kullanıcı hero'nun
-            // NavigationLink olduğunu görsün
             HStack(spacing: 4) {
-                Text("Detay")
+                Text(vehicle.photoFileName != nil ? "Detay" : "Düzenle")
                     .font(.system(size: 12, weight: .semibold))
                 Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .bold))
@@ -426,224 +430,6 @@ struct GarageView: View {
         )
     }
 
-    private func heroMetadataCard(vehicle: Vehicle) -> some View {
-        let score = computeFileScore(for: vehicle)
-
-        return VStack(alignment: .leading, spacing: AppSpacing.md) {
-            // Satır 1: kimlik (fullName + plaka yan yana)
-            HStack(alignment: .top, spacing: AppSpacing.md) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(vehicle.fullName.isEmpty ? "Araç dosyası" : vehicle.fullName)
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(AppColors.textPrimary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.82)
-
-                    if !vehicle.nickname.isEmpty {
-                        Text(vehicle.nickname)
-                            .font(AppTypography.secondary)
-                            .foregroundColor(AppColors.accentPrimary)
-                            .lineLimit(1)
-                    }
-
-                    if vehicle.year != nil {
-                        HStack(spacing: 6) {
-                            Text(String(vehicle.year!))
-                                .font(AppTypography.captionMedium)
-                                .foregroundColor(AppColors.textSecondary)
-                            Text("•")
-                                .font(AppTypography.caption)
-                                .foregroundColor(AppColors.textTertiary)
-                            Text(vehicle.vehicleType.displayName)
-                                .font(AppTypography.caption)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                        .padding(.top, 2)
-                    }
-                }
-
-                Spacer(minLength: AppSpacing.sm)
-
-                // Plaka pill — sağ üstte
-                Text(vehicle.plate.isEmpty ? "—" : vehicle.plate)
-                    .font(.custom("JetBrainsMono-SemiBold", size: 14))
-                    .tracking(1.5)
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-                    .padding(.horizontal, AppSpacing.sm)
-                    .padding(.vertical, 8)
-                    .background(
-                        Capsule()
-                            .fill(AppColors.backgroundSecondary)
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(AppColors.border, lineWidth: 0.5)
-                    )
-                    .frame(maxWidth: 130, alignment: .trailing)
-            }
-
-            Divider()
-
-            // Satır 2: metrics (km, yakıt, vites) — düz satır
-            HStack(spacing: AppSpacing.xs) {
-                metricPill(icon: "gauge.with.needle", text: vehicle.odometerDisplay)
-                metricPill(icon: "fuelpump", text: vehicle.fuelType.displayName)
-                if let trans = vehicle.transmissionType {
-                    metricPill(
-                        icon: trans == .automatic ? "a.circle" : "m.circle",
-                        text: trans.displayName
-                    )
-                }
-                Spacer(minLength: 0)
-            }
-
-            // Satır 3a: Dosya Skoru — tam genişlik tek satır
-            compactFileBadge(score: score)
-
-            // Satır 3b: sıradaki önemli iş — ayrı iki satır (başlık + reminder adı)
-            if let reminder = upcomingReminder(for: vehicle) {
-                heroReminderRow(reminder)
-            }
-        }
-        .padding(AppSpacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .fill(Color.appSurface)
-        )
-        .cardShadow()
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(AppColors.border, lineWidth: 0.5)
-        )
-    }
-
-    private func metricPill(icon: String, text: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption2)
-            Text(text)
-                .font(AppTypography.captionMedium)
-                .lineLimit(1)
-        }
-        .foregroundColor(AppColors.textSecondary)
-        .padding(.horizontal, AppSpacing.xs + 2)
-        .padding(.vertical, 7)
-        .background(
-            Capsule()
-                .fill(AppColors.backgroundSecondary.opacity(0.7))
-        )
-    }
-
-    private func heroIdentityBlock(vehicle: Vehicle) -> some View {
-        HStack(alignment: .center, spacing: AppSpacing.sm) {
-            Text(vehicle.plate.isEmpty ? "Plaka yok" : vehicle.plate)
-                .font(.custom("JetBrainsMono-Bold", size: 17))
-                .tracking(1.5)
-                .foregroundColor(AppColors.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-                .padding(.horizontal, AppSpacing.sm)
-                .padding(.vertical, 7)
-                .background(
-                    Capsule()
-                        .fill(AppColors.backgroundSecondary.opacity(0.86))
-                )
-
-            if let year = vehicle.year {
-                HStack(spacing: AppSpacing.xxs) {
-                    Text(String(year))
-                        .font(AppTypography.captionMedium)
-                        .foregroundColor(AppColors.textPrimary)
-                    Text("•")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textTertiary)
-                    Text(vehicle.vehicleType.displayName)
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textTertiary)
-                }
-            }
-        }
-    }
-
-    private func heroReminderRow(_ reminder: Reminder) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: AppSpacing.xs) {
-                Image(systemName: reminder.isOverdue ? "exclamationmark.triangle.fill" : "bell.badge")
-                    .font(.caption2)
-                    .foregroundColor(reminder.isOverdue ? AppColors.critical : AppColors.warning)
-                Text(reminder.isOverdue ? "Öncelik istiyor" : "Sıradaki önemli iş")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
-                Spacer(minLength: 0)
-            }
-            Text(reminder.title.isEmpty ? reminder.type.displayName : reminder.title)
-                .font(AppTypography.captionMedium)
-                .foregroundColor(AppColors.textPrimary)
-                .lineLimit(1)
-        }
-        .padding(.vertical, AppSpacing.xxs)
-    }
-
-    private func compactFileBadge(score: Int) -> some View {
-        let barColor = score >= 80 ? AppColors.success : AppColors.accentPrimary
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: AppSpacing.xs) {
-                Image(systemName: "chart.bar.fill")
-                    .font(.caption2)
-                    .foregroundColor(barColor)
-                Text("Dosya Skoru")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
-                Spacer(minLength: 0)
-                Text("%\(score)")
-                    .font(AppTypography.labelMono)
-                    .foregroundColor(barColor)
-            }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(barColor.opacity(0.12))
-                        .frame(height: 6)
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(barColor)
-                        .frame(width: max(6, geo.size.width * CGFloat(score) / 100.0), height: 6)
-                        .animation(.easeOut(duration: 0.7), value: score)
-                }
-            }
-            .frame(height: 6)
-        }
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.small, style: .continuous)
-                .fill(barColor.opacity(0.05))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.small, style: .continuous)
-                .stroke(barColor.opacity(0.10), lineWidth: 0.5)
-        )
-        .accessibilityLabel("Dosya skoru yüzde \(score)")
-    }
-
-    private func infoBadge(icon: String, text: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption2)
-            Text(text)
-                .font(AppTypography.captionMedium)
-        }
-        .foregroundColor(AppColors.textSecondary)
-        .padding(.horizontal, AppSpacing.xs)
-        .padding(.vertical, 5)
-        .background(
-            Capsule()
-                .fill(AppColors.backgroundSecondary.opacity(0.82))
-        )
-    }
-
     private var garageSummaryStrip: some View {
         let activeReminderCount = activeReminders.filter { r in activeVehicles.contains { $0.id == r.vehicleId } }.count
         let thisMonth = Calendar.current.component(.month, from: Date())
@@ -654,41 +440,41 @@ struct GarageView: View {
         }
         let monthlyTotal = thisMonthExpenses.reduce(0) { $0 + $1.amount }
 
-        let upcomingReminder = activeReminders
-            .filter { r in activeVehicles.contains { $0.id == r.vehicleId } && r.dueDate != nil }
-            .min(by: { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) })
-
-        return VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.sm) {
-                miniSummary(
-                    icon: "car.2",
-                    value: "\(activeVehicles.count)",
-                    label: "Aktif Araç",
-                    color: AppColors.accentPrimary
-                )
-                miniSummary(
-                    icon: "bell.badge",
-                    value: "\(activeReminderCount)",
-                    label: "Açık İş",
-                    color: activeReminderCount > 3 ? AppColors.warning : AppColors.success
-                )
-                miniSummary(
-                    icon: "turkishlirasign.circle",
-                    value: monthlyTotal > 0 ? formatCurrency(monthlyTotal) : "—",
-                    label: "Bu Ay",
-                    color: AppColors.accentSecondary
-                )
-                if let next = upcomingReminder, let nextDue = next.dueDate {
-                    miniSummary(
-                        icon: "calendar.badge.clock",
-                        value: nextDue.formatted(.dateTime.day().month(.abbreviated)),
-                        label: next.type.displayName,
-                        color: next.isOverdue ? AppColors.critical : AppColors.accentPrimary
-                    )
-                }
-            }
+        return VStack(spacing: AppSpacing.xs) {
+            summaryRow(icon: "car.2", value: "\(activeVehicles.count)", label: "aktif araç", color: AppColors.accentPrimary)
+            summaryRow(icon: "bell.badge", value: "\(activeReminderCount)", label: "açık iş", color: activeReminderCount > 0 ? AppColors.warning : AppColors.success)
+            summaryRow(icon: "turkishlirasign.circle", value: monthlyTotal > 0 ? formatCurrency(monthlyTotal) : "—", label: "bu ay", color: AppColors.accentSecondary)
         }
         .padding(.horizontal, AppSpacing.screenMarginH)
+    }
+
+    private func summaryRow(icon: String, value: String, label: String, color: Color) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .font(.body)
+                .foregroundColor(color)
+                .frame(width: 24)
+
+            Text(label)
+                .font(AppTypography.bodySecondary)
+                .foregroundColor(AppColors.textSecondary)
+
+            Spacer()
+
+            Text(value)
+                .font(.custom("JetBrainsMono-SemiBold", size: 15))
+                .foregroundColor(AppColors.textPrimary)
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm + 2)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.medium)
+                .fill(AppColors.backgroundSecondary.opacity(0.5))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.medium)
+                .stroke(AppColors.border, lineWidth: 0.5)
+        )
     }
 
     private func formatCurrency(_ value: Double) -> String {
@@ -697,34 +483,6 @@ struct GarageView: View {
         formatter.locale = Locale(identifier: "tr_TR")
         formatter.maximumFractionDigits = 0
         return formatter.string(from: NSNumber(value: value)) ?? "₺0"
-    }
-
-    private func miniSummary(icon: String, value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 2) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundColor(color)
-                .frame(height: 20)
-            Text(value)
-                .font(.custom("JetBrainsMono-SemiBold", size: 15))
-                .foregroundColor(AppColors.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(label)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(AppColors.textTertiary)
-                .lineLimit(1)
-        }
-        .padding(.vertical, AppSpacing.sm)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.medium)
-                .fill(AppColors.backgroundSecondary.opacity(0.58))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.medium)
-                .stroke(AppColors.border, lineWidth: 0.5)
-        )
     }
 
     private func todayGarageSection(vehicle: Vehicle) -> some View {
@@ -749,24 +507,25 @@ struct GarageView: View {
                         .font(AppTypography.caption)
                         .foregroundColor(AppColors.textSecondary)
                 }
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-                    .padding(.horizontal, AppSpacing.xs)
-                    .padding(.vertical, 6)
-                    .background(Capsule().fill(AppColors.accentPrimary.opacity(0.08)))
             }
             .padding(.horizontal, AppSpacing.screenMarginH)
 
             if let primary = insights.first {
                 VStack(spacing: AppSpacing.sm) {
-                    GarageDailyInsightCard(insight: primary, prominence: .primary) {
-                        handleContextAction(primary.action)
-                    }
+                    VehicleInsightCard(
+                        insight: primary,
+                        vehicleId: vehicle.id,
+                        onAction: { handleContextAction($0) },
+                        onDismiss: { snoozeInsight(insight: primary, vehicleId: vehicle.id) }
+                    )
 
                     ForEach(insights.dropFirst().prefix(1)) { insight in
-                        GarageDailyInsightCard(insight: insight, prominence: .secondary) {
-                            handleContextAction(insight.action)
-                        }
+                        VehicleInsightCard(
+                            insight: insight,
+                            vehicleId: vehicle.id,
+                            onAction: { handleContextAction($0) },
+                            onDismiss: { snoozeInsight(insight: insight, vehicleId: vehicle.id) }
+                        )
                     }
                 }
                 .padding(.horizontal, AppSpacing.screenMarginH)
@@ -997,7 +756,23 @@ struct GarageView: View {
             showSaleFile = true
         case .addInspectionReport:
             showSaleFile = true
+        // Faz 1.1 — meta-aksiyonlar: kart kendisi dismiss eder, navigation yok.
+        case .acknowledge, .dismissAndSnooze, .markAsRead, .noAction:
+            break
         }
+    }
+
+    /// Faz 1.1 — kart dismiss edildiğinde snooze uygula (type-tabanlı API).
+    private func snoozeInsight(insight: VehicleInsight, vehicleId: UUID) {
+        if let days = insight.snoozeDays, days > 0 {
+            InsightSnoozeStore.shared.snooze(
+                insightType: insight.type,
+                forVehicle: vehicleId,
+                days: days
+            )
+        }
+        // snoozeDays nil olan kartlar (.callToAction) dismiss butonu göstermez
+        // — buraya gelmemeli. Güvenlik için loglanabilir.
     }
 
     private func hasReminderType(_ vehicle: Vehicle, _ type: ReminderType) -> Bool {
@@ -1055,110 +830,7 @@ struct GarageView: View {
 }
 
 // MARK: - Garage Daily Insight Card
-private struct GarageDailyInsightCard: View {
-    let insight: VehicleInsight
-    var prominence: Prominence
-    let action: () -> Void
-
-    enum Prominence {
-        case primary
-        case secondary
-    }
-
-    var body: some View {
-        Button(action: action) {
-            HStack(alignment: .top, spacing: AppSpacing.sm) {
-                Image(systemName: icon)
-                    .font(.system(size: prominence == .primary ? 18 : 16, weight: .semibold))
-                    .foregroundColor(color)
-                    .frame(width: 38, height: 38)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
-                            .fill(color.opacity(0.11))
-                    )
-
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(insight.title)
-                        .font(prominence == .primary ? AppTypography.cardTitle : AppTypography.bodyMedium)
-                        .foregroundColor(AppColors.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(insight.body)
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                        .lineLimit(prominence == .primary ? 3 : 2)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    HStack(spacing: 5) {
-                        Text(insight.action.title)
-                            .font(AppTypography.captionMedium)
-                        Image(systemName: "arrow.right")
-                            .font(.caption2.weight(.semibold))
-                    }
-                    .foregroundColor(color)
-                    .padding(.top, 2)
-                }
-
-                Spacer(minLength: 0)
-            }
-            .padding(prominence == .primary ? AppSpacing.md : AppSpacing.sm)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .fill(Color.appSurface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .stroke(color.opacity(prominence == .primary ? 0.18 : 0.1), lineWidth: 1)
-            )
-        }
-        .buttonStyle(PlainCardButtonStyle())
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(insight.title). \(insight.body). \(insight.action.title)")
-    }
-
-    private var color: Color {
-        switch insight.priority {
-        case .important:
-            return AppColors.critical
-        case .warning:
-            return AppColors.warning
-        case .info:
-            return AppColors.accentPrimary
-        }
-    }
-
-    private var icon: String {
-        switch insight.type {
-        case .overdueReminder:
-            return "exclamationmark.triangle.fill"
-        case .upcomingReminder:
-            return "bell.badge"
-        case .calendarPeriod:
-            return "calendar.badge.clock"
-        case .odometerUpdate:
-            return "gauge.with.needle"
-        case .seasonalGuidance:
-            return "sun.max"
-        case .missingDocument:
-            return "doc.text"
-        case .monthlyExpensePrompt:
-            return "turkishlirasign.circle"
-        case .fuelTypeGuidance:
-            return "fuelpump"
-        case .transmissionGuidance:
-            return "gearshape.2"
-        case .odometerMilestone:
-            return "flag.checkered"
-        case .maintenance:
-            return "wrench.and.screwdriver"
-        case .quietGoodState:
-            return "checkmark.seal"
-        case .saleFileReadiness:
-            return "doc.richtext"
-        }
-    }
-}
+// Faz 1.1: GarageDailyInsightCard kaldırıldı — yerini VehicleInsightCard aldı.
 
 // MARK: - Plain Card Button Style
 // Kart şeklindeki butonlarda varsayılan buton animasyonu yerine
