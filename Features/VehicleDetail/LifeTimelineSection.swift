@@ -1,73 +1,89 @@
 import SwiftUI
 
+// MARK: - Demo Timeline Event
+// Boş state onboarding için örnek yaşam çizgisi olayı.
+struct DemoTimelineEvent: Identifiable {
+    let id = UUID()
+    let kind: VehicleDetailMilestoneCard.MilestoneKind
+    let title: String
+    let subtitle: String?
+    let dateRelative: String
+    let icon: String
+
+    static let onboardingSamples: [DemoTimelineEvent] = [
+        DemoTimelineEvent(
+            kind: .purchase,
+            title: "Satın Alma",
+            subtitle: "₺850.000",
+            dateRelative: "Eyl 2022",
+            icon: "cart.fill"
+        ),
+        DemoTimelineEvent(
+            kind: .majorService,
+            title: "İlk Büyük Bakım",
+            subtitle: "Triger seti + yağ değişimi · ₺14.500",
+            dateRelative: "Mar 2023",
+            icon: "wrench.and.screwdriver.fill"
+        ),
+        DemoTimelineEvent(
+            kind: .inspection,
+            title: "Ekspertiz Raporu",
+            subtitle: "TÜVTÜRK · 95.000 km",
+            dateRelative: "Haz 2025",
+            icon: "checkmark.seal.fill"
+        )
+    ]
+}
+
 // MARK: - Vehicle Life Timeline
 // Aracın kronolojik yaşam çizgisi — uygulamanın imza etkileşimi.
 // Karar 3.3: Milestone event'ler ayrıcalıklı kart olarak gösterilir,
 // regular event'ler mevcut sade liste halini korur.
+// Faz 1.1: Boş state onboarding mock — 3 örnek event + CTA.
 struct LifeTimelineSection: View {
     let vehicle: Vehicle
     let serviceRecords: [ServiceRecord]
     let expenses: [Expense]
     let inspectionReports: [InspectionReport]
     let saleFiles: [SaleFile]
+    let onAddFirstRecord: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            SectionHeader(title: "Araç Yaşam Çizgisi")
+            let allEvents = buildTimelineEvents()
+            let milestoneEvents = allEvents.filter { $0.isMilestone }
+            let regularEvents = allEvents.filter { !$0.isMilestone }
+            let hasNoRealData = milestoneEvents.isEmpty && regularEvents.isEmpty
+
+            // Header — boş state'te "ÖRNEK" rozeti
+            HStack(spacing: AppSpacing.xs) {
+                SectionHeader(title: "Araç Yaşam Çizgisi")
+
+                if hasNoRealData {
+                    Text("ÖRNEK")
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundColor(AppColors.warning)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .overlay(
+                            Capsule()
+                                .stroke(AppColors.warning.opacity(0.5), lineWidth: 0.5)
+                        )
+                }
+            }
 
             VStack(spacing: AppSpacing.md) {
-                let allEvents = buildTimelineEvents()
-                let milestoneEvents = allEvents.filter { $0.isMilestone }
-                let regularEvents = allEvents.filter { !$0.isMilestone }
-                let recentRegulars = Array(regularEvents.suffix(8))
-
-                // Milestone kartları — her biri için VehicleDetailMilestoneCard
-                ForEach(Array(milestoneEvents.enumerated()), id: \.element.id) { index, milestone in
-                    if let kind = milestone.milestoneKind,
-                       let date = milestone.date,
-                       let accent = milestone.accent {
-                        VehicleDetailMilestoneCard(
-                            kind: kind,
-                            date: date,
-                            title: milestone.title,
-                            subtitle: milestone.subtitle,
-                            icon: milestone.icon,
-                            accent: accent
-                        )
-                        if index < milestoneEvents.count - 1 {
-                            Divider()
-                                .padding(.vertical, AppSpacing.xxs)
-                                .opacity(0.5)
-                        }
+                if hasNoRealData {
+                    // Demo timeline (örnek görünüm)
+                    ForEach(Array(DemoTimelineEvent.onboardingSamples.enumerated()), id: \.element.id) { index, demo in
+                        demoTimelineItem(event: demo, isLast: index == DemoTimelineEvent.onboardingSamples.count - 1)
                     }
-                }
 
-                // Milestone'lar ile regular'lar arasında ayraç
-                if !milestoneEvents.isEmpty && !recentRegulars.isEmpty {
                     Divider()
-                        .padding(.vertical, AppSpacing.xxs)
-                }
+                        .padding(.vertical, AppSpacing.xs)
 
-                // Regular timeline items (sade liste)
-                ForEach(Array(recentRegulars.enumerated()), id: \.element.id) { index, event in
-                    timelineItem(
-                        event: event,
-                        isFirst: index == 0,
-                        isLast: index == recentRegulars.count - 1
-                    )
-                }
-
-                // Eski kayıt uyarısı
-                if regularEvents.count > recentRegulars.count {
-                    Text("\(regularEvents.count - recentRegulars.count) eski kayıt gösterilmiyor.")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textTertiary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, AppSpacing.xs)
-                }
-
-                // Empty state
-                if milestoneEvents.isEmpty && recentRegulars.isEmpty {
+                    // "Henüz kayıt yok" placeholder
                     timelineItem(
                         event: TimelineEvent(
                             id: UUID(),
@@ -82,6 +98,59 @@ struct LifeTimelineSection: View {
                         isFirst: true,
                         isLast: true
                     )
+
+                    // CTA: İlk Kaydı Ekle
+                    if let onAddFirstRecord {
+                        addFirstRecordCTA(action: onAddFirstRecord)
+                    }
+                } else {
+                    // Mevcut davranış: gerçek veri gösterimi
+
+                    // Milestone kartları
+                    ForEach(Array(milestoneEvents.enumerated()), id: \.element.id) { index, milestone in
+                        if let kind = milestone.milestoneKind,
+                           let date = milestone.date,
+                           let accent = milestone.accent {
+                            VehicleDetailMilestoneCard(
+                                kind: kind,
+                                date: date,
+                                title: milestone.title,
+                                subtitle: milestone.subtitle,
+                                icon: milestone.icon,
+                                accent: accent
+                            )
+                            if index < milestoneEvents.count - 1 {
+                                Divider()
+                                    .padding(.vertical, AppSpacing.xxs)
+                                    .opacity(0.5)
+                            }
+                        }
+                    }
+
+                    // Milestone'lar ile regular'lar arasında ayraç
+                    if !milestoneEvents.isEmpty && !regularEvents.isEmpty {
+                        Divider()
+                            .padding(.vertical, AppSpacing.xxs)
+                    }
+
+                    // Regular timeline items
+                    let recentRegulars = Array(regularEvents.suffix(8))
+                    ForEach(Array(recentRegulars.enumerated()), id: \.element.id) { index, event in
+                        timelineItem(
+                            event: event,
+                            isFirst: index == 0,
+                            isLast: index == recentRegulars.count - 1
+                        )
+                    }
+
+                    // Eski kayıt uyarısı
+                    if regularEvents.count > recentRegulars.count {
+                        Text("\(regularEvents.count - recentRegulars.count) eski kayıt gösterilmiyor.")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, AppSpacing.xs)
+                    }
                 }
             }
             .padding(AppSpacing.md)
@@ -95,7 +164,13 @@ struct LifeTimelineSection: View {
             )
             .padding(.horizontal, AppSpacing.screenMarginH)
 
-            if serviceRecords.isEmpty && inspectionReports.isEmpty {
+            // Disclaimer — boş state'te güncellenmiş metin
+            if hasNoRealData {
+                Text("Böyle görünecek. İlk kaydı eklediğinde kendi geçmişin oluşmaya başlar.")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textTertiary)
+                    .padding(.horizontal, AppSpacing.screenMarginH + AppSpacing.md)
+            } else if serviceRecords.isEmpty && inspectionReports.isEmpty {
                 Text("Bakım, masraf ve ekspertiz kayıtlarını ekledikçe aracının yaşam çizgisi burada şekillenecek.")
                     .font(AppTypography.caption)
                     .foregroundColor(AppColors.textTertiary)
@@ -115,6 +190,84 @@ struct LifeTimelineSection: View {
         let accent: Color?
     }
 
+    // MARK: - Demo Timeline Item (örnek görünüm)
+    private func demoTimelineItem(event: DemoTimelineEvent, isLast: Bool) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            // Sol kolon: çizgi + ikon
+            VStack(spacing: 0) {
+                Rectangle()
+                    .fill(event.kind.defaultAccent.opacity(0.3))
+                    .frame(width: 1.5, height: 12)
+                Image(systemName: event.icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(event.kind.defaultAccent.opacity(0.6)))
+                    .overlay(Circle().stroke(event.kind.defaultAccent.opacity(0.2), lineWidth: 1))
+                if !isLast {
+                    Rectangle()
+                        .fill(AppColors.border.opacity(0.5))
+                        .frame(width: 1.5, height: 16)
+                } else {
+                    Spacer().frame(height: 4)
+                }
+            }
+            .frame(width: 30)
+
+            // Sağ kolon: title + subtitle + date
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(event.title)
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textSecondary)
+                    if let subtitle = event.subtitle {
+                        Text(subtitle)
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+                Spacer()
+                Text(event.dateRelative)
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textTertiary)
+                    .monospacedDigit()
+            }
+        }
+        .padding(AppSpacing.xs)
+        .frame(minHeight: 44)
+        .opacity(0.7)
+    }
+
+    // MARK: - "İlk Kaydı Ekle" CTA
+    private func addFirstRecordCTA(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: "plus.circle.fill")
+                    .font(.body)
+                    .foregroundColor(AppColors.accentPrimary)
+                Text("İlk Kaydı Ekle")
+                    .font(AppTypography.bodyMedium)
+                    .foregroundColor(AppColors.accentPrimary)
+                Spacer()
+                Image(systemName: "arrow.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(AppColors.accentPrimary)
+            }
+            .padding(AppSpacing.md)
+            .frame(minHeight: 52)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.medium)
+                    .fill(AppColors.accentPrimary.opacity(0.08))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.medium)
+                    .stroke(AppColors.accentPrimary.opacity(0.3), lineWidth: 0.5)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Build Timeline Events
     private func buildTimelineEvents() -> [TimelineEvent] {
         var events: [TimelineEvent] = []
 
@@ -151,7 +304,6 @@ struct LifeTimelineSection: View {
         }
 
         // İlk büyük bakım — parts_cost > 5000 veya service_type = major
-        // (ServiceType enum'unda .major yok; aşağıdaki set major işlem kapsamında değerlendirilir)
         let majorServiceTypes: Set<ServiceType> = [.engine, .transmission, .body, .airConditioning]
         let sortedServices = serviceRecords.sorted { ($0.date) < ($1.date) }
         for service in sortedServices {
@@ -177,7 +329,7 @@ struct LifeTimelineSection: View {
             let isMajor = (service.partsCost ?? 0) > 5000
                 || (service.totalCost ?? 0) > 7000
                 || majorServiceTypes.contains(service.serviceType)
-            if isMajor { continue } // zaten milestone olarak eklendi
+            if isMajor { continue }
             events.append(TimelineEvent(
                 id: service.id,
                 icon: "wrench.and.screwdriver",
@@ -242,6 +394,7 @@ struct LifeTimelineSection: View {
         return events
     }
 
+    // MARK: - Timeline Item
     private func timelineItem(
         event: TimelineEvent,
         isFirst: Bool,

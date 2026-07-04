@@ -189,7 +189,8 @@ struct VehicleDetailView: View {
                     serviceRecords: serviceRecords,
                     expenses: expenses,
                     inspectionReports: inspectionReports,
-                    saleFiles: saleFiles
+                    saleFiles: saleFiles,
+                    onAddFirstRecord: { showAddExpense = true }
                 )
 
                 Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
