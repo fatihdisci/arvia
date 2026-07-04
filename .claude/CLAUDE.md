@@ -39,7 +39,7 @@ ObservableObject + SwiftData + Feature-based modular
 ## Tema
 
 - **Her zaman dark:** `.preferredColorScheme(.dark)`
-- **Renk paleti:** Altın vurgu (`#E6C479`), koyu surface (`#0F131F`), secondary text (`#8B95A8`)
+- **Renk paleti:** Turkuaz vurgu (`#00E5C7`), AMOLED siyah surface (`#000000`/`#0A0A0A`), critical kırmızı (`#FF2D3C`) — sadece kritik durum, secondary text (`#9A9AA0`)
 - **Locale:** `tr_TR` sabit
 - **Design token'ları:** `AppColors.swift`, `AppTypography.swift`, `AppSpacing.swift`, `AppRadius.swift`, `AppShadows.swift`, `ButtonStyles.swift`
 

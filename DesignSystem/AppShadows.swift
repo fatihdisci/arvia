@@ -1,14 +1,14 @@
 import SwiftUI
 
 // MARK: - Border System
-// Dark-only luxury tasarımda gölge kullanılmaz.
-// Derinlik, 1px altın çerçeve ve tonal yüzey farkı ile sağlanır.
+// "Cockpit Black" tasarımda gölge kullanılmaz.
+// Derinlik, 1px turkuaz çerçeve ve tonal yüzey farkı ile sağlanır.
 // Hero/elevated kartlarda üst kenarda hafif beyaz highlight olur.
 
 enum AppShadows {
     // MARK: - ViewModifiers
 
-    /// Hafif elevasyon — ince altın çerçeve
+    /// Hafif elevasyon — ince turkuaz çerçeve
     struct SubtleShadow: ViewModifier {
         func body(content: Content) -> some View {
             content
@@ -19,7 +19,7 @@ enum AppShadows {
         }
     }
 
-    /// Kart elevasyonu — altın çerçeve, kart radius'unda
+    /// Kart elevasyonu — turkuaz çerçeve, kart radius'unda
     struct CardShadow: ViewModifier {
         func body(content: Content) -> some View {
             content
@@ -30,7 +30,7 @@ enum AppShadows {
         }
     }
 
-    /// Yüksek elevasyon — altın çerçeve + üst kenar highlight'ı
+    /// Yüksek elevasyon — turkuaz çerçeve + üst kenar highlight'ı
     struct ElevatedShadow: ViewModifier {
         func body(content: Content) -> some View {
             content
@@ -40,9 +40,10 @@ enum AppShadows {
                 )
                 .overlay(
                     // Üst kenarda 1px physicial thickness hissi
+                    // (saf siyah zeminde 0.05 yeterince okunmuyor → 0.08)
                     Rectangle()
                         .frame(height: 1)
-                        .foregroundColor(.white.opacity(0.05)),
+                        .foregroundColor(.white.opacity(0.08)),
                     alignment: .top
                 )
         }
@@ -50,17 +51,17 @@ enum AppShadows {
 }
 
 extension View {
-    /// Hafif elevasyonlu görünüm — ince altın çerçeve
+    /// Hafif elevasyonlu görünüm — ince turkuaz çerçeve
     func subtleShadow() -> some View {
         modifier(AppShadows.SubtleShadow())
     }
 
-    /// Kart elevasyonlu görünüm — altın çerçeve
+    /// Kart elevasyonlu görünüm — turkuaz çerçeve
     func cardShadow() -> some View {
         modifier(AppShadows.CardShadow())
     }
 
-    /// Yüksek elevasyonlu görünüm — altın çerçeve + üst highlight
+    /// Yüksek elevasyonlu görünüm — turkuaz çerçeve + üst highlight
     func elevatedShadow() -> some View {
         modifier(AppShadows.ElevatedShadow())
     }

@@ -2,8 +2,8 @@
 
 ## 1. Ürün karakteri
 
-Bu uygulama premium, güvenilir, sakin ve profesyonel görünmelidir.
-Tasarım konsepti: **"Aracın Dijital Pasaportu"** — aracının finansal ve teknik dosyası.
+Bu uygulama premium, güvenilir, teknik ve odaklı görünmelidir.
+Tasarım konsepti: **"Aracın Dijital Pasaportu"** — aracının finansal ve teknik dosyası, dijital kokpit hassasiyetiyle sunulur.
 
 Uygulama dili:
 
@@ -12,20 +12,21 @@ Uygulama dili:
 - Galeri ilan uygulaması değil.
 - AI wrapper gibi görünmeyecek.
 - Aşırı neon, 3D, emoji, mavi-mor gradyan, generic SaaS kartları yok.
-- Premium fintech + automotive estetiğinde, prestijli bir dijital dosya hissi verecek.
+- Dijital kokpit / gösterge paneli estetiğinde: karanlık kabin, hassas enstrümanlar, tek enerji vurgusu. Yumuşak lüks değil — teknik, enerjik ve prestijli bir dijital dosya hissi verecek.
 
 Ana his:
 
-> Aracının dijital pasaportu.
+> Aracının dijital pasaportu — kokpit hassasiyetinde.
 
 ## 2. Tasarım felsefesi
 
-**Corporate Minimalism with Tactile Accents.** Dark luxury estetik; mat altın vurgulu deep navy zemin.
+**Cockpit Black.** Gerçek siyah (AMOLED) tuval; tek aktif vurgu turkuaz, kritik semantik için rezerve racing kırmızı.
 
-- **Minimalism:** Ağır negatif alan, kısıtlı renk paleti, finansal veriye odak.
-- **High-Contrast Accents:** Derin lacivert-siyah tuval üzerinde mat altın vurgular değer ve önem belirtir.
-- **Technical Precision:** Monospaced tipografi (JetBrains Mono) veri noktalarında hassasiyet ve mekanik güvenilirlik hissi verir.
-- **Subtle Depth:** 1px altın border'lar ve iç highlight'lar, flat/modern profili bozmadan fiziksel katman hissi yaratır.
+- **True-Black Canvas:** Saf siyah (#000000) zemin; derinlik renkle değil, ince tonal yüzey farkı ve 1px çerçevelerle kurulur.
+- **Single Energy Accent:** Turkuaz (#00E5C7) tek aktif/enerji vurgusudur — CTA, aktif durum, canlı metrik. Başka dekoratif renk yok.
+- **Reserved Red:** Racing kırmızı (#FF2D3C) yalnızca kritik/destructive semantikte kullanılır; dekoratif kullanımı yasaktır.
+- **Terminal Precision:** Monospaced tipografi (JetBrains Mono) artık hero metriğe de uzanır — plaka, tutar, km ve büyük göstergeler terminal/odometre gibi okunur.
+- **Subtle Depth:** 1px turkuaz border'lar ve iç highlight'lar, flat/modern profili bozmadan fiziksel katman hissi yaratır.
 
 Ana kural:
 
@@ -48,6 +49,8 @@ Aşağıdakiler üretimde kullanılmayacak:
 - Renklerin anlam taşımadan kullanılması.
 - Sadece güzel görünen ama gerçek veriyle dağılan layout.
 - Light/dark mode adaptive renk karmaşası.
+- Tam daire progress ring (Apple Fitness/Nike Activity Ring klonu) — bunun yerine yarım daire takometre-yayı kullanılır.
+- Dolgu (filled) primary buton — bunun yerine tracked-uppercase bordered buton kullanılır.
 
 ## 4. Tema
 
@@ -67,46 +70,46 @@ Kaynak: `DesignSystem/AppColors.swift` (code-based, asset catalog kullanılmaz).
 **Background / Surface:**
 | Token | Hex | Kullanım |
 |---|---|---|
-| backgroundPrimary | #0A0E1A | En derin arka plan (surface-container-lowest) |
-| backgroundSecondary | #0F131F | Ana arka plan / surface |
-| surfacePrimary | #171B28 | Kart yüzeyleri (surface-container-low) |
-| surfaceSecondary | #1B1F2C | Hafif elevasyonlu yüzey (surface-container) |
+| backgroundPrimary | #000000 | En derin arka plan — AMOLED siyah (surface-container-lowest) |
+| backgroundSecondary | #0A0A0A | Ana arka plan / surface |
+| surfacePrimary | #121214 | Kart yüzeyleri (surface-container-low) |
+| surfaceSecondary | #1A1A1C | Hafif elevasyonlu yüzey (surface-container) |
 
 **Text:**
 | Token | Hex | Kullanım |
 |---|---|---|
-| textPrimary | #F5F0E8 | Cream-white (saf beyaz değil, düşük glare) |
-| textSecondary | #8B95A8 | Gri-mavi secondary text |
-| textTertiary | #999080 | Muted outline rengi |
-| textOnAccent | #3F2E00 | Gold buton üstünde koyu metin |
+| textPrimary | #F5F5F7 | Soft white (saf beyaz değil, düşük glare) |
+| textSecondary | #9A9AA0 | Nötr gri secondary text |
+| textTertiary | #6E6E73 | Muted outline rengi |
+| textOnAccent | #00251F | Turkuaz vurgu üstünde koyu teal metin |
 
-**Accent (Mat Altın + Şampanya):**
+**Accent (Turkuaz):**
 | Token | Hex | Kullanım |
 |---|---|---|
-| accentPrimary | #E6C479 | Mat altın — birincil vurgu, CTA, aktif durum |
-| accentSecondary | #D8C594 | Şampanya — ikincil vurgu, gradient |
-| accentMuted | #E6C479 @ 12% | Gold tinted arka plan |
+| accentPrimary | #00E5C7 | Turkuaz — birincil vurgu, CTA, aktif durum |
+| accentSecondary | #33EDD4 | Açık turkuaz — ikincil vurgu, gradient |
+| accentMuted | #00E5C7 @ 12% | Turkuaz tinted arka plan |
 
 **Semantic:**
 | Token | Hex | Kullanım |
 |---|---|---|
-| success | #2D5F3F | Koyu yeşil — başarı/tamamlandı |
-| warning | #D4A017 | Amber/altın — yaklaşan tarih/uyarı |
-| critical | #8B2C2C | Koyu kırmızı — gecikmiş/kritik |
+| success | #3B8F5A | Yeşil — başarı/tamamlandı (siyah üzerinde ≥4.5:1) |
+| warning | #D4A017 | Amber — yaklaşan tarih/uyarı |
+| critical | #FF2D3C | Racing kırmızı — SADECE kritik/gecikmiş; dekoratif kullanım yasak |
 
 **Functional:**
 | Token | Hex | Kullanım |
 |---|---|---|
-| border | #C9A961 @ 15% | 1px altın kart çerçevesi |
+| border | #00E5C7 @ 15% | 1px turkuaz kart çerçevesi |
 | divider | #FFFFFF @ 5% | Subtitle divider |
 
 ### Renk kullanımı
 
-- Primary (Mat Altın): Yalnızca CTA, aktif durum ve kritik finansal metrikler için.
-- Secondary (Şampanya): Gradient ve ikincil vurgular için.
-- Neutral (Deep Space): UI'ın temeli; #0A0E1A ana canvas, #171B28 elevated surface.
-- Functional: Success, Warning, Critical koyu temaya entegre olacak şekilde desatüre.
-- Border: Altın border %15 opacity ile "dağlanmış" (etched) görünüm.
+- Primary (Turkuaz): Yalnızca CTA, aktif durum ve canlı metrikler için.
+- Secondary (Açık Turkuaz): Gradient ve ikincil vurgular için.
+- Neutral (Cockpit Black): UI'ın temeli; #000000 ana canvas, #121214 elevated surface.
+- Functional: Success ve Warning koyu temaya entegre; Critical (racing kırmızı) yalnızca kritik semantikte, asla dekoratif değil.
+- Border: Turkuaz border %15 opacity ile "dağlanmış" (etched) görünüm.
 
 ## 6. Tipografi
 
@@ -117,7 +120,7 @@ Kaynak: `DesignSystem/AppTypography.swift`
 ### SF Pro Display — Başlıklar
 | Token | Font | Size | Weight |
 |---|---|---|---|
-| heroMetric | SF Pro Display | 64px | Light (300) |
+| heroMetric | JetBrains Mono | 64px | Light (300) |
 | screenTitle | SF Pro Display | 28px | Bold (700) |
 | sectionTitle | SF Pro Display | 18px | Semibold (600) |
 
@@ -141,7 +144,7 @@ Kaynak: `DesignSystem/AppTypography.swift`
 
 - Tüm tutar, plaka, km okumaları JetBrains Mono kullanır.
 - Büyük display metrikler (Hero Numbers) Light weight ile elegance hissi verir.
-- Body metin cream-white (#F5F0E8) kullanır, saf beyaz değil.
+- Body metin soft white (#F5F5F7) kullanır, saf beyaz değil.
 - `.monospacedDigit()` yerine JetBrains Mono (doğal monospaced).
 - Metinler kırpılmadan gerçek veriyle test edilecek.
 - Dynamic Type otomatik desteklenir (sistem font'ları ile).
@@ -174,32 +177,32 @@ Kaynak: `DesignSystem/AppRadius.swift`
 | Token | Değer | Kullanım |
 |---|---|---|
 | small | 4 | İnce kenar detayı |
-| medium | 8 | Kontroller (buton, input) |
-| large | 16 | Kart container'ları |
-| xlarge | 24 | Hero/medya kartları |
+| medium | 6 | Kontroller (buton, input) |
+| large | 8 | Kart container'ları |
+| xlarge | 12 | Hero/medya kartları |
 | capsule | 9999 | Status chip/pill |
 
 Kullanım:
 
-- Container'lar (kartlar): 16px — modern ve premium.
-- Kontroller (buton/input): 8px — daha keskin, fonksiyonel.
+- Container'lar (kartlar): 8px — keskin, teknik, kokpit hissi.
+- Kontroller (buton/input): 6px — daha keskin, fonksiyonel.
 - Status element'ler (chip/pill): tam yuvarlak (9999).
-- Hero medya: "full-bleed" header'da sadece üst köşeler 16px.
+- Hero medya: "full-bleed" header'da sadece üst köşeler 12px.
 
 ## 9. Elevasyon sistemi (Border-based)
 
-**Gölge kullanılmaz.** Derinlik 1px altın border (%15 opacity) ile sağlanır.
+**Gölge kullanılmaz.** Derinlik 1px turkuaz border (%15 opacity) ile sağlanır.
 
 Kaynak: `DesignSystem/AppShadows.swift`
 
 | Modifier | Kullanım |
 |---|---|
-| `.subtleShadow()` | Hafif elevasyon — ince altın çerçeve (4px radius) |
-| `.cardShadow()` | Kart elevasyonu — altın çerçeve (16px radius) |
-| `.elevatedShadow()` | Yüksek elevasyon — altın çerçeve + üst kenar 1px white @ 5% highlight |
+| `.subtleShadow()` | Hafif elevasyon — ince turkuaz çerçeve (6px radius) |
+| `.cardShadow()` | Kart elevasyonu — turkuaz çerçeve (8px radius) |
+| `.elevatedShadow()` | Yüksek elevasyon — turkuaz çerçeve + üst kenar 1px white @ 8% highlight |
 
-- Hero/elevated kartlarda üst kenarda 1px beyaz highlight (0 1px 0 rgba(255,255,255,0.05)) fiziksel kalınlık hissi verir.
-- Tab bar glassmorphism: background blur + surface color, 1px altın üst border.
+- Hero/elevated kartlarda üst kenarda 1px beyaz highlight (0 1px 0 rgba(255,255,255,0.08)) fiziksel kalınlık hissi verir — saf siyah zeminde 0.05 yeterince okunmadığı için 0.08.
+- Tab bar glassmorphism: background blur + surface color, 1px turkuaz üst border.
 
 ## 10. İkonografi
 
@@ -249,7 +252,7 @@ Merkezi komponentler (`DesignSystem/Components/`):
 - `QuickActionTile` / `QuickActionRail` — Hızlı işlem butonları
 - `SectionHeaderMetricCard` — Bölüm başlığı + metrik kartı
 - `OwnershipInsightCard` / `PremiumMetricHero` — Rapor metrikleri
-- `DossierCompletenessCard` — Dosya tamlık skoru (progress ring)
+- `DossierCompletenessCard` — Dosya tamlık skoru (yarım daire gauge — bkz. bölüm 3 yasaklı liste)
 - `DosyaniTamamlaChecklist` — Onboarding checklist
 - `EmptyStateView` / `ErrorStateView` — Boş/hata durumu
 - `ArviaGuideCard` — Kontekst rehber kartı
@@ -261,16 +264,16 @@ Kart yalnızca gerçekten anlamlıysa kullanılacak. Her veri parçası kart olm
 
 ## 13. Form elemanları
 
-- **Input:** Surface'ten daha koyu (#0A0E1A), 1px altın border (idle %15, focus %100). 52pt yükseklik.
-- **Primary Button:** Solid altın fill (#C9A961), koyu text. 8px radius, minimum 44pt.
-- **Secondary Button:** 1px altın border (%100 opacity), transparan arka plan, cream text.
-- **Destructive Button:** Koyu kırmızı fill (#8B2C2C), cream text.
+- **Input:** Surface'ten daha koyu (#000000), 1px turkuaz border (idle %15, focus %100). 52pt yükseklik.
+- **Primary Button:** Dolgu yok — 1.5pt turkuaz (#00E5C7) çerçeve, surface zemin, tracked-uppercase turkuaz label. 6px radius, minimum 44pt. (Filled buton yasak — bkz. bölüm 3.)
+- **Secondary Button:** 1px turkuaz border (%60 opacity), transparan arka plan, turkuaz text.
+- **Destructive Button:** Racing kırmızı fill (#FF2D3C), `textOnCritical` koyu metin (#2B0A0C, ≥4.5:1). 6px radius.
 
 ## 14. Navigasyon
 
-- **Floating Tab Bar:** 16px yatay margin, 8px alt margin. 1px altın üst border. Aktif ikon altın renginde.
+- **Floating Tab Bar:** 16px yatay margin, 8px alt margin. 1px turkuaz üst border. Aktif ikon turkuaz renginde.
 - **Tab Bar Background:** Glassmorphism — `systemUltraThinMaterialDark` blur + surface color.
-- **Segmented Control:** Normal #8B95A8, Selected #E6C479.
+- **Segmented Control:** Normal #9A9AA0, Selected #00E5C7.
 
 ## 15. Empty state kuralları
 

@@ -8,8 +8,8 @@ import SwiftUI
 enum AppTypography {
     // MARK: SF Pro Display — Başlıklar
 
-    /// Hero metrik — 64px Light (SF Pro Display)
-    static var heroMetric: Font { .system(size: 64, weight: .light, design: .default) }
+    /// Hero metrik — 64px Light (JetBrains Mono, terminal/odometre okuması)
+    static var heroMetric: Font { .custom("JetBrainsMono-Light", size: 64) }
     /// Ekran başlığı — 28px Bold (SF Pro Display)
     static var screenTitle: Font { .system(size: 28, weight: .bold) }
     /// Bölüm başlığı — 18px Semibold (SF Pro Display)
@@ -70,7 +70,7 @@ enum AppTypography {
 
 // MARK: - SwiftUI View Modifiers
 
-/// Hero metrik stili: 64px Light, SF Pro Display
+/// Hero metrik stili: 64px Light, JetBrains Mono
 struct HeroMetricModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
@@ -88,7 +88,7 @@ struct PlateTextModifier: ViewModifier {
 }
 
 extension View {
-    /// Hero metrik stili uygular (64px Light SF Pro Display)
+    /// Hero metrik stili uygular (64px Light JetBrains Mono)
     func heroNumberStyle() -> some View {
         modifier(HeroMetricModifier())
     }
