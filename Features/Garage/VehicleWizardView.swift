@@ -42,6 +42,14 @@ final class VehicleWizardDraft {
     var addInsuranceReminder: Bool = false
     var insuranceDate: Date = Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
 
+    var addCascoReminder: Bool = false
+    var cascoDate: Date = Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
+
+    var addLastServiceReminder: Bool = false
+    /// Son bakımın yapıldığı tarih. Gelecek hatırlatıcısı bu tarihten 1 yıl sonrasına kurulur.
+    var lastServiceDate: Date = Calendar.current.date(byAdding: .month, value: -6, to: Date()) ?? Date()
+    var lastServiceOdometerText: String = ""
+
     var addMTVReminder: Bool = false
     /// MTV taksit ayı: Ocak (1) veya Temmuz (7). Kullanıcı seçer.
     var mtvInstallmentMonth: Int = Calendar.current.component(.month, from: Date()) == 7 ? 7 : 1
@@ -61,6 +69,10 @@ final class VehicleWizardDraft {
     var purchasePrice: Double? {
         let text = purchasePriceText.trimmingCharacters(in: .whitespaces)
         return text.isEmpty ? nil : Double(text)
+    }
+    var lastServiceOdometer: Int? {
+        let text = lastServiceOdometerText.sanitizedIntInput()
+        return text.isEmpty ? nil : Int(text)
     }
 
     var selectedCatalogBrand: CarBrand? {
@@ -106,6 +118,9 @@ final class VehicleWizardDraft {
         }
         if let odometer, odometer < 0 {
             errors.append("Km sıfırdan küçük olamaz.")
+        }
+        if addLastServiceReminder, let serviceKm = lastServiceOdometer, serviceKm < 0 {
+            errors.append("Son bakım km sıfırdan küçük olamaz.")
         }
         return errors
     }
@@ -369,6 +384,33 @@ struct VehicleWizardView: View {
             Task { await NotificationService.shared.scheduleReminder(r) }
         }
 
+        if draft.addCascoReminder {
+            let r = Reminder(
+                vehicleId: vehicleId,
+                type: .casco,
+                title: "Kasko",
+                dueDate: draft.cascoDate,
+                priority: .warning
+            )
+            modelContext.insert(r)
+            Task { await NotificationService.shared.scheduleReminder(r) }
+        }
+
+        if draft.addLastServiceReminder {
+            // Bir sonraki periyodik bakım hatırlatıcısı: son bakımdan 1 yıl sonra
+            // ve (varsa) son bakım km'sinden +10.000 km sonra.
+            let r = Reminder(
+                vehicleId: vehicleId,
+                type: .periodicService,
+                title: "Periyodik Bakım",
+                dueDate: Calendar.current.date(byAdding: .year, value: 1, to: draft.lastServiceDate),
+                dueOdometer: draft.lastServiceOdometer.map { $0 + 10_000 },
+                priority: .info
+            )
+            modelContext.insert(r)
+            Task { await NotificationService.shared.scheduleReminder(r) }
+        }
+
         if draft.addMTVReminder {
             // MTV taksit ayı seçildiyse — yılın ilgili taksit dönemi.
             let type: ReminderType = draft.mtvInstallmentMonth == 1 ? .mtvFirst : .mtvSecond
@@ -417,6 +459,26 @@ struct VehicleWizardView: View {
                     draft.photoError = (error as? LocalizedError)?.errorDescription ?? "Fotoğraf okunamadı."
                 }
             }
+        }
+    }
+}
+
+// MARK: - Vehicle Photo Selection Error
+// Eski `VehicleFormView` burada tanımlıydı; VehicleFormView silindiği için buraya taşındı.
+// Hem `VehicleWizardView` hem `VehicleEditView` (Features/VehicleDetail) tarafından kullanılır.
+enum VehiclePhotoSelectionError: LocalizedError {
+    case unreadable
+    case tooLarge
+    case decodeFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .unreadable:
+            return "Fotoğraf okunamadı. Lütfen tekrar dene."
+        case .tooLarge:
+            return "Fotoğraf 20 MB'dan büyük olamaz. Daha küçük bir görsel seç."
+        case .decodeFailed:
+            return "Bu fotoğraf açılamadı. Lütfen JPG, PNG veya HEIC gibi geçerli bir görsel seç."
         }
     }
 }
@@ -889,6 +951,17 @@ struct WizardNextStepsStep: View {
                     accent: AppColors.accentSecondary
                 )
 
+                reminderCard(
+                    icon: ReminderType.casco.defaultIcon,
+                    title: "Kasko",
+                    subtitle: "Kasko poliçesinin biteceği tarihi gir.",
+                    isOn: Binding(get: { draft.addCascoReminder }, set: { draft.addCascoReminder = $0 }),
+                    date: Binding(get: { draft.cascoDate }, set: { draft.cascoDate = $0 }),
+                    accent: AppColors.warning
+                )
+
+                lastServiceCard
+
                 mtvCard
             }
 
@@ -942,6 +1015,75 @@ struct WizardNextStepsStep: View {
                 }
                 .pickerStyle(.segmented)
                 .padding(.leading, AppSpacing.xl)
+            }
+        }
+        .padding(AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .fill(Color.appSurface)
+        )
+        .cardShadow()
+    }
+
+    private var lastServiceCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Toggle(isOn: Binding(get: { draft.addLastServiceReminder }, set: { draft.addLastServiceReminder = $0 })) {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: ReminderType.periodicService.defaultIcon)
+                        .font(.body)
+                        .foregroundColor(AppColors.success)
+                        .frame(width: 28, height: 28)
+                        .background(Circle().fill(AppColors.success.opacity(0.12)))
+                    Text("Son Bakım")
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                }
+            }
+            .tint(AppColors.accentPrimary)
+
+            if draft.addLastServiceReminder {
+                Text("Son bakımın yapıldığı tarihi gir. 1 yıl sonrası için hatırlatıcı oluşturulur.")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textTertiary)
+                    .padding(.leading, AppSpacing.xl)
+
+                DatePicker(
+                    "Tarih",
+                    selection: Binding(
+                        get: { draft.lastServiceDate },
+                        set: { draft.lastServiceDate = $0 }
+                    ),
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.compact)
+                .padding(.leading, AppSpacing.xl)
+
+                // Opsiyonel km alanı
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "gauge.with.needle")
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 20)
+                    TextField("Km (opsiyonel)", text: Binding(
+                        get: { draft.lastServiceOdometerText },
+                        set: { draft.lastServiceOdometerText = $0 }
+                    ))
+                    .keyboardType(.numberPad)
+                    .font(AppTypography.bodyMedium)
+                    .foregroundColor(AppColors.textPrimary)
+                }
+                .padding(AppSpacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: AppRadius.small)
+                        .fill(AppColors.backgroundSecondary)
+                )
+                .padding(.leading, AppSpacing.xl)
+
+                if let km = draft.lastServiceOdometer, km > 0 {
+                    Text("\(km.formatted(.number.locale(Locale(identifier: "tr_TR")))) km olarak kaydedilecek")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                        .padding(.leading, AppSpacing.xl)
+                }
             }
         }
         .padding(AppSpacing.md)

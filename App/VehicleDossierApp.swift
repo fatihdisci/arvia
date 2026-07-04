@@ -12,18 +12,11 @@ struct VehicleDossierApp: App {
     @StateObject private var communityAuthService = CommunityAuthService.shared
     @StateObject private var navigationRouter = AppNavigationRouter.shared
     @AppStorage("onboarding_completed") private var onboardingCompleted = false
-    /// Onboarding sonrası açılacak sheet tipi — ilk kez (vehicleCount=0) ise wizard,
-    /// aksi halde mevcut VehicleFormView (geridönüş path).
+    /// Onboarding sonrası açılacak sheet tipi — her durumda tek tip wizard kullanılır.
     @State private var postOnboardingSheet: PostOnboardingSheet?
     private enum PostOnboardingSheet: Identifiable {
         case wizard
-        case legacyForm
-        var id: String {
-            switch self {
-            case .wizard: return "wizard"
-            case .legacyForm: return "legacyForm"
-            }
-        }
+        var id: String { "wizard" }
     }
 
     init() {
@@ -130,20 +123,13 @@ struct VehicleDossierApp: App {
                 }
                 .onChange(of: onboardingCompleted) { _, completed in
                     if completed {
-                        // İlk kez onboarding (vehicleCount=0) → wizard.
-                        // Tekrarlayan onboarding veya mevcut araç varsa → mevcut form (geri dönüş path).
-                        let vehicleCount = (try? modelContainer.mainContext.fetch(FetchDescriptor<Vehicle>()))?.count ?? 0
-                        postOnboardingSheet = vehicleCount == 0 ? .wizard : .legacyForm
+                        // Onboarding sonrası her zaman tek tip wizard açılır.
+                        postOnboardingSheet = .wizard
                     }
                 }
-                .sheet(item: $postOnboardingSheet) { sheet in
-                    switch sheet {
-                    case .wizard:
-                        VehicleFormWizardView()
-                            .modelContainer(modelContainer)
-                    case .legacyForm:
-                        VehicleFormView()
-                    }
+                .sheet(item: $postOnboardingSheet) { _ in
+                    VehicleWizardView()
+                        .modelContainer(modelContainer)
                 }
                 .preferredColorScheme(.dark)
             }
