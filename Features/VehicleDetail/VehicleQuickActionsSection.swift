@@ -1,7 +1,8 @@
 import SwiftUI
 
 // MARK: - Daily Quick Actions
-// 6 tile, 2 satır × 3 sütun grid. Ekspertiz tile'ı eklendi (Faz 1.1).
+// 6 tile, 3 satır × 2 sütun — aksiyon odaklı label'lar ile.
+// 2'li grid her butona yeterli yatay alan sağlar, kesilme olmaz.
 struct VehicleQuickActionsSection: View {
     let onKmUpdate: () -> Void
     let onAddExpense: () -> Void
@@ -19,24 +20,26 @@ struct VehicleQuickActionsSection: View {
 
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
-                    vehicleDetailActionButton(icon: "gauge.with.needle", label: "Km", color: AppColors.vehicle) {
+                    vehicleDetailActionButton(icon: "gauge.with.needle", label: "Km Güncelle", color: AppColors.vehicle) {
                         onKmUpdate()
                     }
-                    vehicleDetailActionButton(icon: "turkishlirasign.circle", label: "Masraf", color: AppColors.accentPrimary) {
+                    vehicleDetailActionButton(icon: "turkishlirasign.circle", label: "Masraf Ekle", color: AppColors.accentPrimary) {
                         onAddExpense()
-                    }
-                    vehicleDetailActionButton(icon: "fuelpump", label: "Yakıt", color: AppColors.warning) {
-                        onAddFuelExpense()
                     }
                 }
                 HStack(spacing: 8) {
-                    vehicleDetailActionButton(icon: "doc.text.viewfinder", label: "Belge", color: AppColors.document) {
+                    vehicleDetailActionButton(icon: "fuelpump", label: "Yakıt Ekle", color: AppColors.warning) {
+                        onAddFuelExpense()
+                    }
+                    vehicleDetailActionButton(icon: "doc.text.viewfinder", label: "Belge Ekle", color: AppColors.document) {
                         onAddDocument()
                     }
-                    vehicleDetailActionButton(icon: "bell.badge", label: "Hatırlat", color: AppColors.success) {
+                }
+                HStack(spacing: 8) {
+                    vehicleDetailActionButton(icon: "bell.badge", label: "Hatırlatıcı Ekle", color: AppColors.success) {
                         onAddReminder()
                     }
-                    vehicleDetailActionButton(icon: "magnifyingglass", label: "Ekspertiz", color: AppColors.accentPrimary) {
+                    vehicleDetailActionButton(icon: "magnifyingglass", label: "Ekspertiz Ekle", color: AppColors.accentPrimary) {
                         onAddInspection()
                     }
                 }
@@ -63,13 +66,14 @@ struct VehicleQuickActionsSection: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(color)
-                    .frame(height: 24)
+                    .frame(height: 22)
                 Text(label)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
             .frame(maxWidth: .infinity)
             .frame(minHeight: 48)
