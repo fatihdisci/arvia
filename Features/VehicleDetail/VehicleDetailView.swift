@@ -428,8 +428,8 @@ struct VehicleDetailView: View {
 
     private func scoreColor(_ score: Int) -> Color {
         if score >= 80 { return AppColors.success }
-        if score >= 50 { return AppColors.warning }
-        return AppColors.critical
+        if score >= 30 { return AppColors.accentPrimary }
+        return AppColors.warning
     }
 
 

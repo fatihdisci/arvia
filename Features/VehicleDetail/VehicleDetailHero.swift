@@ -145,34 +145,20 @@ struct VehicleDetailHero: View {
 
     private var detailDossierBadge: some View {
         let barColor = fileScore >= 80 ? AppColors.success : AppColors.accentPrimary
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: AppSpacing.xs) {
-                Image(systemName: "chart.bar.fill")
-                    .font(.caption2)
-                    .foregroundColor(barColor)
-                Text("Dosya Skoru")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
-                Spacer(minLength: 0)
-                Text("%\(fileScore)")
-                    .font(AppTypography.labelMono)
-                    .foregroundColor(barColor)
-            }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(barColor.opacity(0.12))
-                        .frame(height: 6)
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(barColor)
-                        .frame(width: max(6, geo.size.width * CGFloat(fileScore) / 100.0), height: 6)
-                        .animation(.easeOut(duration: 0.7), value: fileScore)
-                }
-            }
-            .frame(height: 6)
+        return HStack(spacing: AppSpacing.xs) {
+            Image(systemName: "chart.bar.fill")
+                .font(.caption2)
+                .foregroundColor(barColor)
+            Text("Dosya Skoru")
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textTertiary)
+            Spacer(minLength: 0)
+            Text("%\(fileScore)")
+                .font(AppTypography.labelMono)
+                .foregroundColor(barColor)
         }
         .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: AppRadius.small, style: .continuous)
                 .fill(barColor.opacity(0.05))

@@ -1,6 +1,8 @@
 import SwiftUI
 
 // MARK: - File Score Card
+// Dosya Skoru gösterimi — tek yüzey (hero'daki inline indicator dışında).
+// Outcome metni: kullanıcının ne kazanacağını söyleyen microcopy.
 struct FileCompletenessCard: View {
     let vehicle: Vehicle
     let documents: [VehicleDocument]
@@ -8,30 +10,20 @@ struct FileCompletenessCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(alignment: .center, spacing: AppSpacing.md) {
-                ZStack {
-                    Circle()
-                        .stroke(AppColors.border.opacity(0.70), lineWidth: 3.5)
-                        .frame(width: 56, height: 56)
-
-                    Circle()
-                        .trim(from: 0, to: CGFloat(fileScore) / 100.0)
-                        .stroke(AppColors.accentPrimary.opacity(0.75), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
-                        .frame(width: 56, height: 56)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.easeOut(duration: 0.8), value: fileScore)
-
-                    Text("%\(fileScore)")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(AppColors.textPrimary)
-                        .monospacedDigit()
-                }
+            // Üst satır: skor + outcome metni
+            HStack(alignment: .top, spacing: AppSpacing.md) {
+                // Skor yüzdesi — accentPrimary (30-80) veya success (80+)
+                Text("%\(fileScore)")
+                    .font(AppTypography.amountMd)
+                    .foregroundColor(scoreColor(fileScore))
+                    .monospacedDigit()
+                    .accessibilityLabel("Dosya skoru yüzde \(fileScore)")
 
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text("Dosya Skoru")
                         .font(AppTypography.cardTitle)
                         .foregroundColor(AppColors.textPrimary)
-                    Text(scoreDescription(fileScore))
+                    Text(outcomeText(fileScore))
                         .font(AppTypography.caption)
                         .foregroundColor(AppColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -40,6 +32,7 @@ struct FileCompletenessCard: View {
                 Spacer()
             }
 
+            // Chip'ler: Kimlik + Belge (Prompt 3'te daha da kısalacak)
             HStack(spacing: AppSpacing.xs) {
                 completenessChip(icon: "car.fill", title: vehicle.year == nil ? "Yıl eksik" : "Kimlik tamam", isComplete: vehicle.year != nil)
                 completenessChip(icon: "gauge.with.needle", title: vehicle.currentOdometer == 0 ? "Km eksik" : "Km var", isComplete: vehicle.currentOdometer > 0)
@@ -71,9 +64,26 @@ struct FileCompletenessCard: View {
             )
     }
 
-    private func scoreDescription(_ score: Int) -> String {
-        if score >= 80 { return "Aracının geçmişi iyi dokümante edilmiş." }
-        if score >= 50 { return "Birkaç bilgi veya belge daha ekleyebilirsin." }
-        return "Skoru yükseltmek için bilgi, hatırlatıcı ve belge ekle."
+    // MARK: - Outcome Microcopy
+    // Kullanıcının skor aralığına göre ne kazanacağını söyler.
+    private func outcomeText(_ score: Int) -> String {
+        if score >= 80 {
+            return "Dosyan tamam — alıcı için güven dosyası oluşturabilirsin."
+        }
+        if score >= 60 {
+            return "Son birkaç belge ile satışta değer kazandırabilirsin."
+        }
+        if score >= 30 {
+            return "3-4 bilgi daha eklersen dosyan satışa hazır olur."
+        }
+        return "İlk belgeni ekle, dosyan şekillenmeye başlasın."
+    }
+
+    // Dosya Skoru renk semantiği: 80+ success, 30+ accentPrimary (turkuaz), <30 warning.
+    // critical (#FF2D3C) yalnızca form hatası/gecikmiş reminder/destructive buton için.
+    private func scoreColor(_ score: Int) -> Color {
+        if score >= 80 { return AppColors.success }
+        if score >= 30 { return AppColors.accentPrimary }
+        return AppColors.warning
     }
 }
