@@ -88,16 +88,41 @@ struct VehicleDetailHero: View {
 
             Divider()
 
-            // Satır 2: metrics
-            HStack(spacing: AppSpacing.xs) {
-                detailMetricBadge(icon: "gauge.with.needle", text: vehicle.odometerDisplay)
-                detailMetricBadge(icon: "fuelpump", text: vehicle.fuelType.displayName)
-                if let transmission = vehicle.transmissionType {
-                    detailMetricBadge(
-                        icon: transmission == .automatic ? "a.circle" : "m.circle",
-                        text: transmission.displayName
-                    )
+            // Satır 2: hero metric (km) + yan bilgiler (yakıt, vites)
+            HStack(alignment: .top, spacing: AppSpacing.lg) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(vehicle.currentOdometer.formatted())
+                        .font(AppTypography.heroMetric)
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Text("km")
+                        .font(AppTypography.captionMedium)
+                        .foregroundColor(AppColors.textTertiary)
                 }
+                .accessibilityLabel("\(vehicle.currentOdometer.formatted()) kilometre")
+
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "fuelpump")
+                            .font(.caption2)
+                            .foregroundColor(AppColors.textTertiary)
+                        Text(vehicle.fuelType.displayName)
+                            .font(AppTypography.captionMedium)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                    if let transmission = vehicle.transmissionType {
+                        HStack(spacing: 4) {
+                            Image(systemName: transmission == .automatic ? "a.circle" : "m.circle")
+                                .font(.caption2)
+                                .foregroundColor(AppColors.textTertiary)
+                            Text(transmission.displayName)
+                                .font(AppTypography.captionMedium)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                    }
+                }
+
                 Spacer(minLength: 0)
             }
 
@@ -168,23 +193,5 @@ struct VehicleDetailHero: View {
                 .stroke(barColor.opacity(0.10), lineWidth: 0.5)
         )
         .accessibilityLabel("Dosya skoru yüzde \(fileScore)")
-    }
-
-    private func detailMetricBadge(icon: String, text: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption2.weight(.medium))
-            Text(text)
-                .font(AppTypography.captionMedium)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .foregroundColor(AppColors.textSecondary)
-        .padding(.horizontal, AppSpacing.xs + 2)
-        .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.small, style: .continuous)
-                .fill(AppColors.backgroundSecondary.opacity(0.68))
-        )
     }
 }
