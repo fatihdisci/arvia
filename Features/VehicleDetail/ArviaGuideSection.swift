@@ -10,6 +10,7 @@ struct ArviaGuideSection: View {
     let onDismissInsight: (VehicleInsight) -> Void
 
     @State private var selectedInsight: VehicleInsight?
+    @State private var currentCardID: VehicleInsight.ID?
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -61,12 +62,19 @@ struct ArviaGuideSection: View {
                                 onDismiss: { onDismissInsight(insight) }
                             )
                             .containerRelativeFrame(.horizontal, count: 1, spacing: AppSpacing.sm)
-                            .id(insight.id)
                         }
                     }
                     .scrollTargetLayout()
                 }
                 .scrollTargetBehavior(.viewAligned)
+                .scrollPosition(id: $currentCardID)
+                .scrollClipDisabled()
+                .padding(.horizontal, -AppSpacing.screenMarginH)
+
+                // Sayfa göstergesi — yalnızca birden fazla kart varsa
+                if insights.count > 1 {
+                    pageIndicator
+                }
             }
 
             arviaGuideDisclaimer
@@ -84,6 +92,23 @@ struct ArviaGuideSection: View {
                 }
             )
         }
+        .onAppear { currentCardID = insights.first?.id }
+    }
+
+    // MARK: - Sayfa Göstergesi
+    private var pageIndicator: some View {
+        HStack(spacing: 6) {
+            ForEach(insights) { insight in
+                Circle()
+                    .fill(insight.id == (currentCardID ?? insights.first?.id)
+                          ? AppColors.accentPrimary
+                          : AppColors.textTertiary.opacity(0.28))
+                    .frame(width: 5, height: 5)
+                    .animation(.easeInOut(duration: 0.25), value: currentCardID)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityHidden(true)
     }
 
     private var arviaGuideDisclaimer: some View {

@@ -16,8 +16,7 @@ struct FileCompletenessCard: View {
                 TachometerGauge(
                     value: CGFloat(fileScore) / 100.0,
                     accent: scoreColor(fileScore),
-                    size: 72,
-                    label: "%\(fileScore)"
+                    size: 72
                 )
                 .accessibilityLabel("Dosya skoru yüzde \(fileScore)")
 

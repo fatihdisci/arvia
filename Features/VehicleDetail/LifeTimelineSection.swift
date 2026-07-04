@@ -78,7 +78,7 @@ struct LifeTimelineSection: View {
                 if hasNoRealData {
                     // Demo timeline (örnek görünüm)
                     ForEach(Array(DemoTimelineEvent.onboardingSamples.enumerated()), id: \.element.id) { index, demo in
-                        demoTimelineItem(event: demo, isLast: index == DemoTimelineEvent.onboardingSamples.count - 1)
+                        demoTimelineItem(event: demo, isFirst: index == 0, isLast: index == DemoTimelineEvent.onboardingSamples.count - 1)
                     }
 
                     Divider()
@@ -192,13 +192,17 @@ struct LifeTimelineSection: View {
     }
 
     // MARK: - Demo Timeline Item (örnek görünüm)
-    private func demoTimelineItem(event: DemoTimelineEvent, isLast: Bool) -> some View {
+    private func demoTimelineItem(event: DemoTimelineEvent, isFirst: Bool, isLast: Bool) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
             // Sol kolon: çizgi + ikon
             VStack(spacing: 0) {
-                Rectangle()
-                    .fill(event.kind.defaultAccent.opacity(0.5))
-                    .frame(width: 1.5, height: 12)
+                if !isFirst {
+                    Rectangle()
+                        .fill(event.kind.defaultAccent.opacity(0.5))
+                        .frame(width: 1.5, height: 12)
+                } else {
+                    Spacer().frame(height: 4)
+                }
                 Image(systemName: event.icon)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.white)

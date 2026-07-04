@@ -10,8 +10,6 @@ struct TachometerGauge: View {
     var accent: Color = AppColors.accentPrimary
     /// Genişlik (pt). Yükseklik otomatik: size/2 + hub payı.
     var size: CGFloat = 84
-    /// Yay altındaki okuma metni (örn. "%68"). Nil ise gösterilmez.
-    var label: String? = nil
 
     @State private var animated: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -42,15 +40,6 @@ struct TachometerGauge: View {
                 .frame(width: size - strokeWidth * 2, height: size - strokeWidth * 2)
                 .position(center)
 
-            // Okuma metni — hub'ın üstünde, yay açıklığının içinde
-            if let label {
-                Text(label)
-                    .font(.custom("JetBrainsMono-SemiBold", size: size * 0.17))
-                    .foregroundColor(accent)
-                    .monospacedDigit()
-                    .position(x: center.x, y: center.y - size * 0.17)
-            }
-
             // İbre — hub'dan değere doğru
             Capsule()
                 .fill(accent)
@@ -70,8 +59,7 @@ struct TachometerGauge: View {
         .clipped()
         .onAppear { animate(to: value) }
         .onChange(of: value) { _, newValue in animate(to: newValue) }
-        .accessibilityHidden(label == nil)
-        .accessibilityLabel(label ?? "")
+        .accessibilityHidden(true)
     }
 
     // Tik: yayın hemen içinde, radyal yönde kısa çizgi.
@@ -110,9 +98,9 @@ struct TachometerGauge: View {
 // MARK: - Preview
 #Preview("Tachometer — değerler") {
     VStack(spacing: 24) {
-        TachometerGauge(value: 0.15, accent: AppColors.warning, size: 84, label: "%15")
-        TachometerGauge(value: 0.55, accent: AppColors.accentPrimary, size: 84, label: "%55")
-        TachometerGauge(value: 0.9, accent: AppColors.success, size: 84, label: "%90")
+        TachometerGauge(value: 0.15, accent: AppColors.warning, size: 84)
+        TachometerGauge(value: 0.55, accent: AppColors.accentPrimary, size: 84)
+        TachometerGauge(value: 0.9, accent: AppColors.success, size: 84)
     }
     .padding()
     .background(Color.appBackground)

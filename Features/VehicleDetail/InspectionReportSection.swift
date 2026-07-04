@@ -5,6 +5,8 @@ import SwiftUI
 struct InspectionReportSection: View {
     let inspectionReports: [InspectionReport]
     let onAddInspection: () -> Void
+    var onEditReport: ((InspectionReport) -> Void)?
+    var onDeleteReport: ((InspectionReport) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -41,7 +43,7 @@ struct InspectionReportSection: View {
                             .lineLimit(2)
                     }
 
-                    // Hukuki uyarı — tek satır
+                    // Aksiyon ipucu + hukuki uyarı
                     HStack(spacing: 4) {
                         Image(systemName: "info.circle.fill")
                             .font(.caption2)
@@ -50,6 +52,12 @@ struct InspectionReportSection: View {
                             .font(.system(size: 10))
                             .foregroundColor(AppColors.textTertiary)
                             .lineLimit(1)
+
+                        Spacer(minLength: AppSpacing.sm)
+
+                        Text("Düzenlemek için dokun")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(AppColors.accentPrimary.opacity(0.7))
                     }
                     .padding(.top, AppSpacing.xxs)
                 }
@@ -59,6 +67,47 @@ struct InspectionReportSection: View {
                         .fill(Color.appSurface)
                 )
                 .subtleShadow()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if let onEdit = onEditReport {
+                        onEdit(latest)
+                    }
+                }
+                .contextMenu {
+                    if let onEdit = onEditReport {
+                        Button {
+                            onEdit(latest)
+                        } label: {
+                            Label("Düzenle", systemImage: "pencil")
+                        }
+                    }
+                    if let onDelete = onDeleteReport {
+                        Button(role: .destructive) {
+                            onDelete(latest)
+                        } label: {
+                            Label("Sil", systemImage: "trash")
+                        }
+                    }
+                }
+                .swipeActions(edge: .trailing) {
+                    if let onDelete = onDeleteReport {
+                        Button(role: .destructive) {
+                            onDelete(latest)
+                        } label: {
+                            Label("Sil", systemImage: "trash")
+                        }
+                    }
+                }
+                .swipeActions(edge: .leading) {
+                    if let onEdit = onEditReport {
+                        Button {
+                            onEdit(latest)
+                        } label: {
+                            Label("Düzenle", systemImage: "pencil")
+                        }
+                        .tint(AppColors.accentPrimary)
+                    }
+                }
             } else {
                 // Kompakt tek satır CTA
                 Button {

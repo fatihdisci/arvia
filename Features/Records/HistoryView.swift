@@ -27,6 +27,7 @@ struct HistoryView: View {
     @State private var previewURL: URL?
     @State private var editingExpense: Expense?
     @State private var editingService: ServiceRecord?
+    @State private var editingInspection: InspectionReport?
     @State private var showDeleteConfirmation = false
     @State private var itemToDelete: Any? = nil
 
@@ -110,6 +111,7 @@ struct HistoryView: View {
             .sheet(isPresented: $showAddInspection) { InspectionReportFormView() }
             .sheet(item: $editingExpense) { expense in ExpenseFormView(existingExpense: expense) }
             .sheet(item: $editingService) { service in ServiceRecordFormView(existingRecord: service) }
+            .sheet(item: $editingInspection) { report in InspectionReportFormView(existingReport: report) }
             .confirmationDialog("Kayıt Silinsin mi?", isPresented: $showDeleteConfirmation, actions: {
                 Button("Sil", role: .destructive) { performDelete() }
                 Button("Vazgeç", role: .cancel) {}
@@ -529,42 +531,53 @@ struct HistoryView: View {
         let filtered = allInspections.filter { isWithinDateRange($0.reportDate) }
         return Section {
             ForEach(filtered) { report in
-                HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(AppColors.accentPrimary)
-                        .frame(width: 28)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(report.providerName)
-                            .font(AppTypography.secondary)
-                            .foregroundColor(AppColors.textPrimary)
-                            .lineLimit(1)
-                        HStack(spacing: 4) {
-                            if let vehicle = vehicleFor(id: report.vehicleId) {
-                                Text(vehicle.plate.isEmpty ? vehicle.fullName : vehicle.plate)
-                                    .font(AppTypography.caption)
-                                    .foregroundColor(AppColors.textTertiary)
-                                    .lineLimit(1)
-                            }
-                            if let branch = report.branchName, !branch.isEmpty {
-                                if vehicleFor(id: report.vehicleId) != nil {
-                                    Text("·")
-                                        .font(.caption)
-                                        .foregroundColor(AppColors.textTertiary.opacity(0.4))
+                Button {
+                    editingInspection = report
+                } label: {
+                    HStack(spacing: AppSpacing.sm) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(AppColors.accentPrimary)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(report.providerName)
+                                .font(AppTypography.secondary)
+                                .foregroundColor(AppColors.textPrimary)
+                                .lineLimit(1)
+                            HStack(spacing: 4) {
+                                if let vehicle = vehicleFor(id: report.vehicleId) {
+                                    Text(vehicle.plate.isEmpty ? vehicle.fullName : vehicle.plate)
+                                        .font(AppTypography.caption)
+                                        .foregroundColor(AppColors.textTertiary)
+                                        .lineLimit(1)
                                 }
-                                Text(branch)
-                                    .font(AppTypography.caption)
-                                    .foregroundColor(AppColors.textTertiary)
-                                    .lineLimit(1)
+                                if let branch = report.branchName, !branch.isEmpty {
+                                    if vehicleFor(id: report.vehicleId) != nil {
+                                        Text("·")
+                                            .font(.caption)
+                                            .foregroundColor(AppColors.textTertiary.opacity(0.4))
+                                    }
+                                    Text(branch)
+                                        .font(AppTypography.caption)
+                                        .foregroundColor(AppColors.textTertiary)
+                                        .lineLimit(1)
+                                }
                             }
                         }
+                        Spacer()
+                        Text(report.dateDisplay)
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textTertiary)
                     }
-                    Spacer()
-                    Text(report.dateDisplay)
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textTertiary)
                 }
+                .buttonStyle(.plain)
                 .padding(.vertical, AppSpacing.xxs)
                 .swipeActions(edge: .trailing) { swipeDeleteButton(report) }
+                .swipeActions(edge: .leading) {
+                    Button { editingInspection = report } label: {
+                        Label("Düzenle", systemImage: "pencil")
+                    }
+                    .tint(AppColors.accentPrimary)
+                }
             }
         }
     }

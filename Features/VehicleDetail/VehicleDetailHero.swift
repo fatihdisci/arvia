@@ -47,27 +47,6 @@ struct VehicleDetailHero: View {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.heroCard, style: .continuous))
         // İmza motif: köşe ayraç/reticle — aracın görsel kimlik alanı
         .reticleCorners()
-        // Fotoğraf üzerinde yarı transparan plaka rozeti — araç tek bakışta tanınır
-        .overlay(alignment: .bottomLeading) {
-            if !vehicle.plate.isEmpty {
-                Text(vehicle.plate)
-                    .font(.custom("JetBrainsMono-SemiBold", size: 13))
-                    .tracking(1.5)
-                    .foregroundColor(.white.opacity(0.92))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppRadius.small, style: .continuous)
-                            .fill(Color.black.opacity(0.55))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppRadius.small, style: .continuous)
-                            .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
-                    )
-                    .padding(AppSpacing.md + 4)
-                    .accessibilityHidden(true) // hero zaten plakayı okuyor
-            }
-        }
         .elevatedShadow()
     }
 

@@ -31,6 +31,7 @@ struct VehicleDetailView: View {
     @State private var showAddMTVReminder = false
     @State private var showQuickKmUpdate = false
     @State private var showAddInspection = false
+    @State private var editingInspectionReport: InspectionReport?
     @State private var showSaleFile = false
     @State private var showAddDocument = false
     @State private var showDocumentPreview = false
@@ -159,7 +160,12 @@ struct VehicleDetailView: View {
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
                 // MARK: Inspection Report
-                InspectionReportSection(inspectionReports: inspectionReports, onAddInspection: handleAddInspection)
+                InspectionReportSection(
+                    inspectionReports: inspectionReports,
+                    onAddInspection: handleAddInspection,
+                    onEditReport: handleEditInspection,
+                    onDeleteReport: handleDeleteInspection
+                )
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
                 // MARK: Sale File Preview
@@ -264,6 +270,9 @@ struct VehicleDetailView: View {
         }
         .sheet(isPresented: $showAddInspection) {
             InspectionReportFormView(preselectedVehicleId: vehicle.id)
+        }
+        .sheet(item: $editingInspectionReport) { report in
+            InspectionReportFormView(existingReport: report)
         }
         .sheet(isPresented: $showSaleFile) {
             SaleFileView(vehicle: vehicle)
@@ -455,6 +464,15 @@ struct VehicleDetailView: View {
     // MARK: - Gate Helpers
     private func handleAddInspection() {
         showAddInspection = true
+    }
+
+    private func handleEditInspection(_ report: InspectionReport) {
+        editingInspectionReport = report
+    }
+
+    private func handleDeleteInspection(_ report: InspectionReport) {
+        modelContext.delete(report)
+        try? modelContext.save()
     }
 
     private func handleSaleFileTap() {

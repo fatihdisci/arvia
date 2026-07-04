@@ -22,8 +22,7 @@ struct DossierCompletenessCard: View {
             TachometerGauge(
                 value: CGFloat(score) / 100.0,
                 accent: scoreColor,
-                size: 84,
-                label: "%\(score)"
+                size: 84
             )
 
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
