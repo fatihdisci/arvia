@@ -192,13 +192,36 @@ struct HistoryView: View {
         Group {
             switch selectedFilter {
             case .all:
-                EmptyStateView(
-                    icon: "clock.arrow.circlepath",
-                    title: "Henüz kayıt yok",
-                    description: "Masraf, bakım, belge veya tamamlanan işleri ekledikçe aracının geçmişi burada oluşur.",
-                    actionTitle: "İlk Kaydı Ekle",
-                    action: { showAddExpense = true }
-                )
+                VStack(spacing: AppSpacing.lg) {
+                    EmptyStateView(
+                        icon: "clock.arrow.circlepath",
+                        title: "Aracının geçmişi burada oluşacak",
+                        description: "Masraf, bakım, belge veya tamamlanan işleri ekledikçe aracının geçmişi tek arşivde birikir."
+                    )
+
+                    HStack(spacing: AppSpacing.sm) {
+                        quickAddButton(icon: "turkishlirasign.circle", label: "Masraf", color: AppColors.accentPrimary) {
+                            showAddExpense = true
+                        }
+                        quickAddButton(icon: "wrench.and.screwdriver", label: "Bakım", color: AppColors.warning) {
+                            showAddService = true
+                        }
+                        quickAddButton(icon: "doc.text", label: "Belge", color: AppColors.document) {
+                            handleAddDocument()
+                        }
+                    }
+
+                    Divider().padding(.vertical, AppSpacing.xs)
+
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Aracının geçmişini nasıl oluşturursun?")
+                            .font(AppTypography.bodyMedium)
+                            .foregroundColor(AppColors.textSecondary)
+                        tourStep(number: 1, text: "İlk kaydı ekle (örn. son yakıt alma)")
+                        tourStep(number: 2, text: "Sıradaki hatırlatıcıları Yapılacaklar'dan takip et")
+                        tourStep(number: 3, text: "Geçmiş otomatik dolar, Raporlar özetler")
+                    }
+                }
             case .expenses:
                 EmptyStateView(
                     icon: "turkishlirasign.circle",
@@ -659,6 +682,45 @@ struct HistoryView: View {
 
     private func handleAddInspection() {
         showAddInspection = true
+    }
+
+    // MARK: - Quick Add + Tour Helpers (Empty State)
+
+    private func quickAddButton(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(color)
+                Text(label)
+                    .font(AppTypography.captionMedium)
+                    .foregroundColor(AppColors.textPrimary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 64)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.medium)
+                    .fill(AppColors.backgroundSecondary.opacity(0.5))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.medium)
+                    .stroke(AppColors.border, lineWidth: 0.5)
+            )
+        }
+        .buttonStyle(PlainCardButtonStyle())
+    }
+
+    private func tourStep(number: Int, text: String) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            Text("\(number)")
+                .font(AppTypography.captionMedium)
+                .foregroundColor(AppColors.accentPrimary)
+                .frame(width: 22, height: 22)
+                .background(Circle().fill(AppColors.accentPrimary.opacity(0.12)))
+            Text(text)
+                .font(AppTypography.secondarySmall)
+                .foregroundColor(AppColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     // MARK: - Row helper

@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 // MARK: - Community Feed View
 // Topluluk ana ekranı. Guest okuyabilir, yazmak için giriş gerekir.
@@ -99,19 +100,18 @@ struct CommunityFeedView: View {
                         }
                     }
                 } else if !communityAuth.isAuthenticated && communityAuth.isCommunityAvailable {
-                    // Guest: show sign-in button in toolbar
+                    // Guest: native Sign in with Apple button (HIG)
                     ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            Task { try? await communityAuth.signInWithApple() }
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "apple.logo")
-                                Text("Giriş Yap")
-                                    .font(AppTypography.captionMedium)
+                        SignInWithAppleButton(
+                            onRequest: { request in
+                                request.requestedScopes = [.fullName, .email]
+                            },
+                            onCompletion: { result in
+                                communityAuth.handleSignInResult(result)
                             }
-                            .foregroundColor(AppColors.accentPrimary)
-                        }
-                        .accessibilityLabel("Apple ile Giriş Yap")
+                        )
+                        .signInWithAppleButtonStyle(.white)
+                        .frame(width: 130, height: 32)
                     }
                 }
             }
@@ -173,18 +173,17 @@ struct CommunityFeedView: View {
                     .font(AppTypography.sectionTitle)
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
-                Button {
-                    showSignInPrompt = false
-                    Task { try? await communityAuth.signInWithApple() }
-                } label: {
-                    HStack {
-                        Image(systemName: "apple.logo")
-                        Text("Apple ile Giriş Yap")
+                SignInWithAppleButton(
+                    onRequest: { request in
+                        request.requestedScopes = [.fullName, .email]
+                    },
+                    onCompletion: { result in
+                        communityAuth.handleSignInResult(result)
+                        showSignInPrompt = false
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, AppSpacing.md)
-                }
-                .buttonStyle(.primary)
+                )
+                .signInWithAppleButtonStyle(.white)
+                .frame(height: 50)
                 Spacer()
             }
             .padding(.horizontal, AppSpacing.screenMarginH)
@@ -216,31 +215,6 @@ struct CommunityFeedView: View {
                 .foregroundColor(AppColors.textSecondary)
         }
         .frame(maxHeight: .infinity)
-    }
-
-    // MARK: - Guest Banner (feed üzerinde)
-    private var guestBanner: some View {
-        HStack(spacing: AppSpacing.sm) {
-            Image(systemName: "person.crop.circle.badge.questionmark")
-                .foregroundColor(AppColors.accentPrimary)
-            Text("Topluluğa katılmak için Apple ile giriş yap.")
-                .font(AppTypography.caption)
-                .foregroundColor(AppColors.textSecondary)
-            Spacer()
-            Button("Giriş Yap") {
-                Task { try? await communityAuth.signInWithApple() }
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .tint(AppColors.accentPrimary)
-        }
-        .padding(AppSpacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.medium)
-                .fill(AppColors.accentPrimary.opacity(0.08))
-        )
-        .padding(.horizontal, AppSpacing.screenMarginH)
-        .padding(.top, AppSpacing.xs)
     }
 
     // MARK: - Profile Creation (inline)
@@ -410,11 +384,6 @@ struct CommunityFeedView: View {
 
     private var feedView: some View {
         VStack(spacing: 0) {
-            // Guest banner
-            if !communityAuth.isAuthenticated && communityAuth.isCommunityAvailable {
-                guestBanner
-            }
-
             // Filter chips
             CommunityFilterChips(selectedType: $selectedType, selectedTags: $selectedTags)
                 .padding(.vertical, AppSpacing.xs)

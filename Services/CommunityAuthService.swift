@@ -65,6 +65,54 @@ final class CommunityAuthService: NSObject, ObservableObject {
         }
     }
 
+    /// SignInWithAppleButton completion handler — native HIG butonla kullanım için.
+    /// `signInWithApple()` async versiyonu kendi ASAuthorizationController'ını oluşturur;
+    /// bu metod native butonun completion handler'ından çağrılır.
+    func handleSignInResult(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  let identityToken = credential.identityToken,
+                  let idTokenString = String(data: identityToken, encoding: .utf8) else {
+                authError = "Apple kimlik doğrulaması başarısız oldu."
+                return
+            }
+
+            isSigningIn = true
+            Task {
+                guard let client = client else {
+                    authError = "Topluluk bağlantısı yapılandırılmamış."
+                    isSigningIn = false
+                    return
+                }
+
+                do {
+                    let session = try await client.auth.signInWithIdToken(
+                        credentials: .init(provider: .apple, idToken: idTokenString)
+                    )
+                    currentSession = session
+                    isAuthenticated = true
+                    authError = nil
+
+                    let userId = session.user.id
+                    await fetchProfile(userId: userId)
+                } catch {
+                    authError = "Giriş yapılamadı. Lütfen tekrar dene."
+                }
+
+                isSigningIn = false
+            }
+
+        case .failure(let error):
+            if let asAuthError = error as? ASAuthorizationError,
+               asAuthError.code == .canceled {
+                authError = nil
+            } else {
+                authError = "Apple ile giriş yapılamadı: \(error.localizedDescription)"
+            }
+        }
+    }
+
     /// Uygulama açıldığında mevcut session'ı geri yükle.
     func restoreSession() async {
         guard let client = client else { return }

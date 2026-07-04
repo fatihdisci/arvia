@@ -144,11 +144,10 @@ struct VehicleDetailHero: View {
 
     private var detailPlateBadge: some View {
         Text(vehicle.plate.isEmpty ? "Plaka yok" : vehicle.plate)
-            .font(.custom("JetBrainsMono-SemiBold", size: 15))
-            .tracking(1.5)
+            .font(.custom("JetBrainsMono-SemiBold", size: 17))
             .foregroundColor(AppColors.textPrimary)
             .lineLimit(1)
-            .minimumScaleFactor(0.78)
+            .minimumScaleFactor(0.85)
             .padding(.horizontal, AppSpacing.sm)
             .padding(.vertical, 6)
             .background(Capsule().fill(AppColors.backgroundSecondary.opacity(0.72)))

@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - Reminder List View
 // Gruplandırılmış hatırlatıcı listesi.
-// Gruplar: Gecikenler → Bugün → Yaklaşanlar → Daha Sonra
+// Gruplar: Gecikenler → Bugün → Yaklaşanlar → Bu Yıl → Uzak Vade
 
 struct ReminderListView: View {
     @Environment(\.modelContext) private var modelContext
@@ -43,8 +43,22 @@ struct ReminderListView: View {
         activeReminders.filter { $0.isUpcoming && !$0.isToday && !$0.isOverdue && !isKmOverdue($0) }
     }
 
-    private var laterReminders: [Reminder] {
-        activeReminders.filter { !$0.isOverdue && !$0.isToday && !$0.isUpcoming && !isKmOverdue($0) }
+    /// 30-180 gün arası — "Bu Yıl" grubu
+    private var midTermReminders: [Reminder] {
+        activeReminders.filter {
+            guard let dueDate = $0.dueDate, !$0.isOverdue, !$0.isToday, !$0.isUpcoming, !isKmOverdue($0) else { return false }
+            let days = Calendar.current.dateComponents([.day], from: Date(), to: dueDate).day ?? 0
+            return days > 30 && days <= 180
+        }
+    }
+
+    /// 180+ gün — "Uzak Vade" grubu
+    private var farFutureReminders: [Reminder] {
+        activeReminders.filter {
+            guard let dueDate = $0.dueDate, !$0.isOverdue, !$0.isToday, !$0.isUpcoming, !isKmOverdue($0) else { return false }
+            let days = Calendar.current.dateComponents([.day], from: Date(), to: dueDate).day ?? 0
+            return days > 180
+        }
     }
 
     private func isKmOverdue(_ reminder: Reminder) -> Bool {
@@ -199,12 +213,21 @@ struct ReminderListView: View {
                 )
             }
 
-            if !laterReminders.isEmpty {
+            if !midTermReminders.isEmpty {
                 reminderGroup(
-                    title: "Daha Sonra",
+                    title: "Bu Yıl",
+                    icon: "calendar.badge.clock",
+                    color: AppColors.accentPrimary.opacity(0.6),
+                    reminders: midTermReminders
+                )
+            }
+
+            if !farFutureReminders.isEmpty {
+                reminderGroup(
+                    title: "Uzak Vade",
                     icon: "calendar",
                     color: AppColors.textTertiary,
-                    reminders: laterReminders
+                    reminders: farFutureReminders
                 )
             }
         }
@@ -370,12 +393,16 @@ struct ReminderRow: View {
         .accessibilityLabel("\(reminder.title), \(statusText)")
     }
 
-    /// Öncelik/gecikme bazlı renk
+    /// Öncelik/gecikme bazlı renk — 30+ gün kala nötr gri
     private var statusColor: Color {
         if reminder.isOverdue { return AppColors.critical }
         if let vehicle, reminder.isKmOverdue(vehicleOdometer: vehicle.currentOdometer) { return AppColors.critical }
         if reminder.isToday { return AppColors.warning }
         if let vehicle, reminder.isKmUpcoming(vehicleOdometer: vehicle.currentOdometer) { return AppColors.warning }
+        if let dueDate = reminder.dueDate {
+            let days = Calendar.current.dateComponents([.day], from: Date(), to: dueDate).day ?? 0
+            if days > 30 { return AppColors.textTertiary }
+        }
         return AppColors.accentPrimary
     }
 
