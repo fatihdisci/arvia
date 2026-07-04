@@ -481,12 +481,15 @@ enum VehicleContextRefreshService {
     static func updateCurrentOdometer(
         vehicle: Vehicle,
         newOdometer: Int,
+        isEstimate: Bool = false,
         context: ModelContext,
         notificationRefresh: @escaping (ModelContext) async -> Void = { context in
             await NotificationRefreshService.refreshAll(context: context)
         }
     ) async throws {
         vehicle.currentOdometer = newOdometer
+        vehicle.odometerIsEstimate = isEstimate
+        vehicle.lastOdometerUpdate = Date()
         try context.save()
         await notificationRefresh(context)
     }

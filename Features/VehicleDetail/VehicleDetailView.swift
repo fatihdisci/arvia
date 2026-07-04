@@ -20,6 +20,9 @@ struct VehicleDetailView: View {
     @Query private var allInspectionReports: [InspectionReport]
     @Query(sort: \VehicleDocument.createdAt, order: .reverse) private var allDocuments: [VehicleDocument]
     @Query(sort: \SaleFile.createdAt, order: .reverse) private var allSaleFiles: [SaleFile]
+    @Query private var allUsageProfiles: [VehicleUsageProfile]
+
+    @AppStorage("assistant_profile_prompted") private var assistantProfilePrompted = false
 
     @State private var showEditSheet = false
     @State private var showDeleteConfirmation = false
@@ -38,6 +41,7 @@ struct VehicleDetailView: View {
     @State private var previewDocumentURL: URL?
     @State private var showReceiptScan = false
     @State private var showReceiptPaywall = false
+    @State private var showAssistantProfile = false
     private let snoozeStore = InsightSnoozeStore.shared
 
     // Filtered data
@@ -104,7 +108,8 @@ struct VehicleDetailView: View {
             documents: documents,
             inspectionReports: inspectionReports,
             saleFiles: saleFiles,
-            displayContext: .vehicleDetailGuide(excludingReminderIds: Set(upcomingTasks.map(\.reminderId)))
+            displayContext: .vehicleDetailGuide(excludingReminderIds: Set(upcomingTasks.map(\.reminderId))),
+            assistant: assistantInputs
         )
         .filter { !snoozeStore.isDismissed(insightType: $0.type, forVehicle: vehicle.id) }
         .filter { !snoozeStore.isSnoozed(insightType: $0.type, forVehicle: vehicle.id) }
@@ -290,6 +295,9 @@ struct VehicleDetailView: View {
             PaywallView(feature: .receiptScan)
                 .environmentObject(PaywallService.shared)
         }
+        .sheet(isPresented: $showAssistantProfile) {
+            UsageProfileFlowView()
+        }
         .quickLookPreview($previewDocumentURL)
         .confirmationDialog("Aracı Arşivle", isPresented: $showArchiveConfirmation) {
             Button("Arşivle") { archiveVehicle() }
@@ -318,6 +326,62 @@ struct VehicleDetailView: View {
         }
     }
 
+    // MARK: - Akıllı Sürüş Asistanı
+    private var assistantInputs: VehicleInsightService.AssistantInputs {
+        guard PaywallService.shared.canUseAssistant else { return .disabled }
+        let profile = UsageProfileService.resolve(for: vehicle.id, from: allUsageProfiles)
+        let estimate = PredictiveOdometerService.shared.estimate(
+            lastKnownOdometer: vehicle.currentOdometer,
+            lastKnownDate: vehicle.odometerIsEstimate ? nil : vehicle.lastOdometerUpdate,
+            readings: odometerReadings,
+            profileBand: profile?.dailyKmBand
+        )
+        var suggestion: MaintenanceAdvisorService.Suggestion?
+        if let profile {
+            let dailyKm = estimate?.dailyKmAverage ?? Double(profile.dailyKmBand.midpointKm)
+            suggestion = MaintenanceAdvisorService.shared.topSuggestion(for: MaintenanceAdvisorService.Input(
+                fuelType: vehicle.fuelType,
+                vehicleYear: vehicle.year,
+                currentOdometer: vehicle.currentOdometer,
+                dailyKm: dailyKm,
+                routeType: profile.routeType,
+                dailyKmBand: profile.dailyKmBand,
+                now: Date()
+            ))
+        }
+        return VehicleInsightService.AssistantInputs(
+            enabled: true,
+            odometerEstimate: estimate,
+            maintenanceSuggestion: suggestion,
+            usageProfileMissing: profile == nil && assistantProfilePrompted
+        )
+    }
+
+    private var odometerReadings: [PredictiveOdometerService.Reading] {
+        var readings: [PredictiveOdometerService.Reading] = []
+        for e in expenses where e.odometer != nil { readings.append(.init(date: e.date, odometer: e.odometer!)) }
+        for s in serviceRecords where s.odometer != nil { readings.append(.init(date: s.date, odometer: s.odometer!)) }
+        return readings
+    }
+
+    private func acceptEstimatedOdometer() {
+        let profile = UsageProfileService.resolve(for: vehicle.id, from: allUsageProfiles)
+        guard let estimate = PredictiveOdometerService.shared.estimate(
+            lastKnownOdometer: vehicle.currentOdometer,
+            lastKnownDate: vehicle.odometerIsEstimate ? nil : vehicle.lastOdometerUpdate,
+            readings: odometerReadings,
+            profileBand: profile?.dailyKmBand
+        ) else { return }
+        Task {
+            try? await VehicleContextRefreshService.updateCurrentOdometer(
+                vehicle: vehicle,
+                newOdometer: estimate.estimatedOdometer,
+                isEstimate: true,
+                context: modelContext
+            )
+        }
+    }
+
     private func handleGuideAction(_ action: VehicleInsightAction) {
         switch action {
         case .addServiceRecord:
@@ -340,6 +404,10 @@ struct VehicleDetailView: View {
             showAddExpense = true
         case .addFuelExpense:
             showAddFuelExpense = true
+        case .acceptEstimatedOdometer:
+            acceptEstimatedOdometer()
+        case .openAssistantProfile:
+            showAssistantProfile = true
         case .dismissAndSnooze, .markAsRead, .acknowledge, .noAction:
             break // Meta-aksiyonlar — ArviaGuideCard tarafından handle edilir
         }

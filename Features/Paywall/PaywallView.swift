@@ -42,6 +42,7 @@ struct PaywallView: View {
         case advancedReports
         case inspectionReport
         case receiptScan
+        case assistant
 
         var title: String {
             switch self {
@@ -51,6 +52,7 @@ struct PaywallView: View {
             case .advancedReports: return "Gelişmiş raporlar"
             case .inspectionReport: return "Ekspertiz raporları"
             case .receiptScan: return "Fiş ve faturaları tarayarak ekle"
+            case .assistant: return "Akıllı Sürüş Asistanı — seni tanıyan öneriler"
             }
         }
 
@@ -62,6 +64,7 @@ struct PaywallView: View {
             case .advancedReports: return "Pro ile gelişmiş raporlar."
             case .inspectionReport: return "Pro ile sınırsız ekspertiz."
             case .receiptScan: return "Pro ile fiş/fatura tarama."
+            case .assistant: return "Pro ile kişiselleştirilmiş sürüş asistanı."
             }
         }
     }
@@ -120,6 +123,10 @@ struct PaywallView: View {
                     .padding(.top, AppSpacing.xs)
                     .padding(.bottom, AppSpacing.xs)
 
+                // Pro özellik listesi — asistan + tarama öncü sırada
+                proFeaturesList
+                    .padding(.horizontal, AppSpacing.screenMarginH)
+
                 // Orta — fiyatlar + CTA + yasal (scroll gerektirmeyen içerik)
                 VStack(spacing: AppSpacing.sm) {
                     pricingSection
@@ -143,8 +150,29 @@ struct PaywallView: View {
         }
         // Sheet yüksekliği: ekranın %65'i (~555pt). Tek detent — swipe kapalı.
         // Pro özellikleri arttıkça fraction büyütülür.
-        .presentationDetents([.fraction(0.65)])
+        .presentationDetents([.fraction(0.78)])
         .presentationDragIndicator(.hidden)
+    }
+
+    // MARK: - Pro Features List
+    private var proFeaturesList: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            ForEach(Array(PaywallService.proFeatures.prefix(4).enumerated()), id: \.offset) { _, item in
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: item.icon)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(AppColors.accentPrimary)
+                        .frame(width: 22)
+                    Text(item.title)
+                        .font(AppTypography.secondary)
+                        .foregroundColor(AppColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, AppSpacing.xs)
     }
 
     // MARK: - Compact Hero (80pt)

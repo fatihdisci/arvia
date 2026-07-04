@@ -86,7 +86,7 @@ struct VehicleInsightCard: View {
             }
 
         case .softQuestion:
-            // Çift buton: action + "Şimdi Değil"
+            // Çift buton: action + ikincil aksiyon (varsa) ya da "Şimdi Değil".
             HStack(spacing: AppSpacing.sm) {
                 if let action = insight.action {
                     Button { onAction(action) } label: {
@@ -95,11 +95,19 @@ struct VehicleInsightCard: View {
                     }
                     .buttonStyle(.primary)
                 }
-                Button(action: onDismiss) {
-                    Text("Şimdi Değil")
-                        .frame(maxWidth: .infinity)
+                if let secondary = insight.secondaryAction {
+                    Button { onAction(secondary) } label: {
+                        Text(secondary.title)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.secondary)
+                } else {
+                    Button(action: onDismiss) {
+                        Text("Şimdi Değil")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.secondary)
                 }
-                .buttonStyle(.secondary)
             }
             .frame(minHeight: AppSpacing.minimumTapTarget)
 

@@ -17,6 +17,18 @@ struct VehicleInsightService {
         self.fixedNow = now
     }
 
+    // MARK: - Akıllı Sürüş Asistanı girdileri
+    /// Predictive insight'lar için önceden hesaplanmış girdiler. Pro gate'i çağıran
+    /// katmanda uygulanır: `enabled` yalnızca Pro + asistan açıkken true gelir.
+    struct AssistantInputs {
+        var enabled: Bool
+        var odometerEstimate: PredictiveOdometerService.Estimate?
+        var maintenanceSuggestion: MaintenanceAdvisorService.Suggestion?
+        var usageProfileMissing: Bool
+
+        static let disabled = AssistantInputs(enabled: false, odometerEstimate: nil, maintenanceSuggestion: nil, usageProfileMissing: false)
+    }
+
     func insights(
         for vehicle: Vehicle,
         reminders: [Reminder],
@@ -26,7 +38,8 @@ struct VehicleInsightService {
         inspectionReports: [InspectionReport],
         saleFiles: [SaleFile] = [],
         maxVisible: Int = Self.defaultVisibleLimit,
-        displayContext: VehicleInsightDisplayContext = .vehicleDetailGuide()
+        displayContext: VehicleInsightDisplayContext = .vehicleDetailGuide(),
+        assistant: AssistantInputs = .disabled
     ) -> [VehicleInsight] {
         Array(contextualInsights(
             for: vehicle,
@@ -36,7 +49,8 @@ struct VehicleInsightService {
             documents: documents,
             inspectionReports: inspectionReports,
             includeQuietState: true,
-            displayContext: displayContext
+            displayContext: displayContext,
+            assistant: assistant
         ).prefix(maxVisible))
     }
 
@@ -47,7 +61,8 @@ struct VehicleInsightService {
         serviceRecords: [ServiceRecord],
         documents: [VehicleDocument],
         inspectionReports: [InspectionReport],
-        maxVisible: Int = Self.defaultVisibleLimit
+        maxVisible: Int = Self.defaultVisibleLimit,
+        assistant: AssistantInputs = .disabled
     ) -> [VehicleInsight] {
         Array(contextualInsights(
             for: vehicle,
@@ -57,7 +72,8 @@ struct VehicleInsightService {
             documents: documents,
             inspectionReports: inspectionReports,
             includeQuietState: true,
-            displayContext: .garageDaily
+            displayContext: .garageDaily,
+            assistant: assistant
         ).prefix(maxVisible))
     }
 
@@ -136,9 +152,22 @@ struct VehicleInsightService {
         documents: [VehicleDocument],
         inspectionReports: [InspectionReport],
         includeQuietState: Bool,
-        displayContext: VehicleInsightDisplayContext
+        displayContext: VehicleInsightDisplayContext,
+        assistant: AssistantInputs = .disabled
     ) -> [VehicleInsight] {
         var generated: [VehicleInsight] = []
+
+        // Akıllı Sürüş Asistanı (Layer B) — yalnızca Pro + asistan açıkken.
+        if assistant.enabled {
+            if let estimate = assistant.odometerEstimate, estimate.daysSinceLastReading > 30 {
+                generated.append(predictiveOdometerInsight(estimate))
+            }
+            if assistant.usageProfileMissing {
+                generated.append(assistantProfileInviteInsight())
+            } else if let suggestion = assistant.maintenanceSuggestion {
+                generated.append(predictiveMaintenanceInsight(suggestion))
+            }
+        }
 
         generated.append(contentsOf: overdueReminderInsights(reminders, vehicleOdometer: vehicle.currentOdometer))
         if let upcoming = upcomingReminderInsight(reminders, vehicleOdometer: vehicle.currentOdometer) {
@@ -199,6 +228,8 @@ struct VehicleInsightService {
                 .upcomingReminder,
                 .calendarPeriod,
                 .odometerUpdate,
+                .predictiveOdometer,
+                .predictiveMaintenance,
                 .quietGoodState,
                 .seasonalGuidance,
             ]
@@ -347,6 +378,45 @@ struct VehicleInsightService {
             body: body,
             action: nil,
             snoozeDays: 90
+        )
+    }
+
+    // MARK: - Akıllı Sürüş Asistanı insight'ları (Layer B)
+    private func predictiveOdometerInsight(_ estimate: PredictiveOdometerService.Estimate) -> VehicleInsight {
+        VehicleInsight(
+            type: .predictiveOdometer,
+            priority: .info,
+            contentKind: .softQuestion,
+            title: "Tahmini kilometre",
+            body: "Aracın şu an yaklaşık ~\(estimate.estimatedOdometer.formatted()) km olmalı. Doğru mu?",
+            action: .acceptEstimatedOdometer,
+            secondaryAction: .updateOdometer,
+            snoozeDays: 7
+        )
+    }
+
+    private func predictiveMaintenanceInsight(_ suggestion: MaintenanceAdvisorService.Suggestion) -> VehicleInsight {
+        let kind: VehicleInsightContentKind = (suggestion.severity == .info) ? .info : .warning
+        return VehicleInsight(
+            type: .predictiveMaintenance,
+            priority: suggestion.severity,
+            contentKind: kind,
+            title: suggestion.title,
+            body: suggestion.message,
+            action: suggestion.suggestedReminderType != nil ? .addReminder : nil,
+            snoozeDays: 7
+        )
+    }
+
+    private func assistantProfileInviteInsight() -> VehicleInsight {
+        VehicleInsight(
+            type: .predictiveMaintenance,
+            priority: .info,
+            contentKind: .softQuestion,
+            title: "Asistanı kişiselleştir",
+            body: "5 kısa soruyla önerileri tam sana göre ayarlayalım.",
+            action: .openAssistantProfile,
+            snoozeDays: 30
         )
     }
 
@@ -596,8 +666,12 @@ struct VehicleInsightService {
             return 1
         case .calendarPeriod:
             return 2
+        case .predictiveOdometer:
+            return 3
         case .odometerUpdate:
             return 3
+        case .predictiveMaintenance:
+            return 4
         case .seasonalGuidance:
             return 4
         case .missingDocument, .fuelTypeGuidance, .transmissionGuidance, .odometerMilestone:

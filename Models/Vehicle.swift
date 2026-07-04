@@ -21,6 +21,10 @@ final class Vehicle {
     var fuelTypeRaw: String = FuelType.gasoline.rawValue
     var transmissionTypeRaw: String?
     var currentOdometer: Int = 0
+    /// Mevcut km değeri Akıllı Asistan tahmini mi (kullanıcı "Doğru, kaydet" dedi). Additive.
+    var odometerIsEstimate: Bool = false
+    /// currentOdometer'ın en son güncellendiği tarih (tahmin/staleness hesabı için). Additive.
+    var lastOdometerUpdate: Date?
     var purchaseDate: Date?
     var purchaseOdometer: Int?
     var purchasePrice: Double?
@@ -68,7 +72,8 @@ final class Vehicle {
     }
 
     var odometerDisplay: String {
-        "\(currentOdometer.formatted()) km"
+        // Tahmini okumalar "~" ile gösterilir (Akıllı Asistan).
+        "\(odometerIsEstimate ? "~" : "")\(currentOdometer.formatted()) km"
     }
 
     var fullName: String {
