@@ -34,7 +34,7 @@ struct ReminderDetailView: View {
                 // Aksiyon butonları
                 actionsCard
 
-                Spacer().frame(height: AppSpacing.xxl)
+                Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
             }
             .padding(.vertical, AppSpacing.md)
         }

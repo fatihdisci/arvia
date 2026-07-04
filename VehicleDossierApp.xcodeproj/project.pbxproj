@@ -41,6 +41,8 @@
 		3DFEAF842FEFEC2300295F98 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = BC08A72FB4C5D1E8E5FFE119 /* Supabase */; };
 		40E961163B1745D5B6187997 /* ServiceRecordFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D87D2294746D6B9613377 /* ServiceRecordFormView.swift */; };
 		46AA631DF99F4D72842BB3B3 /* VehicleCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86FDB0BC84684A08AF49E08A /* VehicleCard.swift */; };
+		AFAD17BDCB8273428CF91817 /* ReticleCorners.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF76F53F65D4E2DF3BBF28FA /* ReticleCorners.swift */; };
+		7392B91FE0BA4BDC33058E6A /* TachometerGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F4536EA611C03F6DBBB7F5A /* TachometerGauge.swift */; };
 		46B087CD5E754871AB46D4A3 /* ServiceRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3B311C36494DCA985B4932 /* ServiceRecord.swift */; };
 		46C63EE762FDBB17C37F4113 /* CommunityProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67DA36FB1DE4FC7982F2BC9 /* CommunityProfile.swift */; };
 		49035E1F1A3D4F9BBB52C851 /* ExpenseFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD7C32E74DE46BBB9E3AC91 /* ExpenseFormView.swift */; };
@@ -221,6 +223,8 @@
 		7DE97661E02C4809BA241D14 /* PartChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartChange.swift; sourceTree = "<group>"; };
 		80E7B058261181D37B36F7C8 /* CommunityAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityAuthService.swift; sourceTree = "<group>"; };
 		86FDB0BC84684A08AF49E08A /* VehicleCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleCard.swift; sourceTree = "<group>"; };
+		EF76F53F65D4E2DF3BBF28FA /* ReticleCorners.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReticleCorners.swift; sourceTree = "<group>"; };
+		9F4536EA611C03F6DBBB7F5A /* TachometerGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TachometerGauge.swift; sourceTree = "<group>"; };
 		889C5EF099CC4E348BEFDA1C /* ReminderListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderListView.swift; sourceTree = "<group>"; };
 		8BEEB3AAF7FD4CCBB63573A7 /* VehiclePhotoStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehiclePhotoStorageService.swift; sourceTree = "<group>"; };
 		90533F411C469C215397BF9A /* CommunityModerationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityModerationView.swift; sourceTree = "<group>"; };
@@ -566,6 +570,8 @@
 				5C82804E9789E31D4DFB0CF6 /* DosyaniTamamlaChecklist.swift */,
 				A11B22C33D44E55F66A77B05 /* ArviaGuideCard.swift */,
 				86FDB0BC84684A08AF49E08A /* VehicleCard.swift */,
+				EF76F53F65D4E2DF3BBF28FA /* ReticleCorners.swift */,
+				9F4536EA611C03F6DBBB7F5A /* TachometerGauge.swift */,
 				AE62D7B7FDAE440B9176077B /* EmptyStateView.swift */,
 				C8C0CA2E86C24103A6F89443 /* RehberIntroBanner.swift */,
 				AA11BB22CC33DD44EE55FF6600 /* QuickOdometerUpdateSheet.swift */,
@@ -770,6 +776,8 @@
 				23FAB056376649C3AF48A795 /* EmptyStateView.swift in Sources */,
 				4D612E3A381246C6AF78E7BF /* SectionHeaderMetricCard.swift in Sources */,
 				46AA631DF99F4D72842BB3B3 /* VehicleCard.swift in Sources */,
+				AFAD17BDCB8273428CF91817 /* ReticleCorners.swift in Sources */,
+				7392B91FE0BA4BDC33058E6A /* TachometerGauge.swift in Sources */,
 				267995CAA5EF4E4AB73225A9 /* VehicleHeroHeader.swift in Sources */,
 				QUIKACTNQUIKACTNQUIKACTN /* QuickActionTile.swift in Sources */,
 				DOSICMPLDOSICMPLDOSICMPL /* DossierCompletenessCard.swift in Sources */,

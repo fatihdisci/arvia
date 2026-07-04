@@ -90,46 +90,73 @@ struct ReminderListView: View {
     private var todayCount: Int { todayReminders.count }
 
     // MARK: - Summary Module
+    // 0/0/0 boş grid göstermek yerine pozitif özet — "her şey yolunda".
+    @ViewBuilder
     private var summaryModule: some View {
-        HStack(spacing: 0) {
-            summaryItem(
-                count: overdueCount,
-                label: "Geciken",
-                icon: "exclamationmark.triangle.fill",
-                color: overdueCount > 0 ? AppColors.critical : AppColors.textTertiary
+        if overdueCount == 0 && todayCount == 0 && next30DaysCount == 0 {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.body)
+                    .foregroundColor(AppColors.success)
+                Text("Önümüzdeki 30 günde iş yok — her şey yolunda.")
+                    .font(AppTypography.secondaryMedium)
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer(minLength: 0)
+            }
+            .padding(AppSpacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+                    .fill(Color.appSurface)
             )
-
-            Divider()
-                .frame(height: 40)
-
-            summaryItem(
-                count: todayCount,
-                label: "Bugün",
-                icon: "clock.fill",
-                color: todayCount > 0 ? AppColors.warning : AppColors.textTertiary
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+                    .stroke(AppColors.border, lineWidth: 0.5)
             )
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Önümüzdeki 30 günde iş yok, her şey yolunda.")
+        } else {
+            HStack(spacing: 0) {
+                summaryItem(
+                    count: overdueCount,
+                    label: "Geciken",
+                    icon: "exclamationmark.triangle.fill",
+                    color: overdueCount > 0 ? AppColors.critical : AppColors.textTertiary
+                )
 
-            Divider()
-                .frame(height: 40)
+                Rectangle()
+                    .fill(AppColors.border)
+                    .frame(width: 1, height: 40)
 
-            summaryItem(
-                count: next30DaysCount,
-                label: "30 Gün",
-                icon: "calendar.badge.clock",
-                color: next30DaysCount > 0 ? AppColors.accentPrimary : AppColors.textTertiary
+                summaryItem(
+                    count: todayCount,
+                    label: "Bugün",
+                    icon: "clock.fill",
+                    color: todayCount > 0 ? AppColors.warning : AppColors.textTertiary
+                )
+
+                Rectangle()
+                    .fill(AppColors.border)
+                    .frame(width: 1, height: 40)
+
+                summaryItem(
+                    count: next30DaysCount,
+                    label: "30 Gün",
+                    icon: "calendar.badge.clock",
+                    color: next30DaysCount > 0 ? AppColors.accentPrimary : AppColors.textTertiary
+                )
+            }
+            .padding(.vertical, AppSpacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+                    .fill(Color.appSurface)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+                    .stroke(AppColors.border, lineWidth: 0.5)
+            )
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Önümüzdeki 30 gün: \(next30DaysCount) hatırlatıcı. Geciken: \(overdueCount). Bugün: \(todayCount).")
         }
-        .padding(.vertical, AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
-                .fill(Color.appSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
-                .stroke(AppColors.border, lineWidth: 0.5)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Önümüzdeki 30 gün: \(next30DaysCount) hatırlatıcı. Geciken: \(overdueCount). Bugün: \(todayCount).")
     }
 
     private func summaryItem(count: Int, label: String, icon: String, color: Color) -> some View {
@@ -220,6 +247,24 @@ struct ReminderListView: View {
                     color: AppColors.accentPrimary.opacity(0.6),
                     reminders: midTermReminders
                 )
+            } else if !farFutureReminders.isEmpty {
+                // Segmentasyon görünür kalsın: uzak vadeli iş varken ara grup boşsa
+                // "Bu Yıl · 0" başlığı + sakin bilgi satırı göster.
+                Section {
+                    Text("30-180 gün aralığında planlı iş yok.")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                        .listRowBackground(Color.appSurface)
+                } header: {
+                    HStack(spacing: AppSpacing.xs) {
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                        Text("Bu Yıl · 0")
+                            .font(AppTypography.captionMedium)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                }
             }
 
             if !farFutureReminders.isEmpty {
@@ -393,7 +438,7 @@ struct ReminderRow: View {
         .accessibilityLabel("\(reminder.title), \(statusText)")
     }
 
-    /// Öncelik/gecikme bazlı renk — 30+ gün kala nötr gri
+    /// Öncelik/gecikme bazlı renk — 30+ gün kala hafif turkuaz ("uzak ama aktif")
     private var statusColor: Color {
         if reminder.isOverdue { return AppColors.critical }
         if let vehicle, reminder.isKmOverdue(vehicleOdometer: vehicle.currentOdometer) { return AppColors.critical }
@@ -401,7 +446,7 @@ struct ReminderRow: View {
         if let vehicle, reminder.isKmUpcoming(vehicleOdometer: vehicle.currentOdometer) { return AppColors.warning }
         if let dueDate = reminder.dueDate {
             let days = Calendar.current.dateComponents([.day], from: Date(), to: dueDate).day ?? 0
-            if days > 30 { return AppColors.textTertiary }
+            if days > 30 { return AppColors.accentPrimary.opacity(0.55) }
         }
         return AppColors.accentPrimary
     }

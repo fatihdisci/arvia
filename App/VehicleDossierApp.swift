@@ -56,26 +56,28 @@ struct VehicleDossierApp: App {
     }
 
     // MARK: - UIKit Appearance Configuration
-    /// Tab bar ve segmented control için dark-only luxury görünüm.
-    /// Mat altın vurgu, glassmorphism tab bar.
+    /// Tab bar ve segmented control için "Cockpit Black" görünüm.
+    /// Turkuaz vurgu, AMOLED siyah zemin, nötr hairline üst çizgi.
+    /// NOT: Buradaki UIColor değerleri AppColors token'larıyla eşleşmek zorunda
+    /// (accentPrimary #00E5C7, backgroundSecondary #0A0A0A, textSecondary #9A9AA0, border #2A2A2C).
     private static func configureAppearance() {
-        // Altın rengi
-        let goldColor = UIColor(red: 0xE6/255, green: 0xC4/255, blue: 0x79/255, alpha: 1.0)
-        let goldBorderColor = UIColor(red: 0xC9/255, green: 0xA9/255, blue: 0x61/255, alpha: 0.15)
-        let secondaryTextColor = UIColor(red: 0x8B/255, green: 0x95/255, blue: 0xA8/255, alpha: 1.0)
-        let surfaceColor = UIColor(red: 0x0F/255, green: 0x13/255, blue: 0x1F/255, alpha: 0.85)
+        // Turkuaz vurgu
+        let accentColor = UIColor(red: 0x00/255, green: 0xE5/255, blue: 0xC7/255, alpha: 1.0)
+        let hairlineColor = UIColor(red: 0x2A/255, green: 0x2A/255, blue: 0x2C/255, alpha: 1.0)
+        let secondaryTextColor = UIColor(red: 0x9A/255, green: 0x9A/255, blue: 0xA0/255, alpha: 1.0)
+        let surfaceColor = UIColor(red: 0x0A/255, green: 0x0A/255, blue: 0x0A/255, alpha: 0.85)
 
-        // Tab bar — glassmorphism + gold accent
+        // Tab bar — glassmorphism + turkuaz aktif ikon
         let tabBarAppearance = UITabBarAppearance()
         tabBarAppearance.configureWithTransparentBackground()
         tabBarAppearance.backgroundColor = surfaceColor
         tabBarAppearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
-        tabBarAppearance.shadowColor = goldBorderColor // Üst kenar altın çizgi
+        tabBarAppearance.shadowColor = hairlineColor // Üst kenar nötr hairline
 
         let tabBarItemAppearance = UITabBarItemAppearance()
-        // Selected — mat altın
-        tabBarItemAppearance.selected.iconColor = goldColor
-        tabBarItemAppearance.selected.titleTextAttributes = [.foregroundColor: goldColor]
+        // Selected — turkuaz
+        tabBarItemAppearance.selected.iconColor = accentColor
+        tabBarItemAppearance.selected.titleTextAttributes = [.foregroundColor: accentColor]
         // Unselected — secondary text
         tabBarItemAppearance.normal.iconColor = secondaryTextColor
         tabBarItemAppearance.normal.titleTextAttributes = [.foregroundColor: secondaryTextColor]
@@ -94,7 +96,7 @@ struct VehicleDossierApp: App {
             for: .normal
         )
         segmentedAppearance.setTitleTextAttributes(
-            [.foregroundColor: goldColor],
+            [.foregroundColor: accentColor],
             for: .selected
         )
     }

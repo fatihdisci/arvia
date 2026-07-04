@@ -2,13 +2,13 @@ import SwiftUI
 
 // MARK: - Border System
 // "Cockpit Black" tasarımda gölge kullanılmaz.
-// Derinlik, 1px turkuaz çerçeve ve tonal yüzey farkı ile sağlanır.
+// Derinlik, 1px hairline çerçeve ve tonal yüzey farkı ile sağlanır.
 // Hero/elevated kartlarda üst kenarda hafif beyaz highlight olur.
 
 enum AppShadows {
     // MARK: - ViewModifiers
 
-    /// Hafif elevasyon — ince turkuaz çerçeve
+    /// Hafif elevasyon — ince hairline çerçeve
     struct SubtleShadow: ViewModifier {
         func body(content: Content) -> some View {
             content
@@ -19,7 +19,7 @@ enum AppShadows {
         }
     }
 
-    /// Kart elevasyonu — turkuaz çerçeve, kart radius'unda
+    /// Kart elevasyonu — hairline çerçeve, kart radius'unda
     struct CardShadow: ViewModifier {
         func body(content: Content) -> some View {
             content
@@ -30,7 +30,7 @@ enum AppShadows {
         }
     }
 
-    /// Yüksek elevasyon — turkuaz çerçeve + üst kenar highlight'ı
+    /// Yüksek elevasyon — hairline çerçeve + üst kenar highlight'ı
     struct ElevatedShadow: ViewModifier {
         func body(content: Content) -> some View {
             content
@@ -51,17 +51,17 @@ enum AppShadows {
 }
 
 extension View {
-    /// Hafif elevasyonlu görünüm — ince turkuaz çerçeve
+    /// Hafif elevasyonlu görünüm — ince hairline çerçeve
     func subtleShadow() -> some View {
         modifier(AppShadows.SubtleShadow())
     }
 
-    /// Kart elevasyonlu görünüm — turkuaz çerçeve
+    /// Kart elevasyonlu görünüm — hairline çerçeve
     func cardShadow() -> some View {
         modifier(AppShadows.CardShadow())
     }
 
-    /// Yüksek elevasyonlu görünüm — turkuaz çerçeve + üst highlight
+    /// Yüksek elevasyonlu görünüm — hairline çerçeve + üst highlight
     func elevatedShadow() -> some View {
         modifier(AppShadows.ElevatedShadow())
     }

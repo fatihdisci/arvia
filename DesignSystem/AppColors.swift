@@ -85,8 +85,9 @@ enum AppColors {
     static let document = Color(hex: "9A9AA0")
     /// Araç rengi (secondary text ile aynı)
     static let vehicle = Color(hex: "9A9AA0")
-    /// 1px turkuaz çerçeve — accentPrimary @ 15%
-    static let border = Color(hex: "2600E5C7")
+    /// 1px nötr hairline çerçeve — HUD/teknik şema hissi.
+    /// Turkuaz yalnızca aktif/enerji vurgusudur; kart çerçeveleri nötrdür.
+    static let border = Color(hex: "2A2A2C")
     /// Subtitle divider — white @ 5%
     static let divider = Color(hex: "0DFFFFFF")
 

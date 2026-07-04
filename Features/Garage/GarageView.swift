@@ -124,7 +124,7 @@ struct GarageView: View {
                             .font(.body)
                             .foregroundColor(AppColors.textSecondary)
                     }
-                    .accessibilityLabel("Diğer")
+                    .accessibilityLabel("Garaj Seçenekleri")
                 }
             }
             .sheet(isPresented: $showAddVehicle) {
@@ -260,7 +260,7 @@ struct GarageView: View {
     /// çünkü ortadaki label değişir, kenar butonlar sabit kalır.
     private var multiVehiclePicker: some View {
         HStack(spacing: AppSpacing.md) {
-            chevronButton(systemName: "chevron.left", enabled: canGoPrevious) {
+            chevronButton(systemName: "chevron.left", enabled: canGoPrevious, accessibilityLabel: "Önceki araç") {
                 goToPreviousVehicle()
             }
 
@@ -282,13 +282,13 @@ struct GarageView: View {
                 impact.impactOccurred()
             }
 
-            chevronButton(systemName: "chevron.right", enabled: canGoNext) {
+            chevronButton(systemName: "chevron.right", enabled: canGoNext, accessibilityLabel: "Sonraki araç") {
                 goToNextVehicle()
             }
         }
     }
 
-    private func chevronButton(systemName: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+    private func chevronButton(systemName: String, enabled: Bool, accessibilityLabel: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 14, weight: .semibold))
@@ -303,6 +303,7 @@ struct GarageView: View {
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
+        .accessibilityLabel(accessibilityLabel)
     }
 
     private var canGoPrevious: Bool {

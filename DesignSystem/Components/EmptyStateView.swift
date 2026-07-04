@@ -30,10 +30,16 @@ struct EmptyStateView: View {
         VStack(spacing: AppSpacing.lg) {
             Spacer()
 
+            // Marka kimliği: turkuaz muted zemin + accent outline ikon —
+            // soluk gri outline yerine "Arvia" hissi.
             Image(systemName: icon)
-                .font(.system(size: 48, weight: .light))
-                .foregroundColor(AppColors.textTertiary)
+                .font(.system(size: 30, weight: .regular))
+                .foregroundColor(AppColors.accentPrimary)
+                .frame(width: 76, height: 76)
+                .background(Circle().fill(AppColors.accentMuted))
+                .overlay(Circle().stroke(AppColors.accentPrimary.opacity(0.22), lineWidth: 1))
                 .padding(.bottom, AppSpacing.xs)
+                .accessibilityHidden(true)
 
             VStack(spacing: AppSpacing.xs) {
                 Text(title)

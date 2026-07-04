@@ -16,30 +16,15 @@ struct DossierCompletenessCard: View {
     let score: Int // 0-100
     let criteriaMissing: [String]
 
-    @State private var animatedScore: CGFloat = 0
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
         HStack(spacing: AppSpacing.md) {
-            // Yarım daire takometre-yayı (anayasaya uygun)
-            ZStack {
-                // Arka plan yayı (silik guide)
-                halfCircleArc(progress: 1.0)
-                    .stroke(scoreColor.opacity(0.15), style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                    .frame(width: 64, height: 64)
-
-                // Skor yayı
-                halfCircleArc(progress: animatedScore)
-                    .stroke(scoreColor, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                    .frame(width: 64, height: 64)
-
-                VStack(spacing: 0) {
-                    Text("%\(score)")
-                        .font(.custom("JetBrainsMono-SemiBold", size: 16))
-                        .foregroundColor(scoreColor)
-                        .monospacedDigit()
-                }
-            }
+            // İmza grafik: tik işaretli + ibreli takometre gauge
+            TachometerGauge(
+                value: CGFloat(score) / 100.0,
+                accent: scoreColor,
+                size: 84,
+                label: "%\(score)"
+            )
 
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text("Dosya Skoru")
@@ -68,15 +53,6 @@ struct DossierCompletenessCard: View {
                 .fill(Color.appSurface)
         )
         .cardShadow()
-        .onAppear {
-            if !reduceMotion {
-                withAnimation(.easeOut(duration: 0.8)) {
-                    animatedScore = CGFloat(score) / 100.0
-                }
-            } else {
-                animatedScore = CGFloat(score) / 100.0
-            }
-        }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
     }
@@ -102,25 +78,6 @@ struct DossierCompletenessCard: View {
         if score >= 80 { return AppColors.success }
         if score >= 30 { return AppColors.accentPrimary }
         return AppColors.warning
-    }
-
-    // MARK: - Half-Circle Arc (takometre-yayı)
-    // 01_DESIGN.md Madde 3: tam daire progress ring yasak.
-    // Yarım daire: alttan açık, soldan sağa dolan 180° yay.
-    private func halfCircleArc(progress: CGFloat) -> Path {
-        var path = Path()
-        let radius: CGFloat = 27
-        let center = CGPoint(x: 32, y: 32)
-        // Soldan (180°) sağa (0°) doğru saat yönünde ilerler
-        let endAngle = 180.0 - (180.0 * Double(progress))
-        path.addArc(
-            center: center,
-            radius: radius,
-            startAngle: .degrees(180),
-            endAngle: .degrees(endAngle),
-            clockwise: true
-        )
-        return path
     }
 
     private var accessibilityLabel: String {

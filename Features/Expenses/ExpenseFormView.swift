@@ -77,7 +77,10 @@ struct ExpenseFormView: View {
                         .foregroundColor(AppColors.textSecondary)
                 }
                 ToolbarItem(placement: .confirmationAction) {
+                    // .borderless: sistemin confirmationAction'a verdiği dolgulu
+                    // görünümü kaldırır — anayasa: filled primary yasak.
                     Button(isEditing ? "Kaydet" : "Ekle", action: saveExpense)
+                        .buttonStyle(.borderless)
                         .font(AppTypography.bodyMedium)
                         .foregroundColor(AppColors.accentPrimary)
                 }
@@ -101,7 +104,7 @@ struct ExpenseFormView: View {
 
     private var categorySection: some View {
         Section {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 64))], spacing: AppSpacing.xs) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 72))], spacing: AppSpacing.xs) {
                 ForEach(availableCategories, id: \.self) { category in
                     categoryButton(category)
                 }
@@ -114,26 +117,35 @@ struct ExpenseFormView: View {
     }
 
     private func categoryButton(_ category: ExpenseCategory) -> some View {
-        Button {
+        let isSelected = selectedCategory == category
+        // Seçim = outline + muted dolgu + tik (anayasa: filled seçim yerine bordered).
+        return Button {
             selectedCategory = category
         } label: {
             VStack(spacing: 3) {
-                Image(systemName: category.defaultIcon)
-                    .font(.body)
-                    .foregroundColor(selectedCategory == category ? .white : AppColors.textSecondary)
+                Image(systemName: isSelected ? "checkmark" : category.defaultIcon)
+                    .font(.body.weight(isSelected ? .semibold : .regular))
+                    .foregroundColor(isSelected ? AppColors.accentPrimary : AppColors.textSecondary)
                     .frame(width: 32, height: 32)
                     .background(
                         RoundedRectangle(cornerRadius: AppRadius.small)
-                            .fill(selectedCategory == category ? AppColors.accentPrimary : AppColors.backgroundSecondary)
+                            .fill(isSelected ? AppColors.accentMuted : AppColors.backgroundSecondary)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppRadius.small)
+                            .stroke(isSelected ? AppColors.accentPrimary : Color.clear, lineWidth: 1.2)
                     )
                 Text(category.displayName)
-                    .font(.system(size: 9))
-                    .foregroundColor(selectedCategory == category ? AppColors.accentPrimary : AppColors.textSecondary)
+                    .font(.system(size: 10, weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(isSelected ? AppColors.accentPrimary : AppColors.textSecondary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            .frame(width: 64)
+            .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(category.displayName)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     // MARK: - Amount Section

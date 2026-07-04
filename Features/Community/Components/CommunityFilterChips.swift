@@ -29,6 +29,7 @@ struct CommunityFilterChips: View {
                 }
                 .padding(.horizontal, AppSpacing.screenMarginH)
             }
+            .trailingScrollFade()
 
             // Etiket filtreleri
             ScrollView(.horizontal, showsIndicators: false) {
@@ -43,6 +44,7 @@ struct CommunityFilterChips: View {
                 }
                 .padding(.horizontal, AppSpacing.screenMarginH)
             }
+            .trailingScrollFade()
         }
     }
 
@@ -106,4 +108,21 @@ struct FilterChip: View {
     }
     .padding(.vertical)
     .background(Color.appBackground)
+}
+
+// MARK: - Trailing Scroll Fade
+// Yatay chip listesi ekran kenarında kesildiğinde "devamı var" sinyali —
+// sağ kenarda arka plana karışan kısa bir fade.
+private extension View {
+    func trailingScrollFade(width: CGFloat = 28) -> some View {
+        overlay(alignment: .trailing) {
+            LinearGradient(
+                colors: [Color.appBackground.opacity(0), Color.appBackground],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: width)
+            .allowsHitTesting(false)
+        }
+    }
 }

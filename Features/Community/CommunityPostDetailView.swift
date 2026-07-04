@@ -74,6 +74,7 @@ struct CommunityPostDetailView: View {
                         Image(systemName: "ellipsis.circle")
                             .foregroundColor(AppColors.accentPrimary)
                     }
+                    .accessibilityLabel("Gönderi Seçenekleri")
                 }
             }
         }

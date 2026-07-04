@@ -10,14 +10,16 @@ struct FileCompletenessCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            // Üst satır: skor + outcome metni
-            HStack(alignment: .top, spacing: AppSpacing.md) {
-                // Skor yüzdesi — accentPrimary (30-80) veya success (80+)
-                Text("%\(fileScore)")
-                    .font(AppTypography.amountMd)
-                    .foregroundColor(scoreColor(fileScore))
-                    .monospacedDigit()
-                    .accessibilityLabel("Dosya skoru yüzde \(fileScore)")
+            // Üst satır: takometre gauge + outcome metni
+            HStack(alignment: .center, spacing: AppSpacing.md) {
+                // İmza grafik: tik işaretli + ibreli takometre gauge
+                TachometerGauge(
+                    value: CGFloat(fileScore) / 100.0,
+                    accent: scoreColor(fileScore),
+                    size: 72,
+                    label: "%\(fileScore)"
+                )
+                .accessibilityLabel("Dosya skoru yüzde \(fileScore)")
 
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text("Dosya Skoru")
@@ -32,17 +34,18 @@ struct FileCompletenessCard: View {
                 Spacer()
             }
 
-            // Chip'ler: Kimlik + Belge (Km hero'da zaten gösteriliyor)
+            // Chip'ler: Kimlik + Belge (Km hero'da zaten gösteriliyor).
+            // Tamam = dolu tik + turkuaz; eksik = kesikli daire + nötr — durum tek bakışta ayrışır.
             HStack(spacing: AppSpacing.xs) {
                 completenessChip(
-                    icon: vehicle.year != nil ? "checkmark.circle.fill" : "car.fill",
+                    icon: vehicle.year != nil ? "checkmark.circle.fill" : "circle.dashed",
                     label: "Kimlik",
                     isComplete: vehicle.year != nil
                 )
                 .accessibilityLabel(vehicle.year != nil ? "Kimlik tamamlandı" : "Kimlik eksik")
 
                 completenessChip(
-                    icon: !documents.isEmpty ? "checkmark.circle.fill" : "doc.text",
+                    icon: !documents.isEmpty ? "checkmark.circle.fill" : "circle.dashed",
                     label: "Belge",
                     isComplete: !documents.isEmpty
                 )
@@ -64,13 +67,17 @@ struct FileCompletenessCard: View {
     private func completenessChip(icon: String, label: String, isComplete: Bool) -> some View {
         Label(label, systemImage: icon)
             .font(AppTypography.captionMedium)
-            .foregroundColor(isComplete ? AppColors.textSecondary : AppColors.textTertiary)
+            .foregroundColor(isComplete ? AppColors.accentPrimary : AppColors.textTertiary)
             .lineLimit(1)
             .padding(.horizontal, AppSpacing.xs + 2)
             .padding(.vertical, 5)
             .background(
                 Capsule()
-                    .fill((isComplete ? AppColors.accentPrimary : AppColors.textTertiary).opacity(0.07))
+                    .fill(isComplete ? AppColors.accentMuted : AppColors.textTertiary.opacity(0.07))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(isComplete ? AppColors.accentPrimary.opacity(0.3) : AppColors.border, lineWidth: 0.5)
             )
     }
 

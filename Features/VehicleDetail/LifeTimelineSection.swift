@@ -60,15 +60,16 @@ struct LifeTimelineSection: View {
                 SectionHeader(title: "Araç Yaşam Çizgisi")
 
                 if hasNoRealData {
+                    // Nötr bilgi rozeti — warning rengi "dikkat" demek, örnek veri değil.
                     Text("ÖRNEK")
                         .font(.system(size: 9, weight: .bold))
                         .tracking(1.5)
-                        .foregroundColor(AppColors.warning)
+                        .foregroundColor(AppColors.textSecondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .overlay(
                             Capsule()
-                                .stroke(AppColors.warning.opacity(0.5), lineWidth: 0.5)
+                                .stroke(AppColors.border, lineWidth: 1)
                         )
                 }
             }
@@ -196,14 +197,14 @@ struct LifeTimelineSection: View {
             // Sol kolon: çizgi + ikon
             VStack(spacing: 0) {
                 Rectangle()
-                    .fill(event.kind.defaultAccent.opacity(0.3))
+                    .fill(event.kind.defaultAccent.opacity(0.5))
                     .frame(width: 1.5, height: 12)
                 Image(systemName: event.icon)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.white)
                     .frame(width: 28, height: 28)
-                    .background(Circle().fill(event.kind.defaultAccent.opacity(0.6)))
-                    .overlay(Circle().stroke(event.kind.defaultAccent.opacity(0.2), lineWidth: 1))
+                    .background(Circle().fill(event.kind.defaultAccent.opacity(0.85)))
+                    .overlay(Circle().stroke(event.kind.defaultAccent.opacity(0.35), lineWidth: 1))
                 if !isLast {
                     Rectangle()
                         .fill(AppColors.border.opacity(0.5))
@@ -235,7 +236,8 @@ struct LifeTimelineSection: View {
         }
         .padding(AppSpacing.xs)
         .frame(minHeight: 44)
-        .opacity(0.7)
+        // Hedef: görünür ama "örnek olduğu belli" — silik placeholder değil.
+        .opacity(0.72)
     }
 
     // MARK: - "İlk Kaydı Ekle" CTA

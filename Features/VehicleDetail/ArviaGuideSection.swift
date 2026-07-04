@@ -146,13 +146,16 @@ private struct CompactInsightCard: View {
 
                 Spacer(minLength: 0)
 
-                // Alt: "detay için dokun" hint'i
-                HStack {
+                // Alt: "detay için dokun" hint'i — tıklanabilirlik açık olsun
+                HStack(spacing: 4) {
                     Spacer()
+                    Text("DETAY")
+                        .font(.system(size: 9, weight: .semibold))
+                        .tracking(1.2)
                     Image(systemName: "arrow.right")
                         .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
                 }
+                .foregroundColor(AppColors.accentPrimary)
             }
             .padding(AppSpacing.md)
             .frame(width: 280, height: 152)
@@ -231,8 +234,11 @@ private struct InsightDetailSheet: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title3)
                         .foregroundColor(AppColors.textTertiary)
+                        .frame(width: AppSpacing.minimumTapTarget, height: AppSpacing.minimumTapTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Öneriyi kapat")
             }
 
             Divider()

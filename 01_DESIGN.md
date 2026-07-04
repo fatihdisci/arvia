@@ -100,7 +100,7 @@ Kaynak: `DesignSystem/AppColors.swift` (code-based, asset catalog kullanılmaz).
 **Functional:**
 | Token | Hex | Kullanım |
 |---|---|---|
-| border | #00E5C7 @ 15% | 1px turkuaz kart çerçevesi |
+| border | #2A2A2C | 1px nötr hairline kart çerçevesi — HUD/teknik şema |
 | divider | #FFFFFF @ 5% | Subtitle divider |
 
 ### Renk kullanımı
@@ -109,7 +109,7 @@ Kaynak: `DesignSystem/AppColors.swift` (code-based, asset catalog kullanılmaz).
 - Secondary (Açık Turkuaz): Gradient ve ikincil vurgular için.
 - Neutral (Cockpit Black): UI'ın temeli; #000000 ana canvas, #121214 elevated surface.
 - Functional: Success ve Warning koyu temaya entegre; Critical (racing kırmızı) yalnızca kritik semantikte, asla dekoratif değil.
-- Border: Turkuaz border %15 opacity ile "dağlanmış" (etched) görünüm.
+- Border: Nötr hairline (#2A2A2C) — kart çerçeveleri turkuaz DEĞİLDİR; turkuaz yalnızca aktif/enerji vurgusudur.
 
 ## 6. Tipografi
 
@@ -178,31 +178,31 @@ Kaynak: `DesignSystem/AppRadius.swift`
 |---|---|---|
 | small | 4 | İnce kenar detayı |
 | medium | 6 | Kontroller (buton, input) |
-| large | 8 | Kart container'ları |
-| xlarge | 12 | Hero/medya kartları |
+| large | 6 | Kart container'ları |
+| xlarge | 10 | Hero/medya kartları |
 | capsule | 9999 | Status chip/pill |
 
 Kullanım:
 
-- Container'lar (kartlar): 8px — keskin, teknik, kokpit hissi.
-- Kontroller (buton/input): 6px — daha keskin, fonksiyonel.
+- Container'lar (kartlar): 6px — keskin, teknik, HUD/kokpit hissi (yuvarlak köşe klişesinden kaçış).
+- Kontroller (buton/input): 6px — keskin, fonksiyonel.
 - Status element'ler (chip/pill): tam yuvarlak (9999).
-- Hero medya: "full-bleed" header'da sadece üst köşeler 12px.
+- Hero medya: "full-bleed" header'da sadece üst köşeler 10px.
 
 ## 9. Elevasyon sistemi (Border-based)
 
-**Gölge kullanılmaz.** Derinlik 1px turkuaz border (%15 opacity) ile sağlanır.
+**Gölge kullanılmaz.** Derinlik 1px nötr hairline border (#2A2A2C) ile sağlanır — soft shadow "koyu mod SaaS dashboard" klişesidir.
 
 Kaynak: `DesignSystem/AppShadows.swift`
 
 | Modifier | Kullanım |
 |---|---|
-| `.subtleShadow()` | Hafif elevasyon — ince turkuaz çerçeve (6px radius) |
-| `.cardShadow()` | Kart elevasyonu — turkuaz çerçeve (8px radius) |
-| `.elevatedShadow()` | Yüksek elevasyon — turkuaz çerçeve + üst kenar 1px white @ 8% highlight |
+| `.subtleShadow()` | Hafif elevasyon — ince hairline çerçeve (6px radius) |
+| `.cardShadow()` | Kart elevasyonu — hairline çerçeve (6px radius) |
+| `.elevatedShadow()` | Yüksek elevasyon — hairline çerçeve + üst kenar 1px white @ 8% highlight |
 
 - Hero/elevated kartlarda üst kenarda 1px beyaz highlight (0 1px 0 rgba(255,255,255,0.08)) fiziksel kalınlık hissi verir — saf siyah zeminde 0.05 yeterince okunmadığı için 0.08.
-- Tab bar glassmorphism: background blur + surface color, 1px turkuaz üst border.
+- Tab bar glassmorphism: background blur + surface color, 1px hairline üst border; aktif ikon turkuaz.
 
 ## 10. İkonografi
 
@@ -252,7 +252,9 @@ Merkezi komponentler (`DesignSystem/Components/`):
 - `QuickActionTile` / `QuickActionRail` — Hızlı işlem butonları
 - `SectionHeaderMetricCard` — Bölüm başlığı + metrik kartı
 - `OwnershipInsightCard` / `PremiumMetricHero` — Rapor metrikleri
-- `DossierCompletenessCard` — Dosya tamlık skoru (yarım daire gauge — bkz. bölüm 3 yasaklı liste)
+- `TachometerGauge` — İmza grafik: tik işaretli + ibreli yarım daire takometre gauge (skorlar için)
+- `ReticleCorners` — İmza motif: köşe ayraç/nişangah çerçevesi (araç fotoğrafı, tarama alanları)
+- `DossierCompletenessCard` — Dosya tamlık skoru (TachometerGauge kullanır)
 - `DosyaniTamamlaChecklist` — Onboarding checklist
 - `EmptyStateView` / `ErrorStateView` — Boş/hata durumu
 - `ArviaGuideCard` — Kontekst rehber kartı
@@ -264,14 +266,14 @@ Kart yalnızca gerçekten anlamlıysa kullanılacak. Her veri parçası kart olm
 
 ## 13. Form elemanları
 
-- **Input:** Surface'ten daha koyu (#000000), 1px turkuaz border (idle %15, focus %100). 52pt yükseklik.
+- **Input:** Surface'ten daha koyu (#000000), 1px border (idle nötr hairline #2A2A2C, focus turkuaz %100). 52pt yükseklik.
 - **Primary Button:** Dolgu yok — 1.5pt turkuaz (#00E5C7) çerçeve, surface zemin, tracked-uppercase turkuaz label. 6px radius, minimum 44pt. (Filled buton yasak — bkz. bölüm 3.)
 - **Secondary Button:** 1px turkuaz border (%60 opacity), transparan arka plan, turkuaz text.
 - **Destructive Button:** Racing kırmızı fill (#FF2D3C), `textOnCritical` koyu metin (#2B0A0C, ≥4.5:1). 6px radius.
 
 ## 14. Navigasyon
 
-- **Floating Tab Bar:** 16px yatay margin, 8px alt margin. 1px turkuaz üst border. Aktif ikon turkuaz renginde.
+- **Floating Tab Bar:** 16px yatay margin, 8px alt margin. 1px nötr hairline üst border. Aktif ikon turkuaz renginde.
 - **Tab Bar Background:** Glassmorphism — `systemUltraThinMaterialDark` blur + surface color.
 - **Segmented Control:** Normal #9A9AA0, Selected #00E5C7.
 

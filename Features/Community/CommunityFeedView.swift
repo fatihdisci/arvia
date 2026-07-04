@@ -100,18 +100,17 @@ struct CommunityFeedView: View {
                         }
                     }
                 } else if !communityAuth.isAuthenticated && communityAuth.isCommunityAvailable {
-                    // Guest: native Sign in with Apple button (HIG)
+                    // Guest: toolbar'da sade metin CTA — asıl tam genişlik
+                    // Sign in with Apple butonu signInPromptSheet içinde (HIG).
+                    // Toolbar'a sıkıştırılmış mini Apple butonu, iOS 26 cam
+                    // toolbar kapsülüyle çift çerçeve görünümü yaratıyordu.
                     ToolbarItem(placement: .primaryAction) {
-                        SignInWithAppleButton(
-                            onRequest: { request in
-                                request.requestedScopes = [.fullName, .email]
-                            },
-                            onCompletion: { result in
-                                communityAuth.handleSignInResult(result)
-                            }
-                        )
-                        .signInWithAppleButtonStyle(.white)
-                        .frame(width: 130, height: 32)
+                        Button("Giriş Yap") {
+                            showSignInPrompt = true
+                        }
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.accentPrimary)
+                        .accessibilityLabel("Topluluğa giriş yap")
                     }
                 }
             }
