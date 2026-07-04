@@ -1,6 +1,7 @@
 import SwiftUI
 
 // MARK: - Inspection Report Card
+// Kompakt: boş state tek satır CTA, dolu state 4-5 satır.
 struct InspectionReportSection: View {
     let inspectionReports: [InspectionReport]
     let onAddInspection: () -> Void
@@ -17,7 +18,6 @@ struct InspectionReportSection: View {
                             .font(AppTypography.bodyMedium)
                             .foregroundColor(AppColors.textPrimary)
                         Spacer()
-                        // TODO: Partner doğrulama entegrasyonu geldiğinde badge eklenecek
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -38,10 +38,10 @@ struct InspectionReportSection: View {
                         Text(latest.summary)
                             .font(AppTypography.secondarySmall)
                             .foregroundColor(AppColors.textSecondary)
-                            .lineLimit(3)
+                            .lineLimit(2)
                     }
 
-                    // Hukuki uyarı
+                    // Hukuki uyarı — tek satır
                     HStack(spacing: 4) {
                         Image(systemName: "info.circle.fill")
                             .font(.caption2)
@@ -49,7 +49,7 @@ struct InspectionReportSection: View {
                         Text(InspectionReport.legalDisclaimer)
                             .font(.system(size: 10))
                             .foregroundColor(AppColors.textTertiary)
-                            .lineLimit(2)
+                            .lineLimit(1)
                     }
                     .padding(.top, AppSpacing.xxs)
                 }
@@ -60,28 +60,23 @@ struct InspectionReportSection: View {
                 )
                 .subtleShadow()
             } else {
-                // Ekspertiz yok — ekleme çağrısı
+                // Kompakt tek satır CTA
                 Button {
                     onAddInspection()
                 } label: {
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: "magnifyingglass")
-                            .font(.body)
-                            .foregroundColor(AppColors.textTertiary)
-                            .frame(width: 32)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Ekspertiz raporu ekle")
-                                .font(AppTypography.bodyMedium)
-                                .foregroundColor(AppColors.accentPrimary)
-                            Text("Aracının ekspertiz raporunu ekleyerek satış dosyanı güçlendir.")
-                                .font(AppTypography.caption)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
+                            .foregroundColor(AppColors.accentPrimary)
+                            .frame(width: 24)
+                        Text("Ekspertiz raporu ekle")
+                            .font(AppTypography.bodyMedium)
+                            .foregroundColor(AppColors.accentPrimary)
                         Spacer()
                         Image(systemName: "plus.circle")
                             .foregroundColor(AppColors.accentPrimary)
                     }
-                    .padding(AppSpacing.md)
+                    .padding(AppSpacing.sm)
+                    .frame(minHeight: 44)
                     .background(
                         RoundedRectangle(cornerRadius: AppRadius.card)
                             .fill(Color.appSurface)

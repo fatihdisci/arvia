@@ -1,12 +1,14 @@
 import SwiftUI
 
 // MARK: - Daily Quick Actions
+// 6 tile, 2 satır × 3 sütun grid. Ekspertiz tile'ı eklendi (Faz 1.1).
 struct VehicleQuickActionsSection: View {
     let onKmUpdate: () -> Void
     let onAddExpense: () -> Void
     let onAddFuelExpense: () -> Void
     let onAddDocument: () -> Void
     let onAddReminder: () -> Void
+    let onAddInspection: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -15,21 +17,28 @@ struct VehicleQuickActionsSection: View {
                 .foregroundColor(AppColors.textPrimary)
                 .accessibilityAddTraits(.isHeader)
 
-            HStack(spacing: 8) {
-                vehicleDetailActionButton(icon: "gauge.with.needle", label: "Km", color: AppColors.vehicle) {
-                    onKmUpdate()
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    vehicleDetailActionButton(icon: "gauge.with.needle", label: "Km", color: AppColors.vehicle) {
+                        onKmUpdate()
+                    }
+                    vehicleDetailActionButton(icon: "turkishlirasign.circle", label: "Masraf", color: AppColors.accentPrimary) {
+                        onAddExpense()
+                    }
+                    vehicleDetailActionButton(icon: "fuelpump", label: "Yakıt", color: AppColors.warning) {
+                        onAddFuelExpense()
+                    }
                 }
-                vehicleDetailActionButton(icon: "turkishlirasign.circle", label: "Masraf", color: AppColors.accentPrimary) {
-                    onAddExpense()
-                }
-                vehicleDetailActionButton(icon: "fuelpump", label: "Yakıt", color: AppColors.warning) {
-                    onAddFuelExpense()
-                }
-                vehicleDetailActionButton(icon: "doc.text.viewfinder", label: "Belge", color: AppColors.document) {
-                    onAddDocument()
-                }
-                vehicleDetailActionButton(icon: "bell.badge", label: "Hatırlatıcı", color: AppColors.success) {
-                    onAddReminder()
+                HStack(spacing: 8) {
+                    vehicleDetailActionButton(icon: "doc.text.viewfinder", label: "Belge", color: AppColors.document) {
+                        onAddDocument()
+                    }
+                    vehicleDetailActionButton(icon: "bell.badge", label: "Hatırlat", color: AppColors.success) {
+                        onAddReminder()
+                    }
+                    vehicleDetailActionButton(icon: "magnifyingglass", label: "Ekspertiz", color: AppColors.accentPrimary) {
+                        onAddInspection()
+                    }
                 }
             }
         }
