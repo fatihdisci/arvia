@@ -3,7 +3,6 @@ import SwiftUI
 // MARK: - Detail Hero
 struct VehicleDetailHero: View {
     let vehicle: Vehicle
-    let fileScore: Int
 
     var body: some View {
         VStack(spacing: AppSpacing.md) {
@@ -125,9 +124,6 @@ struct VehicleDetailHero: View {
 
                 Spacer(minLength: 0)
             }
-
-            // Satır 3: dosya tamlığı
-            detailDossierBadge
         }
         .padding(AppSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -165,32 +161,5 @@ struct VehicleDetailHero: View {
                 .font(AppTypography.caption)
                 .foregroundColor(AppColors.textTertiary)
         }
-    }
-
-    private var detailDossierBadge: some View {
-        let barColor = fileScore >= 80 ? AppColors.success : AppColors.accentPrimary
-        return HStack(spacing: AppSpacing.xs) {
-            Image(systemName: "chart.bar.fill")
-                .font(.caption2)
-                .foregroundColor(barColor)
-            Text("Dosya Skoru")
-                .font(AppTypography.caption)
-                .foregroundColor(AppColors.textTertiary)
-            Spacer(minLength: 0)
-            Text("%\(fileScore)")
-                .font(AppTypography.labelMono)
-                .foregroundColor(barColor)
-        }
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.small, style: .continuous)
-                .fill(barColor.opacity(0.05))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.small, style: .continuous)
-                .stroke(barColor.opacity(0.10), lineWidth: 0.5)
-        )
-        .accessibilityLabel("Dosya skoru yüzde \(fileScore)")
     }
 }

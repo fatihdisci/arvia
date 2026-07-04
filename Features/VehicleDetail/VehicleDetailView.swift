@@ -121,7 +121,7 @@ struct VehicleDetailView: View {
                 let fileScore = computeFileScore()
 
                 // MARK: Visual Anchor — Hero Header
-                VehicleDetailHero(vehicle: vehicle, fileScore: fileScore)
+                VehicleDetailHero(vehicle: vehicle)
 
                 if let banner = notificationRouteBanner {
                     banner
