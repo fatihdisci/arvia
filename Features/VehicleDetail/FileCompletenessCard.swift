@@ -32,12 +32,23 @@ struct FileCompletenessCard: View {
                 Spacer()
             }
 
-            // Chip'ler: Kimlik + Belge (Prompt 3'te daha da kısalacak)
+            // Chip'ler: Kimlik + Belge (Km hero'da zaten gösteriliyor)
             HStack(spacing: AppSpacing.xs) {
-                completenessChip(icon: "car.fill", title: vehicle.year == nil ? "Yıl eksik" : "Kimlik tamam", isComplete: vehicle.year != nil)
-                completenessChip(icon: "gauge.with.needle", title: vehicle.currentOdometer == 0 ? "Km eksik" : "Km var", isComplete: vehicle.currentOdometer > 0)
-                completenessChip(icon: "doc.text", title: documents.isEmpty ? "Belge bekliyor" : "Belge var", isComplete: !documents.isEmpty)
+                completenessChip(
+                    icon: vehicle.year != nil ? "checkmark.circle.fill" : "car.fill",
+                    label: "Kimlik",
+                    isComplete: vehicle.year != nil
+                )
+                .accessibilityLabel(vehicle.year != nil ? "Kimlik tamamlandı" : "Kimlik eksik")
+
+                completenessChip(
+                    icon: !documents.isEmpty ? "checkmark.circle.fill" : "doc.text",
+                    label: "Belge",
+                    isComplete: !documents.isEmpty
+                )
+                .accessibilityLabel(!documents.isEmpty ? "Belge tamamlandı" : "Belge eksik")
             }
+            .frame(maxWidth: .infinity)
         }
         .padding(AppSpacing.md)
         .background(
@@ -50,12 +61,11 @@ struct FileCompletenessCard: View {
         )
     }
 
-    private func completenessChip(icon: String, title: String, isComplete: Bool) -> some View {
-        Label(title, systemImage: icon)
+    private func completenessChip(icon: String, label: String, isComplete: Bool) -> some View {
+        Label(label, systemImage: icon)
             .font(AppTypography.captionMedium)
             .foregroundColor(isComplete ? AppColors.textSecondary : AppColors.textTertiary)
             .lineLimit(1)
-            .minimumScaleFactor(0.78)
             .padding(.horizontal, AppSpacing.xs + 2)
             .padding(.vertical, 5)
             .background(
