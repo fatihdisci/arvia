@@ -63,6 +63,22 @@ struct VehicleDetailView: View {
         allSaleFiles.filter { $0.vehicleId == vehicle.id }
     }
 
+    private var recordCounts: RecordCounts {
+        RecordCounts(
+            bakim: serviceRecords.count,
+            masraf: expenses.count,
+            belge: documents.count,
+            ekspertiz: inspectionReports.count
+        )
+    }
+
+    private var saleFileReadiness: SaleFileReadiness {
+        let total = recordCounts.total
+        if total == 0 { return .empty }
+        if recordCounts.belge == 0 { return .partial(hasDocuments: false) }
+        return .ready
+    }
+
     private var activeReminders: [Reminder] {
         reminders.filter { $0.statusRaw != ReminderStatus.completed.rawValue && $0.statusRaw != ReminderStatus.archived.rawValue }
     }
@@ -147,7 +163,12 @@ struct VehicleDetailView: View {
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
                 // MARK: Sale File Preview
-                SaleFilePreviewCard(onTap: handleSaleFileTap)
+                SaleFilePreviewCard(
+                    readiness: saleFileReadiness,
+                    recordCounts: recordCounts,
+                    onTap: handleSaleFileTap,
+                    onAddExpense: { showAddExpense = true }
+                )
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
                 // MARK: Documents (Belgeler)
