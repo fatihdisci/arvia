@@ -19,6 +19,10 @@ struct GarageView: View {
     @Query private var allServiceRecords: [ServiceRecord]
     @Query(sort: \VehicleDocument.createdAt, order: .reverse) private var allDocuments: [VehicleDocument]
     @Query private var allInspectionReports: [InspectionReport]
+    @Query private var allUsageProfiles: [VehicleUsageProfile]
+
+    @AppStorage("assistant_profile_prompted") private var assistantProfilePrompted = false
+    @State private var showAssistantProfile = false
 
     @State private var showAddVehicle = false
     @State private var showPaywall = false
@@ -177,6 +181,9 @@ struct GarageView: View {
             }
             .sheet(isPresented: $showPaywall) {
                 PaywallView(feature: paywallFeature)
+            }
+            .sheet(isPresented: $showAssistantProfile) {
+                UsageProfileFlowView()
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView()
@@ -586,7 +593,8 @@ struct GarageView: View {
             expenses: expenses(for: vehicle),
             serviceRecords: services(for: vehicle),
             documents: documents(for: vehicle),
-            inspectionReports: inspectionReports(for: vehicle)
+            inspectionReports: inspectionReports(for: vehicle),
+            assistant: assistantInputs(for: vehicle)
         )
         .filter { !InsightSnoozeStore.shared.isDismissed(insightType: $0.type, forVehicle: vehicle.id) }
         .filter { !InsightSnoozeStore.shared.isSnoozed(insightType: $0.type, forVehicle: vehicle.id) }
@@ -856,6 +864,68 @@ struct GarageView: View {
         allInspectionReports.filter { $0.vehicleId == vehicle.id }
     }
 
+    // MARK: - Akıllı Sürüş Asistanı
+    /// Bir araç için predictive insight girdilerini hazırlar. Pro değilse .disabled döner.
+    private func assistantInputs(for vehicle: Vehicle) -> VehicleInsightService.AssistantInputs {
+        guard paywallService.canUseAssistant else { return .disabled }
+        let profile = UsageProfileService.resolve(for: vehicle.id, from: allUsageProfiles)
+        let estimate = PredictiveOdometerService.shared.estimate(
+            lastKnownOdometer: vehicle.currentOdometer,
+            lastKnownDate: vehicle.odometerIsEstimate ? nil : vehicle.lastOdometerUpdate,
+            readings: odometerReadings(for: vehicle),
+            profileBand: profile?.dailyKmBand
+        )
+        var suggestion: MaintenanceAdvisorService.Suggestion?
+        if let profile {
+            let dailyKm = estimate?.dailyKmAverage ?? Double(profile.dailyKmBand.midpointKm)
+            let input = MaintenanceAdvisorService.Input(
+                fuelType: vehicle.fuelType,
+                vehicleYear: vehicle.year,
+                currentOdometer: vehicle.currentOdometer,
+                dailyKm: dailyKm,
+                routeType: profile.routeType,
+                dailyKmBand: profile.dailyKmBand,
+                now: Date()
+            )
+            suggestion = MaintenanceAdvisorService.shared.topSuggestion(for: input)
+        }
+        return VehicleInsightService.AssistantInputs(
+            enabled: true,
+            odometerEstimate: estimate,
+            maintenanceSuggestion: suggestion,
+            usageProfileMissing: profile == nil && assistantProfilePrompted
+        )
+    }
+
+    private func odometerReadings(for vehicle: Vehicle) -> [PredictiveOdometerService.Reading] {
+        var readings: [PredictiveOdometerService.Reading] = []
+        for e in expenses(for: vehicle) where e.odometer != nil {
+            readings.append(.init(date: e.date, odometer: e.odometer!))
+        }
+        for s in services(for: vehicle) where s.odometer != nil {
+            readings.append(.init(date: s.date, odometer: s.odometer!))
+        }
+        return readings
+    }
+
+    private func acceptEstimatedOdometer(for vehicle: Vehicle) {
+        let profile = UsageProfileService.resolve(for: vehicle.id, from: allUsageProfiles)
+        guard let estimate = PredictiveOdometerService.shared.estimate(
+            lastKnownOdometer: vehicle.currentOdometer,
+            lastKnownDate: vehicle.odometerIsEstimate ? nil : vehicle.lastOdometerUpdate,
+            readings: odometerReadings(for: vehicle),
+            profileBand: profile?.dailyKmBand
+        ) else { return }
+        Task {
+            try? await VehicleContextRefreshService.updateCurrentOdometer(
+                vehicle: vehicle,
+                newOdometer: estimate.estimatedOdometer,
+                isEstimate: true,
+                context: modelContext
+            )
+        }
+    }
+
     private func handleContextAction(_ action: VehicleInsightAction) {
         switch action {
         case .updateOdometer:
@@ -878,6 +948,10 @@ struct GarageView: View {
             showSaleFile = true
         case .addInspectionReport:
             showSaleFile = true
+        case .acceptEstimatedOdometer:
+            if let vehicle = currentVehicle { acceptEstimatedOdometer(for: vehicle) }
+        case .openAssistantProfile:
+            showAssistantProfile = true
         // Faz 1.1 — meta-aksiyonlar: kart kendisi dismiss eder, navigation yok.
         case .acknowledge, .dismissAndSnooze, .markAsRead, .noAction:
             break

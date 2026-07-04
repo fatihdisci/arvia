@@ -19,10 +19,11 @@ final class PaywallService: ObservableObject {
     enum FreeLimits {
         static let maxVehicles = 1
         static let documentLimit: Int? = nil
-        static let saleFileRequiresPro = false
-        static let advancedReportsRequiresPro = false
+        static let saleFileRequiresPro = true
+        static let advancedReportsRequiresPro = true
         static let inspectionReportsRequirePro = false
         static let receiptScanRequiresPro = true
+        static let assistantRequiresPro = true
     }
 
     // Ürün ID'leri — App Store Connect'te tanımlanmalı
@@ -221,6 +222,10 @@ final class PaywallService: ObservableObject {
         !FreeLimits.receiptScanRequiresPro || isPro
     }
 
+    var canUseAssistant: Bool {
+        !FreeLimits.assistantRequiresPro || isPro
+    }
+
     // Forum yazma artık Pro gerektirmez — auth yeterli.
     // Community gate'ler doğrudan CommunityAuthService üzerinden yapılır.
 
@@ -234,10 +239,11 @@ final class PaywallService: ObservableObject {
     ]
 
     static let proFeatures: [(icon: String, title: String)] = [
+        ("brain.head.profile", "Akıllı Sürüş Asistanı — seni tanıyan öneriler"),
+        ("doc.viewfinder", "Fiş/Fatura Tarama"),
         ("car.2", "Sınırsız araç"),
-        ("wrench.and.screwdriver", "Araç bazlı bakım ve masraf geçmişi"),
         ("folder", "Araç bazlı belge kasası"),
-        ("rectangle.grid.2x2", "Çoklu araç garajı"),
+        ("doc.richtext", "Satış dosyası ve gelişmiş raporlar"),
         ("bell.badge", "Tüm araçlar için hatırlatıcılar"),
     ]
 }

@@ -13,6 +13,9 @@ struct VehicleInsight: Identifiable, Equatable {
     let title: String
     let body: String
     let action: VehicleInsightAction?
+    /// Opsiyonel ikincil aksiyon — softQuestion'da "Şimdi Değil" yerine ikinci pozitif buton
+    /// olarak gösterilir (örn. predictiveOdometer: [Doğru, kaydet] + [Km Güncelle]).
+    let secondaryAction: VehicleInsightAction?
     let snoozeDays: Int?
     let relatedReminderId: UUID?
 
@@ -24,6 +27,7 @@ struct VehicleInsight: Identifiable, Equatable {
         title: String,
         body: String,
         action: VehicleInsightAction?,
+        secondaryAction: VehicleInsightAction? = nil,
         snoozeDays: Int? = nil,
         relatedReminderId: UUID? = nil
     ) {
@@ -35,6 +39,7 @@ struct VehicleInsight: Identifiable, Equatable {
         self.title = title
         self.body = body
         self.action = action
+        self.secondaryAction = secondaryAction
         self.snoozeDays = snoozeDays
         self.relatedReminderId = relatedReminderId
     }
@@ -70,6 +75,9 @@ enum VehicleInsightType: String, CaseIterable {
     case seasonalGuidance
     case calendarPeriod
     case quietGoodState
+    // Akıllı Sürüş Asistanı (Layer B)
+    case predictiveOdometer
+    case predictiveMaintenance
 }
 
 enum VehicleInsightPriority: String {
@@ -101,6 +109,10 @@ enum VehicleInsightAction: String, CaseIterable {
     case addExpense
     case addFuelExpense
 
+    // Akıllı Sürüş Asistanı
+    case acceptEstimatedOdometer   // Tahmini km'yi onayla ve kaydet (isEstimate=true)
+    case openAssistantProfile      // Kullanım profili akışını aç
+
     // Faz 1.1 (Karar 4.2) — yeni meta-aksiyonlar
     case dismissAndSnooze   // Kullanıcı dismiss + snooze
     case markAsRead         // Sadece okundu işaretle
@@ -129,6 +141,10 @@ enum VehicleInsightAction: String, CaseIterable {
             return "Masraf Ekle"
         case .addFuelExpense:
             return "Yakıt Ekle"
+        case .acceptEstimatedOdometer:
+            return "Doğru, kaydet"
+        case .openAssistantProfile:
+            return "Kişiselleştir"
         case .acknowledge:
             return "Anlaşıldı"
         case .dismissAndSnooze, .markAsRead, .noAction:
@@ -158,6 +174,10 @@ enum VehicleInsightAction: String, CaseIterable {
             return "expenseForm"
         case .addFuelExpense:
             return "fuelExpenseForm"
+        case .acceptEstimatedOdometer:
+            return "acceptEstimatedOdometer"
+        case .openAssistantProfile:
+            return "assistantProfileFlow"
         case .acknowledge, .dismissAndSnooze, .markAsRead, .noAction:
             return ""
         }

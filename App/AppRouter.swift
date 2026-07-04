@@ -148,7 +148,12 @@ final class AppNavigationRouter: NSObject, ObservableObject, UNUserNotificationC
 
 struct AppRouter: View {
     @EnvironmentObject private var navigationRouter: AppNavigationRouter
+    @EnvironmentObject private var paywallService: PaywallService
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.modelContext) private var modelContext
+    @State private var showAssistantProfile = false
+    // Post-purchase asistan profili akışı yalnızca bir kez otomatik sunulur.
+    @AppStorage("assistant_profile_prompted") private var assistantProfilePrompted = false
 
     var body: some View {
         TabView(selection: $navigationRouter.selectedTab) {
@@ -165,6 +170,17 @@ struct AppRouter: View {
             if phase == .active {
                 NotificationService.shared.clearBadge()
             }
+        }
+        // Trigger (a): Pro satın alma / geri yükleme sonrası isPro true'ya döndüğünde
+        // Kullanım Profili akışını sun (profil henüz yoksa).
+        .onChange(of: paywallService.isPro) { wasPro, isPro in
+            guard isPro, !wasPro, paywallService.canUseAssistant else { return }
+            let hasProfile = UsageProfileService.shared.globalProfile(context: modelContext) != nil
+            assistantProfilePrompted = true
+            if !hasProfile { showAssistantProfile = true }
+        }
+        .sheet(isPresented: $showAssistantProfile) {
+            UsageProfileFlowView()
         }
     }
 
@@ -188,4 +204,6 @@ struct AppRouter: View {
 #Preview("AppRouter") {
     AppRouter()
         .environmentObject(AppNavigationRouter.shared)
+        .environmentObject(PaywallService.shared)
+        .modelContainer(MockDataProvider.previewContainer)
 }

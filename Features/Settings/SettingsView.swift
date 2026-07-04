@@ -14,6 +14,8 @@ struct SettingsView: View {
     @EnvironmentObject private var navigationRouter: AppNavigationRouter
 
     @State private var showPaywall = false
+    @State private var paywallFeature: PaywallView.PaywallFeature = .secondVehicle
+    @State private var showAssistantProfile = false
     @State private var showSignOutConfirmation = false
     @State private var showDeleteAllConfirmation = false
     @State private var showDeleteAccountConfirmation = false
@@ -35,6 +37,9 @@ struct SettingsView: View {
             Form {
                 // Pro / Abonelik
                 proSection
+
+                // Akıllı Sürüş Asistanı
+                assistantSection
 
                 // Bildirimler
                 notificationSection
@@ -64,7 +69,10 @@ struct SettingsView: View {
                 }
             }
             .sheet(isPresented: $showPaywall) {
-                PaywallView(feature: .secondVehicle)
+                PaywallView(feature: paywallFeature)
+            }
+            .sheet(isPresented: $showAssistantProfile) {
+                UsageProfileFlowView()
             }
             .confirmationDialog("Çıkış Yap", isPresented: $showSignOutConfirmation) {
                 Button("Çıkış Yap", role: .destructive) {
@@ -133,6 +141,47 @@ struct SettingsView: View {
             }
         } header: {
             Text("Plan")
+        }
+        .listRowBackground(Color.appSurface)
+    }
+
+    // MARK: - Assistant Section
+    private var assistantSection: some View {
+        Section {
+            Button {
+                if paywallService.canUseAssistant {
+                    showAssistantProfile = true
+                } else {
+                    paywallFeature = .assistant
+                    showPaywall = true
+                }
+            } label: {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "brain.head.profile")
+                        .foregroundColor(AppColors.accentPrimary)
+                        .frame(width: 24)
+                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                        Text("Kullanım Profilim")
+                            .font(AppTypography.bodyMedium)
+                            .foregroundColor(AppColors.textPrimary)
+                        Text("Akıllı Sürüş Asistanı önerilerini kişiselleştir.")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                    Spacer()
+                    if paywallService.canUseAssistant {
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    } else {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+            }
+        } header: {
+            Text("Akıllı Sürüş Asistanı")
         }
         .listRowBackground(Color.appSurface)
     }

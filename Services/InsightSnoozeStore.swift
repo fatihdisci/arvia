@@ -206,6 +206,10 @@ final class InsightSnoozeStore {
             return 0
         case .saleFileReadiness:
             return 14
+        case .predictiveOdometer:
+            return 7
+        case .predictiveMaintenance:
+            return 7
         }
     }
 }

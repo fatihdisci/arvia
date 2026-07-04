@@ -26,6 +26,7 @@ enum MockDataProvider {
             InspectionReport.self,
             SaleFile.self,
             Receipt.self,
+            VehicleUsageProfile.self,
         ])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         do {

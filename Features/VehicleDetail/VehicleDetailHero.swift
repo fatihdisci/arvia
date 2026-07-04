@@ -92,7 +92,7 @@ struct VehicleDetailHero: View {
             // Satır 2: hero metric (km) + yan bilgiler (yakıt, vites)
             HStack(alignment: .top, spacing: AppSpacing.lg) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(vehicle.currentOdometer.formatted())
+                    Text("\(vehicle.odometerIsEstimate ? "~" : "")\(vehicle.currentOdometer.formatted())")
                         .font(AppTypography.heroMetric)
                         .foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
