@@ -585,6 +585,8 @@ struct GarageView: View {
             documents: documents(for: vehicle),
             inspectionReports: inspectionReports(for: vehicle)
         )
+        .filter { !InsightSnoozeStore.shared.isDismissed(insightType: $0.type, forVehicle: vehicle.id) }
+        .filter { !InsightSnoozeStore.shared.isSnoozed(insightType: $0.type, forVehicle: vehicle.id) }
         .filter { !InsightSnoozeStore().isSnoozed(vehicleId: vehicle.id, insightId: $0.id) }
 
         return VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -866,8 +868,10 @@ struct GarageView: View {
         }
     }
 
-    /// Faz 1.1 — kart dismiss edildiğinde snooze uygula (type-tabanlı API).
+    /// Faz 1.1 — kart dismiss edildiğinde hem dismiss hem snooze uygula.
+    /// Dismiss kalıcıdır (tüm ekranlarda geçerli), snooze sürelidir.
     private func snoozeInsight(insight: VehicleInsight, vehicleId: UUID) {
+        InsightSnoozeStore.shared.dismiss(insightType: insight.type, forVehicle: vehicleId)
         if let days = insight.snoozeDays, days > 0 {
             InsightSnoozeStore.shared.snooze(
                 insightType: insight.type,
@@ -875,8 +879,6 @@ struct GarageView: View {
                 days: days
             )
         }
-        // snoozeDays nil olan kartlar (.callToAction) dismiss butonu göstermez
-        // — buraya gelmemeli. Güvenlik için loglanabilir.
     }
 
     private func hasReminderType(_ vehicle: Vehicle, _ type: ReminderType) -> Bool {

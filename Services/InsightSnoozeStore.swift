@@ -145,6 +145,33 @@ final class InsightSnoozeStore {
         "\(typeKeyPrefix)\(vehicleId.uuidString).\(insightType.rawValue)"
     }
 
+    // MARK: - Dismiss (kalıcı, gün bazlı değil)
+
+    /// Kalıcı dismiss — kullanıcı insight'ı X ile kapattığında çağrılır.
+    /// Bu insight bir daha gösterilmez (manuel geri alma yok).
+    func dismiss(insightType: VehicleInsightType, forVehicle vehicleId: UUID) {
+        let key = "com.arvia.dismiss.\(vehicleId.uuidString).\(insightType.rawValue)"
+        store.set(Date().timeIntervalSince1970, forKey: key)
+    }
+
+    func isDismissed(insightType: VehicleInsightType, forVehicle vehicleId: UUID) -> Bool {
+        let key = "com.arvia.dismiss.\(vehicleId.uuidString).\(insightType.rawValue)"
+        return store.object(forKey: key) != nil
+    }
+
+    func clearDismiss(insightType: VehicleInsightType, forVehicle vehicleId: UUID) {
+        let key = "com.arvia.dismiss.\(vehicleId.uuidString).\(insightType.rawValue)"
+        store.removeObject(forKey: key)
+    }
+
+    /// Tüm dismiss'leri temizle (debug / ayarlar)
+    func clearAllDismisses(forVehicle vehicleId: UUID) {
+        let prefix = "com.arvia.dismiss.\(vehicleId.uuidString)."
+        for key in store.dictionaryRepresentation().keys where key.hasPrefix(prefix) {
+            store.removeObject(forKey: key)
+        }
+    }
+
     // MARK: - Snooze Durations (days) — eski sistem
 
     static func snoozeDuration(for insight: VehicleInsight) -> Int {

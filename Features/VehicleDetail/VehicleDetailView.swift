@@ -35,8 +35,7 @@ struct VehicleDetailView: View {
     @State private var showAddDocument = false
     @State private var showDocumentPreview = false
     @State private var previewDocumentURL: URL?
-    @State private var dismissedGuideInsightIDs: Set<String> = []
-    private let snoozeStore = InsightSnoozeStore()
+    private let snoozeStore = InsightSnoozeStore.shared
 
     // Filtered data
     private var reminders: [Reminder] {
@@ -88,7 +87,8 @@ struct VehicleDetailView: View {
             saleFiles: saleFiles,
             displayContext: .vehicleDetailGuide(excludingReminderIds: Set(upcomingTasks.map(\.reminderId)))
         )
-        .filter { !dismissedGuideInsightIDs.contains($0.id) }
+        .filter { !snoozeStore.isDismissed(insightType: $0.type, forVehicle: vehicle.id) }
+        .filter { !snoozeStore.isSnoozed(insightType: $0.type, forVehicle: vehicle.id) }
         .filter { !snoozeStore.isSnoozed(vehicleId: vehicle.id, insightId: $0.id) }
     }
 
@@ -296,13 +296,9 @@ struct VehicleDetailView: View {
     }
 
     private func handleGuideInsightDismiss(_ insight: VehicleInsight) {
-        dismissedGuideInsightIDs.insert(insight.id)
+        snoozeStore.dismiss(insightType: insight.type, forVehicle: vehicle.id)
         if let days = insight.snoozeDays, days > 0 {
-            InsightSnoozeStore.shared.snooze(
-                insightType: insight.type,
-                forVehicle: vehicle.id,
-                days: days
-            )
+            snoozeStore.snooze(insightType: insight.type, forVehicle: vehicle.id, days: days)
         }
         snoozeStore.snooze(vehicleId: vehicle.id, insight: insight)
     }
