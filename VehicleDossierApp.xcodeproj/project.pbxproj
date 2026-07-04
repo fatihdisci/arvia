@@ -68,8 +68,8 @@
 		83B307817D9542D5B4841A24 /* ServiceRecordListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73C93F33C42540AB9D752ACC /* ServiceRecordListView.swift */; };
 		84114D1BC01D4B9C93AC86CA /* PartChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DE97661E02C4809BA241D14 /* PartChange.swift */; };
 		85B5FB8C30734C0F854FD8C8 /* DemoDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6D76344B3F47E7AF65D4C9 /* DemoDataSeeder.swift */; };
-		85B909F0A3694236A7C09766 /* VehicleFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458CAAD1C9EE4663B24E011A /* VehicleFormView.swift */; };
 		690B9BE68E864ACA853C6948 /* RehberIntroBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C0CA2E86C24103A6F89443 /* RehberIntroBanner.swift */; };
+		AA11BB22CC33DD44EE55FF6601 /* QuickOdometerUpdateSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF6600 /* QuickOdometerUpdateSheet.swift */; };
 		BCB1308F27DB4AB9BCEAF2D1 /* VehicleWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC10A1A69DA8456491CCC9DC /* VehicleWizardView.swift */; };
 		8A128467B94BF543DBD633E5 /* CommunityComment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B82ED1B3C1D76EE5917AB30 /* CommunityComment.swift */; };
 		8C15C2B755734A889A5BA976 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381ADCC8AAB64013850B095C /* NotificationService.swift */; };
@@ -106,6 +106,20 @@
 		D95D8065ACD04ED7986CF967 /* DocumentStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4349C93A9B5494B85D140E6 /* DocumentStorageService.swift */; };
 		D9B295E8680140E3B19B122F /* ButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6942877FED47F5943E58C1 /* ButtonStyles.swift */; };
 		DAF1EA1834834379B0C55C8D /* VehicleEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0755C274CE09437F9EE817AA /* VehicleEditView.swift */; };
+		AA11BB22CC33DD44EE55FF6603 /* UpcomingTaskCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF6602 /* UpcomingTaskCard.swift */; };
+		AA11BB22CC33DD44EE55FF6605 /* ContextualInsightCompactCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF6604 /* ContextualInsightCompactCard.swift */; };
+		AA11BB22CC33DD44EE55FF6607 /* RecentRecordItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF6606 /* RecentRecordItem.swift */; };
+		AA11BB22CC33DD44EE55FF6609 /* VehicleDetailMilestoneCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF6608 /* VehicleDetailMilestoneCard.swift */; };
+		BB11CC22DD33EE44FF55AA6601 /* SaleFilePreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11CC22DD33EE44FF55AA6600 /* SaleFilePreviewCard.swift */; };
+		CC11DD22EE33FF44AA55BB6601 /* RecentRecordsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11DD22EE33FF44AA55BB6600 /* RecentRecordsSection.swift */; };
+		DD11EE22FF33AA44BB55CC6601 /* InspectionReportSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD11EE22FF33AA44BB55CC6600 /* InspectionReportSection.swift */; };
+		EE11FF22AA33BB44CC55DD6601 /* VehicleQuickActionsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE11FF22AA33BB44CC55DD6600 /* VehicleQuickActionsSection.swift */; };
+		FF11AA22BB33CC44DD55EE6601 /* LifeTimelineSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF11AA22BB33CC44DD55EE6600 /* LifeTimelineSection.swift */; };
+		GG11HH22II33JJ44KK55LL6601 /* DocumentsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = GG11HH22II33JJ44KK55LL6600 /* DocumentsSection.swift */; };
+		HH11II22JJ33KK44LL55MM6601 /* CurrentStatusSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH11II22JJ33KK44LL55MM6600 /* CurrentStatusSection.swift */; };
+		II11JJ22KK33LL44MM55NN6601 /* ArviaGuideSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = II11JJ22KK33LL44MM55NN6600 /* ArviaGuideSection.swift */; };
+		JJ11KK22LL33MM44NN55OO6601 /* VehicleDetailHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = JJ11KK22LL33MM44NN55OO6600 /* VehicleDetailHero.swift */; };
+		KK11LL22MM33NN44OO55PP6601 /* FileCompletenessCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = KK11LL22MM33NN44OO55PP6600 /* FileCompletenessCard.swift */; };
 		DOSICMPLDOSICMPLDOSICMPL /* DossierCompletenessCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DOSICMPRDOSICMPRDOSICMPR /* DossierCompletenessCard.swift */; };
 		E46A5A632F95865F5B6B2AFB /* ContextualTipBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A3E83514B5CDEC58D3BFAA /* ContextualTipBanner.swift */; };
 		EB45BAEC6FB64C7897C36AB5 /* DocumentFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED675B3421784ACCA16F72A8 /* DocumentFormView.swift */; };
@@ -138,6 +152,20 @@
 		0046A94CE11C4AACAB946053 /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
 		057834D6DB120B50E147467B /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
 		0755C274CE09437F9EE817AA /* VehicleEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleEditView.swift; sourceTree = "<group>"; };
+		AA11BB22CC33DD44EE55FF6602 /* UpcomingTaskCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpcomingTaskCard.swift; sourceTree = "<group>"; };
+		AA11BB22CC33DD44EE55FF6604 /* ContextualInsightCompactCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualInsightCompactCard.swift; sourceTree = "<group>"; };
+		AA11BB22CC33DD44EE55FF6606 /* RecentRecordItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentRecordItem.swift; sourceTree = "<group>"; };
+		AA11BB22CC33DD44EE55FF6608 /* VehicleDetailMilestoneCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleDetailMilestoneCard.swift; sourceTree = "<group>"; };
+		BB11CC22DD33EE44FF55AA6600 /* SaleFilePreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaleFilePreviewCard.swift; sourceTree = "<group>"; };
+		CC11DD22EE33FF44AA55BB6600 /* RecentRecordsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentRecordsSection.swift; sourceTree = "<group>"; };
+		DD11EE22FF33AA44BB55CC6600 /* InspectionReportSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionReportSection.swift; sourceTree = "<group>"; };
+		EE11FF22AA33BB44CC55DD6600 /* VehicleQuickActionsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleQuickActionsSection.swift; sourceTree = "<group>"; };
+		FF11AA22BB33CC44DD55EE6600 /* LifeTimelineSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeTimelineSection.swift; sourceTree = "<group>"; };
+		GG11HH22II33JJ44KK55LL6600 /* DocumentsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsSection.swift; sourceTree = "<group>"; };
+		HH11II22JJ33KK44LL55MM6600 /* CurrentStatusSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentStatusSection.swift; sourceTree = "<group>"; };
+		II11JJ22KK33LL44MM55NN6600 /* ArviaGuideSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArviaGuideSection.swift; sourceTree = "<group>"; };
+		JJ11KK22LL33MM44NN55OO6600 /* VehicleDetailHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleDetailHero.swift; sourceTree = "<group>"; };
+		KK11LL22MM33NN44OO55PP6600 /* FileCompletenessCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCompletenessCard.swift; sourceTree = "<group>"; };
 		0A1C5BB29F17D32FC16C38D5 /* CommunityFilterChips.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityFilterChips.swift; sourceTree = "<group>"; };
 		0D6DC889DE6440F1933134E5 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		10F2CC53672C2CCEFA92B275 /* CommunityProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityProfileView.swift; sourceTree = "<group>"; };
@@ -165,8 +193,8 @@
 		3DFEAF872FEFF45700295F98 /* Ruhsatim.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Ruhsatim.entitlements; sourceTree = "<group>"; };
 		3FA9FF5C0567498ABB33199F /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		4211CAC644864893A910F6F2 /* CommunityCreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityCreatePostView.swift; sourceTree = "<group>"; };
-		458CAAD1C9EE4663B24E011A /* VehicleFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleFormView.swift; sourceTree = "<group>"; };
 		C8C0CA2E86C24103A6F89443 /* RehberIntroBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RehberIntroBanner.swift; sourceTree = "<group>"; };
+		AA11BB22CC33DD44EE55FF6600 /* QuickOdometerUpdateSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickOdometerUpdateSheet.swift; sourceTree = "<group>"; };
 		EC10A1A69DA8456491CCC9DC /* VehicleWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleWizardView.swift; sourceTree = "<group>"; };
 		476C6456564D448AB1F6C487 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 		4D213AAFB5E2494FB14585B8 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
@@ -340,6 +368,20 @@
 			children = (
 				0755C274CE09437F9EE817AA /* VehicleEditView.swift */,
 				38D5DA3EDB4F445B8B998459 /* VehicleDetailView.swift */,
+				AA11BB22CC33DD44EE55FF6602 /* UpcomingTaskCard.swift */,
+				AA11BB22CC33DD44EE55FF6604 /* ContextualInsightCompactCard.swift */,
+				AA11BB22CC33DD44EE55FF6606 /* RecentRecordItem.swift */,
+				AA11BB22CC33DD44EE55FF6608 /* VehicleDetailMilestoneCard.swift */,
+				BB11CC22DD33EE44FF55AA6600 /* SaleFilePreviewCard.swift */,
+				CC11DD22EE33FF44AA55BB6600 /* RecentRecordsSection.swift */,
+				DD11EE22FF33AA44BB55CC6600 /* InspectionReportSection.swift */,
+				EE11FF22AA33BB44CC55DD6600 /* VehicleQuickActionsSection.swift */,
+				FF11AA22BB33CC44DD55EE6600 /* LifeTimelineSection.swift */,
+				GG11HH22II33JJ44KK55LL6600 /* DocumentsSection.swift */,
+				HH11II22JJ33KK44LL55MM6600 /* CurrentStatusSection.swift */,
+				II11JJ22KK33LL44MM55NN6600 /* ArviaGuideSection.swift */,
+				JJ11KK22LL33MM44NN55OO6600 /* VehicleDetailHero.swift */,
+				KK11LL22MM33NN44OO55PP6600 /* FileCompletenessCard.swift */,
 			);
 			path = VehicleDetail;
 			sourceTree = "<group>";
@@ -402,7 +444,6 @@
 		649795F62EDF43E7BF2D138F /* Garage */ = {
 			isa = PBXGroup;
 			children = (
-				458CAAD1C9EE4663B24E011A /* VehicleFormView.swift */,
 				EC10A1A69DA8456491CCC9DC /* VehicleWizardView.swift */,
 				BDF8A5FF5F314A8C897C56F4 /* GarageView.swift */,
 				CCAT0003CCAT0003CCAT0003 /* VehicleCatalogPickerViews.swift */,
@@ -527,6 +568,7 @@
 				86FDB0BC84684A08AF49E08A /* VehicleCard.swift */,
 				AE62D7B7FDAE440B9176077B /* EmptyStateView.swift */,
 				C8C0CA2E86C24103A6F89443 /* RehberIntroBanner.swift */,
+				AA11BB22CC33DD44EE55FF6600 /* QuickOdometerUpdateSheet.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -737,9 +779,9 @@
 				559086DD7D8C5D4B99927AA6 /* DosyaniTamamlaChecklist.swift in Sources */,
 				A11B22C33D44E55F66A77B06 /* ArviaGuideCard.swift in Sources */,
 				690B9BE68E864ACA853C6948 /* RehberIntroBanner.swift in Sources */,
+				AA11BB22CC33DD44EE55FF6601 /* QuickOdometerUpdateSheet.swift in Sources */,
 				938AB55FE3448B27D70E566C /* OnboardingView.swift in Sources */,
 				62CFD3078AB54AE98354161B /* GarageView.swift in Sources */,
-				85B909F0A3694236A7C09766 /* VehicleFormView.swift in Sources */,
 				BCB1308F27DB4AB9BCEAF2D1 /* VehicleWizardView.swift in Sources */,
 				CCAT0004CCAT0004CCAT0004 /* VehicleCatalogPickerViews.swift in Sources */,
 				C9CEF06186644426ABAE5496 /* RemindersView.swift in Sources */,
@@ -762,7 +804,21 @@
 				18538BAA676A4F4197F59FF0 /* SettingsView.swift in Sources */,
 				34D82A0F6F0D4560835CAE8D /* ReportsView.swift in Sources */,
 				727B82C281964647B9E8E609 /* VehicleDetailView.swift in Sources */,
+				BB11CC22DD33EE44FF55AA6601 /* SaleFilePreviewCard.swift in Sources */,
+				CC11DD22EE33FF44AA55BB6601 /* RecentRecordsSection.swift in Sources */,
+				DD11EE22FF33AA44BB55CC6601 /* InspectionReportSection.swift in Sources */,
+				EE11FF22AA33BB44CC55DD6601 /* VehicleQuickActionsSection.swift in Sources */,
+				FF11AA22BB33CC44DD55EE6601 /* LifeTimelineSection.swift in Sources */,
+				GG11HH22II33JJ44KK55LL6601 /* DocumentsSection.swift in Sources */,
+				HH11II22JJ33KK44LL55MM6601 /* CurrentStatusSection.swift in Sources */,
+				II11JJ22KK33LL44MM55NN6601 /* ArviaGuideSection.swift in Sources */,
+				JJ11KK22LL33MM44NN55OO6601 /* VehicleDetailHero.swift in Sources */,
+				KK11LL22MM33NN44OO55PP6601 /* FileCompletenessCard.swift in Sources */,
 				DAF1EA1834834379B0C55C8D /* VehicleEditView.swift in Sources */,
+				AA11BB22CC33DD44EE55FF6603 /* UpcomingTaskCard.swift in Sources */,
+				AA11BB22CC33DD44EE55FF6605 /* ContextualInsightCompactCard.swift in Sources */,
+				AA11BB22CC33DD44EE55FF6607 /* RecentRecordItem.swift in Sources */,
+				AA11BB22CC33DD44EE55FF6609 /* VehicleDetailMilestoneCard.swift in Sources */,
 				BCC0181C7F83417381502E2A /* Enums.swift in Sources */,
 				3AB3B5BB880346B5AE93CB3E /* Vehicle.swift in Sources */,
 				7E8E3F567E734C9290902E92 /* Reminder.swift in Sources */,
