@@ -22,6 +22,7 @@ final class PaywallService: ObservableObject {
         static let saleFileRequiresPro = false
         static let advancedReportsRequiresPro = false
         static let inspectionReportsRequirePro = false
+        static let receiptScanRequiresPro = true
     }
 
     // Ürün ID'leri — App Store Connect'te tanımlanmalı
@@ -214,6 +215,10 @@ final class PaywallService: ObservableObject {
 
     func canCreateInspectionReport() -> Bool {
         !FreeLimits.inspectionReportsRequirePro || isPro
+    }
+
+    var canUseReceiptScan: Bool {
+        !FreeLimits.receiptScanRequiresPro || isPro
     }
 
     // Forum yazma artık Pro gerektirmez — auth yeterli.

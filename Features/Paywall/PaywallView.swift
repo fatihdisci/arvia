@@ -41,6 +41,7 @@ struct PaywallView: View {
         case saleFileExport
         case advancedReports
         case inspectionReport
+        case receiptScan
 
         var title: String {
             switch self {
@@ -49,6 +50,7 @@ struct PaywallView: View {
             case .saleFileExport: return "Sınırsız satış dosyası"
             case .advancedReports: return "Gelişmiş raporlar"
             case .inspectionReport: return "Ekspertiz raporları"
+            case .receiptScan: return "Fiş ve faturaları tarayarak ekle"
             }
         }
 
@@ -59,6 +61,7 @@ struct PaywallView: View {
             case .saleFileExport: return "Pro ile sınırsız satış dosyası."
             case .advancedReports: return "Pro ile gelişmiş raporlar."
             case .inspectionReport: return "Pro ile sınırsız ekspertiz."
+            case .receiptScan: return "Pro ile fiş/fatura tarama."
             }
         }
     }

@@ -31,6 +31,7 @@ struct VehicleDossierApp: App {
                 VehicleDocument.self,
                 InspectionReport.self,
                 SaleFile.self,
+                Receipt.self,
             ])
             // CloudKit private database sync — yalnızca feature flag açıkken devreye girer.
             // Flag kapalıyken `.none` ile bugünkü davranış birebir korunur (sadece yerel).
