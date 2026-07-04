@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		RCPTMODL0002RCPTMODL0002 /* Receipt.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCPTMODL0001RCPTMODL0001 /* Receipt.swift */; };
+		RCPTSCAN0002RCPTSCAN0002 /* DocumentScannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCPTSCAN0001RCPTSCAN0001 /* DocumentScannerService.swift */; };
+		RCPTOCRS0002RCPTOCRS0002 /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCPTOCRS0001RCPTOCRS0001 /* OCRService.swift */; };
+		RCPTPARS0002RCPTPARS0002 /* ReceiptParserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCPTPARS0001RCPTPARS0001 /* ReceiptParserService.swift */; };
+		RCPTVIEW0002RCPTVIEW0002 /* ReceiptScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCPTVIEW0001RCPTVIEW0001 /* ReceiptScanView.swift */; };
+		RCPTTEST0002RCPTTEST0002 /* ReceiptParserServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCPTTEST0001RCPTTEST0001 /* ReceiptParserServiceTests.swift */; };
 		FB01FB01FB01FB01FB01FB01 /* JetBrainsMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F001F001F001F001F001F001 /* JetBrainsMono-Bold.ttf */; };
 		FB02FB02FB02FB02FB02FB02 /* JetBrainsMono-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F002F002F002F002F002F002 /* JetBrainsMono-Light.ttf */; };
 		FB03FB03FB03FB03FB03FB03 /* JetBrainsMono-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F003F003F003F003F003F003 /* JetBrainsMono-Regular.ttf */; };
@@ -146,6 +152,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		RCPTMODL0001RCPTMODL0001 /* Receipt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/Receipt.swift; sourceTree = SOURCE_ROOT; };
+		RCPTSCAN0001RCPTSCAN0001 /* DocumentScannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/DocumentScannerService.swift; sourceTree = SOURCE_ROOT; };
+		RCPTOCRS0001RCPTOCRS0001 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/OCRService.swift; sourceTree = SOURCE_ROOT; };
+		RCPTPARS0001RCPTPARS0001 /* ReceiptParserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ReceiptParserService.swift; sourceTree = SOURCE_ROOT; };
+		RCPTVIEW0001RCPTVIEW0001 /* ReceiptScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Expenses/ReceiptScanView.swift; sourceTree = SOURCE_ROOT; };
+		RCPTTEST0001RCPTTEST0001 /* ReceiptParserServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/ReceiptParserServiceTests.swift; sourceTree = SOURCE_ROOT; };
 		F001F001F001F001F001F001 /* JetBrainsMono-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fonts/JetBrainsMono-Bold.ttf"; sourceTree = "<group>"; };
 		F002F002F002F002F002F002 /* JetBrainsMono-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fonts/JetBrainsMono-Light.ttf"; sourceTree = "<group>"; };
 		F003F003F003F003F003F003 /* JetBrainsMono-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fonts/JetBrainsMono-Regular.ttf"; sourceTree = "<group>"; };
@@ -404,6 +416,7 @@
 			children = (
 				1DD7C32E74DE46BBB9E3AC91 /* ExpenseFormView.swift */,
 				BEF66CBCFD9C455BA670D36B /* ExpenseListView.swift */,
+				RCPTVIEW0001RCPTVIEW0001 /* ReceiptScanView.swift */,
 			);
 			path = Expenses;
 			sourceTree = "<group>";
@@ -421,6 +434,7 @@
 			isa = PBXGroup;
 			children = (
 				12DF06932F1449458A48C053 /* Expense.swift */,
+				RCPTMODL0001RCPTMODL0001 /* Receipt.swift */,
 				3B7A9414480D45CD943E3DAC /* MockDataProvider.swift */,
 				3BA28B86F91D4BBDA07DADAF /* InspectionReport.swift */,
 				3FA9FF5C0567498ABB33199F /* Enums.swift */,
@@ -583,6 +597,9 @@
 			isa = PBXGroup;
 			children = (
 				381ADCC8AAB64013850B095C /* NotificationService.swift */,
+				RCPTSCAN0001RCPTSCAN0001 /* DocumentScannerService.swift */,
+				RCPTOCRS0001RCPTOCRS0001 /* OCRService.swift */,
+				RCPTPARS0001RCPTPARS0001 /* ReceiptParserService.swift */,
 				65B13317EA9D40DE9A31EA7C /* ReminderRepeatEngine.swift */,
 				60619A1D363143F3840752AB /* RetentionNotificationService.swift */,
 				C4349C93A9B5494B85D140E6 /* DocumentStorageService.swift */,
@@ -645,6 +662,7 @@
 			isa = PBXGroup;
 			children = (
 				0046A94CE11C4AACAB946053 /* ModelTests.swift */,
+				RCPTTEST0001RCPTTEST0001 /* ReceiptParserServiceTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -831,6 +849,11 @@
 				3AB3B5BB880346B5AE93CB3E /* Vehicle.swift in Sources */,
 				7E8E3F567E734C9290902E92 /* Reminder.swift in Sources */,
 				D23AF0F0C6E54C8388CF2EFB /* Expense.swift in Sources */,
+				RCPTMODL0002RCPTMODL0002 /* Receipt.swift in Sources */,
+				RCPTSCAN0002RCPTSCAN0002 /* DocumentScannerService.swift in Sources */,
+				RCPTOCRS0002RCPTOCRS0002 /* OCRService.swift in Sources */,
+				RCPTPARS0002RCPTPARS0002 /* ReceiptParserService.swift in Sources */,
+				RCPTVIEW0002RCPTVIEW0002 /* ReceiptScanView.swift in Sources */,
 				46B087CD5E754871AB46D4A3 /* ServiceRecord.swift in Sources */,
 				84114D1BC01D4B9C93AC86CA /* PartChange.swift in Sources */,
 				0377C4DD607644008D0C299D /* VehicleDocument.swift in Sources */,
@@ -883,6 +906,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C8FCA87C42B54C109FB322DD /* ModelTests.swift in Sources */,
+				RCPTTEST0002RCPTTEST0002 /* ReceiptParserServiceTests.swift in Sources */,
 				C32ADF231A8F497281953818 /* InsightSnoozeStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

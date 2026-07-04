@@ -24,6 +24,8 @@ struct ExpenseFormView: View {
     @State private var selectedVehicleId: UUID?
 
     @State private var validationErrors: [String] = []
+    @State private var showReceiptScan = false
+    @State private var showReceiptPaywall = false
 
     init(existingExpense: Expense? = nil, preselectedVehicleId: UUID? = nil, preselectedCategory: ExpenseCategory? = nil) {
         self.existingExpense = existingExpense
@@ -52,6 +54,9 @@ struct ExpenseFormView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if !isEditing {
+                    scanSection
+                }
                 categorySection
                 amountSection
                 detailSection
@@ -63,6 +68,13 @@ struct ExpenseFormView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Color.appBackground)
+            .sheet(isPresented: $showReceiptScan) {
+                ReceiptScanView(preselectedVehicleId: selectedVehicleId)
+            }
+            .sheet(isPresented: $showReceiptPaywall) {
+                PaywallView(feature: .receiptScan)
+                    .environmentObject(PaywallService.shared)
+            }
             .onChange(of: selectedVehicleId) { _, _ in
                 // Araç değişince geçersiz kategoriyi safe default'a döndür
                 if !availableCategories.contains(selectedCategory) {
@@ -91,6 +103,41 @@ struct ExpenseFormView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Scan Section
+    /// Fiş/fatura tarama girişi. Non-Pro kullanıcı paywall görür (mevcut gate deseni).
+    private var scanSection: some View {
+        Section {
+            Button {
+                if PaywallService.shared.canUseReceiptScan {
+                    showReceiptScan = true
+                } else {
+                    showReceiptPaywall = true
+                }
+            } label: {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "doc.viewfinder")
+                        .foregroundColor(AppColors.accentPrimary)
+                    Text("Fiş/Fatura Tara")
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.accentPrimary)
+                    Spacer()
+                    if !PaywallService.shared.canUseReceiptScan {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Fiş veya fatura tara")
+        } footer: {
+            Text("Fişi tarat, tutar ve tarih otomatik dolsun.")
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .listRowBackground(Color.appSurface)
     }
 
     // MARK: - Category Section

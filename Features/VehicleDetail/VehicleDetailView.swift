@@ -36,6 +36,8 @@ struct VehicleDetailView: View {
     @State private var showAddDocument = false
     @State private var showDocumentPreview = false
     @State private var previewDocumentURL: URL?
+    @State private var showReceiptScan = false
+    @State private var showReceiptPaywall = false
     private let snoozeStore = InsightSnoozeStore.shared
 
     // Filtered data
@@ -135,7 +137,8 @@ struct VehicleDetailView: View {
                     onAddFuelExpense: { showAddFuelExpense = true },
                     onAddDocument: { showAddDocument = true },
                     onAddReminder: { showAddReminder = true },
-                    onAddInspection: { showAddInspection = true }
+                    onAddInspection: { showAddInspection = true },
+                    onScanReceipt: handleScanReceipt
                 )
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
@@ -280,6 +283,13 @@ struct VehicleDetailView: View {
         .sheet(isPresented: $showAddDocument) {
             DocumentFormView(preselectedVehicleId: vehicle.id)
         }
+        .sheet(isPresented: $showReceiptScan) {
+            ReceiptScanView(preselectedVehicleId: vehicle.id)
+        }
+        .sheet(isPresented: $showReceiptPaywall) {
+            PaywallView(feature: .receiptScan)
+                .environmentObject(PaywallService.shared)
+        }
         .quickLookPreview($previewDocumentURL)
         .confirmationDialog("Aracı Arşivle", isPresented: $showArchiveConfirmation) {
             Button("Arşivle") { archiveVehicle() }
@@ -299,6 +309,14 @@ struct VehicleDetailView: View {
     }
 
 
+
+    private func handleScanReceipt() {
+        if PaywallService.shared.canUseReceiptScan {
+            showReceiptScan = true
+        } else {
+            showReceiptPaywall = true
+        }
+    }
 
     private func handleGuideAction(_ action: VehicleInsightAction) {
         switch action {

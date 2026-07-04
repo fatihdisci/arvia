@@ -10,6 +10,7 @@ struct VehicleQuickActionsSection: View {
     let onAddDocument: () -> Void
     let onAddReminder: () -> Void
     let onAddInspection: () -> Void
+    let onScanReceipt: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -42,6 +43,13 @@ struct VehicleQuickActionsSection: View {
                     vehicleDetailActionButton(icon: "magnifyingglass", label: "Ekspertiz Ekle", color: AppColors.accentPrimary) {
                         onAddInspection()
                     }
+                }
+                HStack(spacing: 8) {
+                    vehicleDetailActionButton(icon: "doc.viewfinder", label: "Fiş/Fatura Tara", color: AppColors.accentPrimary) {
+                        onScanReceipt()
+                    }
+                    // Simetri için boş yer tutucu — tek butonu tam genişliğe yaymamak adına.
+                    Color.clear.frame(maxWidth: .infinity)
                 }
             }
         }
