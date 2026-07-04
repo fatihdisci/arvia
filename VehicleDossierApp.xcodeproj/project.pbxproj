@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AIP1MASK0002AIP1MASK0002 /* PIIMaskingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1MASK0001AIP1MASK0001 /* PIIMaskingService.swift */; };
+		AIP1PROX0002AIP1PROX0002 /* AIProxyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1PROX0001AIP1PROX0001 /* AIProxyService.swift */; };
+		AIP1CLID0002AIP1CLID0002 /* AIClientID.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1CLID0001AIP1CLID0001 /* AIClientID.swift */; };
+		AIP1CONV0002AIP1CONV0002 /* AIConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1CONV0001AIP1CONV0001 /* AIConsentView.swift */; };
+		AIP1TMSK0002AIP1TMSK0002 /* PIIMaskingServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1TMSK0001AIP1TMSK0001 /* PIIMaskingServiceTests.swift */; };
+		AIP1TPRX0002AIP1TPRX0002 /* AIProxyServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1TPRX0001AIP1TPRX0001 /* AIProxyServiceTests.swift */; };
 		SDA1MODL0002SDA1MODL0002 /* VehicleUsageProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = SDA1MODL0001SDA1MODL0001 /* VehicleUsageProfile.swift */; };
 		SDA1UPSV0002SDA1UPSV0002 /* UsageProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SDA1UPSV0001SDA1UPSV0001 /* UsageProfileService.swift */; };
 		SDA1PODO0002SDA1PODO0002 /* PredictiveOdometerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SDA1PODO0001SDA1PODO0001 /* PredictiveOdometerService.swift */; };
@@ -160,6 +166,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AIP1MASK0001AIP1MASK0001 /* PIIMaskingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PIIMaskingService.swift; sourceTree = SOURCE_ROOT; };
+		AIP1PROX0001AIP1PROX0001 /* AIProxyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIProxyService.swift; sourceTree = SOURCE_ROOT; };
+		AIP1CLID0001AIP1CLID0001 /* AIClientID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIClientID.swift; sourceTree = SOURCE_ROOT; };
+		AIP1CONV0001AIP1CONV0001 /* AIConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Settings/AIConsentView.swift; sourceTree = SOURCE_ROOT; };
+		AIP1TMSK0001AIP1TMSK0001 /* PIIMaskingServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/PIIMaskingServiceTests.swift; sourceTree = SOURCE_ROOT; };
+		AIP1TPRX0001AIP1TPRX0001 /* AIProxyServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/AIProxyServiceTests.swift; sourceTree = SOURCE_ROOT; };
 		SDA1MODL0001SDA1MODL0001 /* VehicleUsageProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/VehicleUsageProfile.swift; sourceTree = SOURCE_ROOT; };
 		SDA1UPSV0001SDA1UPSV0001 /* UsageProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/UsageProfileService.swift; sourceTree = SOURCE_ROOT; };
 		SDA1PODO0001SDA1PODO0001 /* PredictiveOdometerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PredictiveOdometerService.swift; sourceTree = SOURCE_ROOT; };
@@ -382,6 +394,7 @@
 			children = (
 				1EB3D92AA9514B249B525E50 /* SettingsView.swift */,
 				5DF8F94C1F3A4EC0962F69BD /* ShareSheet.swift */,
+				AIP1CONV0001AIP1CONV0001 /* AIConsentView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -629,6 +642,9 @@
 				SDA1UPSV0001SDA1UPSV0001 /* UsageProfileService.swift */,
 				SDA1PODO0001SDA1PODO0001 /* PredictiveOdometerService.swift */,
 				SDA1MADV0001SDA1MADV0001 /* MaintenanceAdvisorService.swift */,
+				AIP1MASK0001AIP1MASK0001 /* PIIMaskingService.swift */,
+				AIP1PROX0001AIP1PROX0001 /* AIProxyService.swift */,
+				AIP1CLID0001AIP1CLID0001 /* AIClientID.swift */,
 				65B13317EA9D40DE9A31EA7C /* ReminderRepeatEngine.swift */,
 				60619A1D363143F3840752AB /* RetentionNotificationService.swift */,
 				C4349C93A9B5494B85D140E6 /* DocumentStorageService.swift */,
@@ -695,6 +711,8 @@
 				SDA1TPO10001SDA1TPO10001 /* PredictiveOdometerServiceTests.swift */,
 				SDA1TMA10001SDA1TMA10001 /* MaintenanceAdvisorServiceTests.swift */,
 				SDA1TUP10001SDA1TUP10001 /* UsageProfileServiceTests.swift */,
+				AIP1TMSK0001AIP1TMSK0001 /* PIIMaskingServiceTests.swift */,
+				AIP1TPRX0001AIP1TPRX0001 /* AIProxyServiceTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -887,6 +905,10 @@
 				SDA1PODO0002SDA1PODO0002 /* PredictiveOdometerService.swift in Sources */,
 				SDA1MADV0002SDA1MADV0002 /* MaintenanceAdvisorService.swift in Sources */,
 				SDA1FLOW0002SDA1FLOW0002 /* UsageProfileFlowView.swift in Sources */,
+				AIP1MASK0002AIP1MASK0002 /* PIIMaskingService.swift in Sources */,
+				AIP1PROX0002AIP1PROX0002 /* AIProxyService.swift in Sources */,
+				AIP1CLID0002AIP1CLID0002 /* AIClientID.swift in Sources */,
+				AIP1CONV0002AIP1CONV0002 /* AIConsentView.swift in Sources */,
 				RCPTSCAN0002RCPTSCAN0002 /* DocumentScannerService.swift in Sources */,
 				RCPTOCRS0002RCPTOCRS0002 /* OCRService.swift in Sources */,
 				RCPTPARS0002RCPTPARS0002 /* ReceiptParserService.swift in Sources */,
@@ -947,6 +969,8 @@
 				SDA1TPO10002SDA1TPO10002 /* PredictiveOdometerServiceTests.swift in Sources */,
 				SDA1TMA10002SDA1TMA10002 /* MaintenanceAdvisorServiceTests.swift in Sources */,
 				SDA1TUP10002SDA1TUP10002 /* UsageProfileServiceTests.swift in Sources */,
+				AIP1TMSK0002AIP1TMSK0002 /* PIIMaskingServiceTests.swift in Sources */,
+				AIP1TPRX0002AIP1TPRX0002 /* AIProxyServiceTests.swift in Sources */,
 				C32ADF231A8F497281953818 /* InsightSnoozeStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

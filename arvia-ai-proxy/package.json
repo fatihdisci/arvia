@@ -1,0 +1,19 @@
+{
+  "name": "arvia-ai-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stateless Vercel Edge proxy for Arvia AI chat completions (DeepSeek V4).",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.34.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.4.0",
+    "vercel": "^37.0.0"
+  }
+}

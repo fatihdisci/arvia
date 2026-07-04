@@ -16,6 +16,14 @@ struct SettingsView: View {
     @State private var showPaywall = false
     @State private var paywallFeature: PaywallView.PaywallFeature = .secondVehicle
     @State private var showAssistantProfile = false
+    // Yapay Zekâ (Bulut AI)
+    @AppStorage(AIConsentStore.enabledKey) private var aiCloudEnabled = false
+    @AppStorage(AIConsentStore.consentKey) private var aiConsentAccepted = false
+    @State private var showAIConsent = false
+    #if DEBUG
+    @State private var aiTestResult: String?
+    @State private var showAITestResult = false
+    #endif
     @State private var showSignOutConfirmation = false
     @State private var showDeleteAllConfirmation = false
     @State private var showDeleteAccountConfirmation = false
@@ -40,6 +48,9 @@ struct SettingsView: View {
 
                 // Akıllı Sürüş Asistanı
                 assistantSection
+
+                // Yapay Zekâ (Bulut AI)
+                aiSection
 
                 // Bildirimler
                 notificationSection
@@ -74,6 +85,19 @@ struct SettingsView: View {
             .sheet(isPresented: $showAssistantProfile) {
                 UsageProfileFlowView()
             }
+            .sheet(isPresented: $showAIConsent) {
+                AIConsentView(
+                    onAccept: { aiConsentAccepted = true },
+                    onDecline: { aiConsentAccepted = false; aiCloudEnabled = false }
+                )
+            }
+            #if DEBUG
+            .alert("AI Test", isPresented: $showAITestResult) {
+                Button("Tamam", role: .cancel) {}
+            } message: {
+                Text(aiTestResult ?? "")
+            }
+            #endif
             .confirmationDialog("Çıkış Yap", isPresented: $showSignOutConfirmation) {
                 Button("Çıkış Yap", role: .destructive) {
                     Task { await signOut() }
@@ -182,6 +206,41 @@ struct SettingsView: View {
             }
         } header: {
             Text("Akıllı Sürüş Asistanı")
+        }
+        .listRowBackground(Color.appSurface)
+    }
+
+    // MARK: - AI Section (Bulut AI)
+    private var aiSection: some View {
+        Section {
+            Toggle(isOn: $aiCloudEnabled) {
+                Label("Bulut AI özellikleri", systemImage: "sparkles")
+                    .font(AppTypography.body)
+            }
+            .tint(AppColors.accentPrimary)
+            .onChange(of: aiCloudEnabled) { _, isOn in
+                // Açılırken onay alınmamışsa tek seferlik onay ekranını göster.
+                if isOn && !aiConsentAccepted {
+                    showAIConsent = true
+                }
+            }
+
+            Link(destination: privacyURL) {
+                HStack {
+                    Label("Gizlilik Politikası", systemImage: "hand.raised")
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                    Image(systemName: "arrow.up.forward")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+        } header: {
+            Text("Yapay Zekâ")
+        } footer: {
+            Text("Açıkken; fiş okuma ve öneriler için metin, cihazından çıkmadan önce maskelenir (TC, plaka, IBAN, telefon gizlenir) ve yurt dışındaki bir AI sunucusuna gönderilir. Kapalıyken hiçbir metin gönderilmez; özellikler yerelde çalışır. İstediğin zaman kapatabilirsin.")
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textTertiary)
         }
         .listRowBackground(Color.appSurface)
     }
@@ -518,6 +577,14 @@ struct SettingsView: View {
                 Label("Demo Verisi Yükle", systemImage: "wand.and.stars")
                     .foregroundColor(AppColors.accentPrimary)
             }
+
+            // MARK: AI proxy uçtan uca test
+            Button {
+                runAITestRequest()
+            } label: {
+                Label("AI: Uçtan Uca Test İsteği", systemImage: "sparkles")
+                    .foregroundColor(AppColors.accentPrimary)
+            }
         } header: {
             Text("Geliştirici")
         } footer: {
@@ -528,6 +595,29 @@ struct SettingsView: View {
     #endif
 
     // MARK: - Actions
+    #if DEBUG
+    /// Dev hook: maskelenmiş örnek metinle proxy'ye uçtan uca istek atar.
+    private func runAITestRequest() {
+        aiTestResult = "İstek gönderiliyor…"
+        showAITestResult = true
+        let sample = PIIMaskingService.mask(
+            "OPET AKARYAKIT\nTC 10000000146\nTarih: 15.03.2024\nTOPLAM: 1.079,50 TL"
+        )
+        Task {
+            do {
+                let receipt = try await AIProxyService.shared.parseReceipt(ocrText: sample)
+                await MainActor.run {
+                    aiTestResult = "OK · satıcı=\(receipt.vendor ?? "-") · toplam=\(receipt.total.map { String($0) } ?? "-")"
+                }
+            } catch let error as AIProxyError {
+                await MainActor.run { aiTestResult = "Hata (tipli): \(error)" }
+            } catch {
+                await MainActor.run { aiTestResult = "Hata: \(error.localizedDescription)" }
+            }
+        }
+    }
+    #endif
+
     private func openSystemNotificationSettings() {
         if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
             UIApplication.shared.open(url)
