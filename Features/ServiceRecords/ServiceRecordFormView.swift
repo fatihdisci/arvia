@@ -315,10 +315,56 @@ struct ServiceRecordFormView: View {
 
     // MARK: - Save
     private func saveRecord() {
-        guard let vehicleId = selectedVehicleId else {
-            validationErrors = ["Bir araç seçmelisin."]
+        var errors: [String] = []
+
+        if selectedVehicleId == nil {
+            errors.append("Bir araç seçmelisin.")
+        }
+
+        let trimmedOdometer = odometerText.trimmingCharacters(in: .whitespaces)
+        if !trimmedOdometer.isEmpty {
+            if let value = Int(trimmedOdometer) {
+                if value < 0 {
+                    errors.append("Kilometre negatif olamaz.")
+                }
+            } else {
+                errors.append("Kilometre geçerli bir sayı olmalı.")
+            }
+        }
+
+        if date > Date() {
+            errors.append("Bakım tarihi gelecekte olamaz.")
+        }
+
+        if !laborCostText.trimmingCharacters(in: .whitespaces).isEmpty && laborCost == nil {
+            errors.append("İşçilik tutarı geçerli bir sayı olmalı.")
+        }
+        if !partsCostText.trimmingCharacters(in: .whitespaces).isEmpty && partsCost == nil {
+            errors.append("Parça tutarı geçerli bir sayı olmalı.")
+        }
+        if !totalCostText.trimmingCharacters(in: .whitespaces).isEmpty && totalCost == nil {
+            errors.append("Toplam tutar geçerli bir sayı olmalı.")
+        }
+
+        if createNextReminder {
+            let trimmedNextKm = nextReminderOdometerText.trimmingCharacters(in: .whitespaces)
+            if !trimmedNextKm.isEmpty {
+                if let value = Int(trimmedNextKm) {
+                    if value < 0 {
+                        errors.append("Sonraki hatırlatıcı km değeri negatif olamaz.")
+                    }
+                } else {
+                    errors.append("Sonraki hatırlatıcı km değeri geçerli bir sayı olmalı.")
+                }
+            }
+        }
+
+        guard errors.isEmpty else {
+            validationErrors = errors
             return
         }
+
+        guard let vehicleId = selectedVehicleId else { return }
 
         let record: ServiceRecord
         if let existing = existingRecord {
