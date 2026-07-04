@@ -21,22 +21,23 @@ struct DossierCompletenessCard: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
-            // Circular progress
+            // Yarım daire takometre-yayı (anayasaya uygun)
             ZStack {
-                Circle()
-                    .stroke(scoreColor.opacity(0.15), lineWidth: 5)
+                // Arka plan yayı (silik guide)
+                halfCircleArc(progress: 1.0)
+                    .stroke(scoreColor.opacity(0.15), style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .frame(width: 64, height: 64)
 
-                Circle()
-                    .trim(from: 0, to: animatedScore)
-                    .stroke(scoreColor, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                // Skor yayı
+                halfCircleArc(progress: animatedScore)
+                    .stroke(scoreColor, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .frame(width: 64, height: 64)
-                    .rotationEffect(.degrees(-90))
 
                 VStack(spacing: 0) {
                     Text("%\(score)")
-                        .font(AppTypography.cardTitleSmall)
+                        .font(.custom("JetBrainsMono-SemiBold", size: 16))
                         .foregroundColor(scoreColor)
+                        .monospacedDigit()
                 }
             }
 
@@ -96,11 +97,30 @@ struct DossierCompletenessCard: View {
     }
 
     private var scoreColor: Color {
-        // Kırmızı sadece gerçekten başlanmamış durumda (0-29) — skor
-        // geliştikçe amber'a geçer, "kritik" hissi vermez. 80+ yeşil.
+        // 80+ yeşil, 30+ turkuaz (tek enerji vurgusu), <30 amber.
+        // critical (#FF2D3C) yalnızca form hatası/gecikmiş reminder/destructive buton içindir.
         if score >= 80 { return AppColors.success }
-        if score >= 30 { return AppColors.warning }
-        return AppColors.critical
+        if score >= 30 { return AppColors.accentPrimary }
+        return AppColors.warning
+    }
+
+    // MARK: - Half-Circle Arc (takometre-yayı)
+    // 01_DESIGN.md Madde 3: tam daire progress ring yasak.
+    // Yarım daire: alttan açık, soldan sağa dolan 180° yay.
+    private func halfCircleArc(progress: CGFloat) -> Path {
+        var path = Path()
+        let radius: CGFloat = 27
+        let center = CGPoint(x: 32, y: 32)
+        // Soldan (180°) sağa (0°) doğru saat yönünde ilerler
+        let endAngle = 180.0 - (180.0 * Double(progress))
+        path.addArc(
+            center: center,
+            radius: radius,
+            startAngle: .degrees(180),
+            endAngle: .degrees(endAngle),
+            clockwise: true
+        )
+        return path
     }
 
     private var accessibilityLabel: String {
