@@ -1,6 +1,6 @@
 # Arvia Pro — Değer Önerileri Backlog Raporu
 
-> **Tarih:** 3 Temmuz 2026
+> **Tarih:** 4 Temmuz 2026
 > **Hazırlayan:** Fatih + Mavis
 > **Kapsam:** 1-1 bireysel kullanıcı, üçüncü kurum entegrasyonu YOK
 > **Referans:** `ROADMAP.md` (Faz 3.2 backlog), `01_DESIGN.md`, `Services/PaywallService.swift`
@@ -16,276 +16,108 @@
 - Çoklu araç garajı
 - Tüm araçlar için hatırlatıcılar
 
-**Gözlem:** Pro değerinin büyük kısmı "kaç araç" ekseninde. **Veri derinliği/analizi eksik** — kullanıcı 5 yıl masraf topladığında uygulama ona "şu öneriyi yaparım" demiyor. Bu açığı kapatacak 6 öneri aşağıda.
+**Gözlem:** Pro değerinin büyük kısmı "kaç araç" ekseninde. **Veri derinliği/analizi eksik** — kullanıcı 5 yıl masraf topladığında uygulama ona "şu öneriyi yaparım" demiyor. Bu açığı kapatacak aşağıdaki 2 öneri odak backlog'u oluşturur; diğer fikirler (widget, çoklu para birimi, CSV export, satış linki, yıllık rapor) elendi — efektif bulunmadı.
 
 ---
 
-## 1. 🧠 Akıllı Hatırlatıcı Önerisi (km pattern analizi)
-
-**Problem:** Kullanıcı "60.000 km'de triger kontrol et" bilgisine sahip değil, app bilmiyor. Bugün InsightService sadece rule-based, kullanıcının kendi geçmişinden öğrenmiyor.
-
-**Çözüm:** Arka planda çalışan hafif bir analiz: kullanıcının son 3-5 bakım kaydının km aralıklarına bak → "Senin aracın ortalama 8.500 km'de periyodik bakıma giriyor. Bir sonraki tahmini 52.300 km." gibi proaktif bir hatırlatıcı üret.
-
-**UI/UX:** Garage → Bugün Garajında'da (Faz 1.1 rehberinin içinde) yeni bir **insight tipi**: "📊 Bakım Tahmini". İkonu `chart.line.uptrend.xyaxis`. Card tasarımı diğer rehber kartlarıyla aynı (VehicleInsightCard component'i zaten 5 tip destekliyor). CTA: "Hatırlatıcı Oluştur" → reminder eklenir.
-
-**Teknik:**
-- `Services/PredictiveMaintenanceService.swift` — yeni dosya
-- UserDefaults cache ile 24 saatte bir çalışır (background task değil — app açıldığında lazy compute)
-- ServiceRecord üzerinde basit linear regression veya "son 3'ün ortalaması"
-- Yeni `VehicleInsightType.predictiveMaintenance` enum case'i
-- Faz 1.1 rehberiyle entegre, `contentKind: .info`
-
-**Fayda:** Kullanıcı "bu app benim için düşünüyor" hisseder. Bakım kaçırma azalır → pocket'ta para kalır. **Net retention artışı.**
-
-**Pro değeri:** ⭐⭐⭐⭐⭐ Yüksek — bugünkü rehberin en güçlü uzantısı, somut tasarruf vaat eder.
-
-**Efor:** 1-2 gün (servis + 1 enum case + 1 test + 1 rehber kart metni).
-
----
-
-## 2. 📈 Yıllık Derin Rapor (vergi + satış hazırlığı)
-
-**Problem:** ReportsView var ama şu an daha çok "KM başı maliyet" gibi tekil metrikler. Yıllık sahiplik özeti sığ. Kullanıcı aracını satarken veya vergi beyannamesi için "2024'te bu araç bana ne kadara mal oldu?" sorusuna somut cevap yok.
-
-**Çözüm:** Yeni ekran: **Raporlar → "Yıllık Sahiplik Özeti"**. Tarih seçici (2024, 2025, 2026...). Çıktılar:
-- Toplam masraf (kategori dağılımı — pasta grafik)
-- Yakıt tüketimi (L/100km trendi — satır grafik)
-- Aylık karşılaştırma (bar — ocak vs şubat)
-- En pahalı ay + en pahalı kategori
-- Tahmini yıllık değer kaybı (sadece hesap tablosu, garanti yok)
-- "Geçen yıla göre %X daha az harcadın" karşılaştırma
-
-**UI/UX:** ReportsView içinde "Yıllık Özet" card'ı. Tıklayınca dedicated sheet/screen. Swift Charts framework (iOS 16+, zaten var). Design anayasası: token renkler (gold accent, koyu yüzey), AI-slop gradient yok. Paylaş butonu → PDF export.
-
-**Teknik:**
-- `Services/YearlyReportService.swift` — yeni dosya
-- `Features/Reports/YearlyReportView.swift` — yeni ekran
-- Expense + ServiceRecord üzerinde aggregation
-- Swift Charts: `Chart { ... }` syntax
-- PDF: mevcut `PDFExportService` ile entegre, "Yıllık Rapor" şablonu
-
-**Fayda:** Gerçek bir **değer anı** — kullanıcı 1 Ocak'ta "geçen yıl özetim"i görmek ister. Vergi için faydalı (şirket aracıysa). Satış öncesi hazırlık. Paylaşılabilirlik (PDF).
-
-**Pro değeri:** ⭐⭐⭐⭐ Yüksek — somut, paylaşılabilir çıktı, yılda 1-2 kez kullanılır ama her kullanım değerli.
-
-**Efor:** 3-4 gün (chart'lar + PDF + paylaşım + mevcut raporların üstüne ek).
-
----
-
-## 3. 🔗 Sınırlı Süreli Satış Dosyası Paylaşım Linki
-
-**Problem:** SaleFileView var ama paylaşım için AirDrop veya PDF göndermek gerekiyor. Alıcı "link" isterse yok. Kullanıcı aracını satarken 10 kişiye göndermek zor — dosya gizli kalır, güncelleme yapılırsa eski link expire olmaz.
-
-**Çözüm:** Satış dosyasından **public link** üret. Format: `arvia.app/v/ARV-4X9K`. Link tıklanınca web'de (PWA olmadan) minimal bir görüntüleme sayfası açılır:
-- Araç özeti
-- Bakım geçmişi özeti
-- Son görüntüleme tarihi
-- **Son kullanma tarihi** (3 gün, 7 gün, 14 gün — kullanıcı seçer)
-- Görüntülenme sayısı (kullanıcı dashboard'undan takip eder)
-
-**UI/UX:** SaleFileView → "Paylaş" butonu → alt menü: "AirDrop", "PDF Kaydet", **"Link Oluştur"** (Pro). Link oluştur → sheet: son kullanma seçenekleri + "Linki Kopyala". Dashboard'da (Pro) link listesi: kim ne zaman görüntüledi.
-
-**Teknik:**
-- `Vehicle.publicIdentifier: String` (5+5 char random) — yeni alan, SwiftData migration (default boş)
-- `SharedSaleLinkService.swift` — yeni service, Supabase'e link kaydı + expiration logic
-- Web endpoint: minimal static HTML (GitHub Pages'de host edilebilir — mevcut `privacy.html`, `terms.html` aynı yerde)
-- Realtime: `viewCount` increment + `lastViewedAt` update
-
-**Fayda:** Alıcıya profesyonel his — "Arvia kullanıyorum, link bu, 3 gün geçerli" → güven artışı. Kullanıcı kontrol eder (son kullanma). Tek tuşla paylaşım. **Araç satış sürecini kolaylaştırır.**
-
-**Pro değeri:** ⭐⭐⭐⭐ Yüksek — somut dönüşüm anı (araç satarken). Web tarafı ucuz (static site), backend Supabase zaten var.
-
-**Efor:** 4-5 gün (Vehicle alanı + migration + Supabase table + web page + sharing UI + view tracking).
-
----
-
-## 4. 📊 CSV/PDF Veri Export (veri sahipliği)
-
-**Problem:** Kullanıcı 3 yıllık masraf verisi biriktirdi. Uygulama dışında kullanmak istiyor (Excel'de analiz, vergi dosyası, başka app). Şu an sadece PDF var, o da satış dosyası formatında — genel export yok.
-
-**Çözüm:** Ayarlar → "Verileri Dışa Aktar". İki format:
-- **CSV:** Tüm masraflar (tarih, kategori, tutar, km, satıcı, not), bakım kayıtları, hatırlatıcılar. UTF-8 BOM ile (Excel TR desteği).
-- **PDF (Genişletilmiş):** Yıllık raporun farklı formatları — Kategori özet tablosu, aylık trend, kilometre-bazlı analiz.
-
-**UI/UX:** Ayarlar → "Verilerim" bölümüne yeni satır. Tıkla → alt menü: "Masraflar (CSV)", "Bakımlar (CSV)", "Tümü (PDF)". ShareSheet ile dışa aktar.
-
-**Teknik:**
-- `Services/DataExportService.swift` — yeni service
-- CSV: string formatlama, `;` ayraç (TR locale) veya `,`
-- PDF: mevcut `PDFExportService`'i extend et veya yeni `ComprehensiveReportPDFService`
-- Dosya oluştur → `UIActivityViewController` ile paylaş
-
-**Fayda:** "Verilerim benim" hissi — kullanıcı app'ten bağımsız hissetmez, ama kontrol onda. Vergi için kritik. **Aylık aktif kullanım değil, yılda 1-2 kez yüksek değer.**
-
-**Pro değeri:** ⭐⭐⭐ Orta — yüksek değer ama düşük sıklık. Mevcut Free'de satış PDF'i var, Pro'ya yeni katma değer.
-
-**Efor:** 1-2 gün (CSV writer + PDF template + share sheet).
-
----
-
-## 5. 📱 Home Screen Widget
-
-**Problem:** Kullanıcı her seferinde app'i açıp "bugün ne yapmam lazım" diye bakıyor. Sık kullanıcılar için friction.
-
-**Çözüm:** 2 widget:
-- **Küçük (2x2):** Bir sonraki reminder (varsa) + plaka + gün sayısı. "Muayene • 12 gün". Yoksa "Tüm işler tamam ✓".
-- **Orta (4x2):** İlk 2 reminder + aktif araç sayısı + bu ay masraf.
-
-**UI/UX:** iOS Standart widget tasarımı (SF Pro). Dark/light mode otomatik. Pro badge sağ altta küçük (mevcut token sistemi). Widget galerisinde "Arvia Pro Widget" adı.
-
-**Teknik:**
-- `WidgetExtension/` — yeni app extension target (project.pbxproj ekleme gerekir)
-- `AppGroup` ile data paylaşımı (UserDefaults veya dosya)
-- Timeline provider: her saat güncelle, kritik reminder varsa daha sık
-- `WidgetCenter.shared.reloadAllTimelines()` — app'te veri değişince trigger
-
-**Fayda:** App'i açmadan bilgi → retention artışı, sık kullanıcı. **Widget tıklanınca app'te ilgili reminder'a yönlendir.**
-
-**Pro değeri:** ⭐⭐⭐ Orta — bireysel kullanıcı için retention değeri yüksek, ama teknik setup ağır (extension target, App Group provisioning).
-
-**Efor:** 3-4 gün (extension setup + App Group + timeline logic + provisioning). Projenin yapısı gereği yeni target eklemek maliyetli.
-
----
-
-## 6. 💱 Çoklu Para Birimi (tatil/yurt dışı)
-
-**Problem:** Kullanıcı yurt dışına gitti, EUR cinsinden yakıt aldı, otopark ödedi. Uygulama sadece TL. Manuel çevirme zahmetli.
-
-**Çözüm:** Masraf eklerken para birimi seçimi (TRY, EUR, USD, GBP). Görüntüleme daima TRY (kullanıcının tercih ettiği). Geçmiş çeviri kuru kaydedilir (o günkü kur) — daha sonra kur değişirse tutar değişmez, doğru vergi kaydı.
-
-**UI/UX:** Masraf formunda "₺" simgesi yerine dropdown (TRY/EUR/USD/GBP). Seçilince otomatik TRY karşılığı hesaplanır ve gösterilir: "€50 → ₺1.750 (kur: 35,00)". Geçmiş ekranda orijinal birim de görünür: "₺1.750 (€50)".
-
-**Teknik:**
-- `Expense.currency: String` (ISO 4217) — yeni alan, default "TRY", SwiftData migration
-- `Expense.exchangeRate: Double?` — kayıt anındaki kur, default nil
-- `Services/CurrencyService.swift` — kur cache (günlük), `exchangerate-api.com` veya `TCMB` (ücretsiz, basit)
-- `ReportsView` ve `Summary`'de toplamlar TRY cinsinden (tutarlı)
-
-**Fayda:** Niş ama gerçek — yılda 1-2 kez yurt dışına giden Türk kullanıcı için somut değer. **Vergi/döviz hesabı kolaylaşır.**
-
-**Pro değeri:** ⭐⭐⭐ Orta — küçük ama sadık kitle, "beni düşünmüşler" hissi.
-
-**Efor:** 2-3 gün (currency service + form değişikliği + migration + reports toplamları).
-
----
-
-## 7. 🤖 Akıllı Sürüş Asistanı (alışkanlık öğrenme + tahmin motoru)
+## 1. 🤖 Akıllı Sürüş Asistanı
 
 **Problem:** Uygulama bugün kullanıcıyı dinlemez — sadece ne girdiyse onu gösterir. Oysa kullanıcı km güncellemeyi unutuyor, alışkanlıkları bilinmiyor, bakım önerileri jenerik (kullanım tipine göre değil). "Bu app beni tanımıyor" hissi.
 
-**Çözüm:** İki katmanlı bir akıllı asistan:
+**Çözüm:** Üç katmanlı akıllı asistan — kullanıcıyı dinleyen, geçmişten öğrenen, proaktif öneri üreten yapı.
 
 ### Katman A — Alışkanlık Profili (kullanıcı girdisi)
 
-İlk kullanımda veya pro'ya geçiş sonrası kısa bir "tanışma" akışı:
-- **Günde ortalama kaç km yaparsın?** (slider/segment: <20, 20-50, 50-100, 100+)
-- **Genelde şehir içi mi, şehir dışı mı, karma mı?** (segment)
-- **Yakıt tüketimini biliyor musun?** (opsiyonel sayısal giriş — şehir içi / dışı)
-- **Aracı genelde kim kullanıyor?** (sadece sen / eşinle / ailenle)
-- **Tipik yolculuk türün?** (işe gidiş, tatil, hafta sonu, vs.) — çoklu seçim
+İlk kullanımda veya Pro'ya geçiş sonrası kısa "tanışma" akışı:
+- Günde ortalama kaç km yaparsın? (slider/segment: <20, 20-50, 50-100, 100+)
+- Genelde şehir içi mi, şehir dışı mı, karma mı?
+- Yakıt tüketimini biliyor musun? (opsiyonel sayısal giriş — şehir içi / dışı)
+- Aracı genelde kim kullanıyor?
+- Tipik yolculuk türün? (işe gidiş, tatil, hafta sonu vs. — çoklu seçim)
 
-Bu cevaplar `VehicleUsageProfile` modeline kaydedilir (yeni SwiftData modeli). Sonradan ayarlardan düzenlenebilir.
+Bu cevaplar `VehicleUsageProfile` modeline kaydedilir. Sonradan ayarlardan düzenlenebilir.
 
-### Katman B — Tahmin Motoru (kullanıcı verisi girdikçe)
+### Katman B — Tahmin Motoru (veri girdikçe)
 
-Kullanıcının son 3-6 ayda girdiği masraf ve km kayıtlarından gerçek kullanım profili çıkarılır:
+Kullanıcının son 3-6 aydaki masraf ve km kayıtlarından gerçek kullanım profili çıkarılır:
 - **Tahmini günlük km:** Son 90 gündeki masrafların km farklarından ortalama
 - **Tahmini tüketim:** Yakıt masrafları + km farklarından L/100km
 - **Yol tipi dağılımı:** Km değişim hızına göre (ani yükselişler = uzun yol)
 
 ### Katman C — Proaktif Etkileşim
 
-**A) Tahmini km sorgulaması:** Kullanıcı 30+ gündür km güncellemediyse Garaj → Bugün Garajında'da yeni bir insight tipi:
-> "Aracının şu an yaklaşık **52.400 km** olmalı (günde ortalama 47 km × son güncellemeden bugüne). Bu doğru mu, yoksa güncellemek ister misin?"
-> [Doğru, devam et]  [Güncelle]
+**A) Tahmini km sorgulaması:** Kullanıcı 30+ gündür km güncellemediyse Garaj → Bugün Garajında'da yeni insight:
+> "Aracının şu an yaklaşık **52.400 km** olmalı. Bu doğru mu?"
+> [Doğru, devam et] [Güncelle]
 
-**B) Bakım önerisi adaptasyonu:** Kullanıcının yol tipi ve km ortalamasına göre bakım önerileri:
-- "Senin aracın ortalama 47 km/gün yapıyor. Triger kontrolü 90.000 km'de öneriliyor — senin kullanımınla bu **5.5 yıl** sonra."
-- Şehir dışı ağırlıklı kullanımda motor yağı değişim sıklığı farklı önerilir.
-- Elektrikli araçta batarya sağlığı takibi öne çıkar.
+**B) Bakım önerisi adaptasyonu:** Kullanıcının yol tipi ve km ortalamasına göre:
+- "Senin aracın ortalama 47 km/gün yapıyor. Triger 90.000 km'de — senin kullanımınla bu 5.5 yıl sonra."
+- Şehir dışı ağırlıklıysa motor yağı değişim sıklığı farklı önerilir
+- Elektrikli araçta batarya sağlığı takibi öne çıkar
 
-**C) Mevsimsel+alışkanlık kombine tahmin:** "Yaz aylarında gezi yapıyorsan Temmuz'da 2.500 km'ye ulaşabilirsin. Yaz öncesi klima kontrolü eklemeyi düşün."
+**C) Mevsimsel + alışkanlık kombine tahmin:** "Temmuz'da 2.500 km'ye ulaşabilirsin, yaz öncesi klima kontrolü eklemeyi düşün."
 
 ### AI opsiyonu (sonraya)
 
 İlk aşamada **AI olmadan** çalışır (rule-based + ortalama). İleride:
-- Masraf açıklamalarından ("yaz tatili yol", "işe gidiş") NLP ile yol tipi çıkarma
-- LLM ile "kullanıcı tarzına göre" kişiselleştirilmiş bakım planı
-- Kullanıcının kendi ses tonuyla konuşan mini-asistan
-
-İlk sürüm AI olmadan güçlü olabilir — veri zaten mevcut (masraflar, km kayıtları, reminder'lar).
+- Masraf açıklamalarından NLP ile yol tipi çıkarma
+- LLM ile kişiselleştirilmiş bakım planı
+- Kullanıcının ses tonuyla konuşan mini-asistan
 
 **UI/UX:**
-- **Onboarding sonrası (Pro'ya geçiş):** Kısa tanışma akışı (4-5 soru, slider/segment ağırlıklı, her biri 1 ekran)
-- **Garaj → Bugün Garajında:** Yeni insight tipi `.predictiveAssistance` (iconu `brain.head.profile`, contentKind `.info`)
-- **Ayarlar → "Kullanım Profilim":** Düzenleme ekranı (cevapları güncelle)
-- **Insight'lar:** Tek satır, doğal ton — "Aracının şu an ~52.400 km olmalı, doğru mu?"
+- **Onboarding sonrası (Pro'ya geçiş):** 4-5 soruluk tanışma akışı (slider/segment ağırlıklı, her biri 1 ekran)
+- **Garaj → Bugün Garajında:** Yeni insight tipi `.predictiveAssistance` (`brain.head.profile`)
+- **Ayarlar → "Kullanım Profilim":** Düzenleme ekranı
 
 **Teknik:**
 - `Models/VehicleUsageProfile.swift` — yeni SwiftData modeli (vehicleId, dailyKmAverage, routeType, fuelConsumptionCity, fuelConsumptionHighway, primaryUser, tripTypes, updatedAt)
-- `Services/UsageProfileService.swift` — onboarding'den sonra tetiklenir, sonradan ayarlardan güncellenebilir
-- `Services/PredictiveOdometerService.swift` — son masraf/km kayıtlarından tahmin (background-friendly, lazy compute)
-- `Services/MaintenanceAdvisorService.swift` — kullanım profili + araç tipi + mevcut km → kişiselleştirilmiş bakım önerileri
+- `Services/UsageProfileService.swift` — onboarding'den tetiklenir, ayarlardan güncellenebilir
+- `Services/PredictiveOdometerService.swift` — son masraf/km kayıtlarından tahmin
+- `Services/MaintenanceAdvisorService.swift` — kullanım profili + araç tipi → kişiselleştirilmiş bakım önerileri
 - Yeni `VehicleInsightType.predictiveAssistance` + `predictiveMaintenance` enum case'leri
 - Faz 1.1 rehberiyle entegre (VehicleInsightCard)
-- Mevcut #1 (Akıllı Hatırlatıcı km pattern) bu büyük yapının alt özelliği olur
 
-**Fayda:**
-- "Bu app beni tanıyor" hissi — kullanıcıyı dinleyen, hatırlatan, öğrenen bir asistan
-- Km güncelleme unutulsa bile tahmin çalışır — veri kaybı azalır
-- Bakım önerileri kişiselleşir — "jenerik tavsiye" yerine "senin kullanımına göre"
-- Retention: her insight "bu app beni anlıyor" hissi verir
-- **En güçlü Pro değer adayı** — diğer tüm özellikler tek başına somut bir değer sunar ama bu katman uygulamayı "araç yönetim aracı"ndan "kişisel araç asistanına" taşır
-
-**Pro değeri:** ⭐⭐⭐⭐⭐ En yüksek — diğer tüm öneriler tekil değer sunar, bu katman onları birleştirip "deneyim"e dönüştürür.
+**Pro değeri:** ⭐⭐⭐⭐⭐ En yüksek — uygulamayı "araç yönetim aracı"ndan "kişisel araç asistanına" taşır.
 
 **Efor:** 5-7 gün
 - 1 gün: VehicleUsageProfile modeli + SwiftData migration
-- 1-2 gün: Onboarding tanışma akışı (4-5 soru, sonradan ayarlardan düzenlenebilir)
-- 1-2 gün: PredictiveOdometerService (tahmini km) + insight entegrasyonu
-- 2-3 gün: MaintenanceAdvisorService (kullanım profili + araç tipi → bakım önerisi adaptasyonu)
+- 1-2 gün: Onboarding tanışma akışı
+- 1-2 gün: PredictiveOdometerService + insight entegrasyonu
+- 2-3 gün: MaintenanceAdvisorService
 
 ---
 
-## 8. 📸 OCR + AI ile Fatura Tarama (otomatik masraf/bakım ekleme)
+## 2. 📸 OCR + AI ile Fatura Tarama
 
 **Problem:** Kullanıcı benzin istasyonunda fiş alıyor, yağ değişiminde fatura geliyor, servis raporları PDF. Hepsini manuel girmek zahmetli — tarih, tutar, kategori, KM, satıcı. Pro kullanıcı için friction; kayıt tutma alışkanlığını kıran tek şey bu.
 
-**Çözüm:** Fotoğraf veya PDF yükle → OCR (Vision framework, iOS yerleşik) → alanları parse et (tarih, tutar, kategori, başlık, KM) → kullanıcıya onay ekranı göster → kaydet. Süreç 3-5 saniye. İki katman:
+**Çözüm:** Fotoğraf veya PDF yükle → OCR → alanları parse et → kullanıcıya onay ekranı → kaydet. Süreç 3-5 saniye. İki katman:
 - **Yerel (Vision + rule-based):** Ücretsiz, çevrimdışı, basit fişlerde iyi
-- **Bulut (LLM ile, opsiyonel):** Karmaşık belgeler, çok satırlı bakım faturaları, Türkçe fiş formatları için daha doğru
+- **Bulut (LLM ile, opsiyonel):** Karmaşık belgeler, çok satırlı bakım faturaları için daha doğru
 
 **UI/UX:**
 - Masraf ekle ve Bakım ekranlarında yeni buton: **"📸 Fiş/Fatura Tara"**
-- Kamera veya galeriden seçim → çoklu fotoğraf destekli (örn. 2 sayfa fatura)
+- Kamera veya galeriden seçim → çoklu fotoğraf destekli
 - Yükleme sırasında skeleton + "Fiş okunuyor..." mesajı
-- Sonuç ekranı: Parse edilmiş alanlar form gibi — kullanıcı düzeltebilir
-- "Bu bir bakım faturası" toggle'ı → bakım kaydına dönüşür (yoksa masraf olarak kaydedilir)
-- Kaydet → onay toast
-- Ham görsel belge kasasına otomatik eklenir (sonradan erişim için)
+- Sonuç ekranı: parse edilmiş alanlar form gibi — kullanıcı düzeltebilir
+- "Bu bir bakım faturası" toggle'ı → bakım kaydına dönüşür (yoksa masraf)
+- Ham görsel belge kasasına otomatik eklenir
 
 **Teknik:**
-- `Services/DocumentScannerService.swift` — VNDocumentCameraViewController entegrasyonu (VisionKit)
+- `Services/DocumentScannerService.swift` — VNDocumentCameraViewController entegrasyonu
 - `Services/OCRService.swift` — VNRecognizeTextRequest (Türkçe dil paketi, iOS 16+)
 - `Services/FaturaParserService.swift` — rule-based (regex: TUTAR, TARİH, KDV, TOPLAM, T.C.) + opsiyonel LLM
 - `Features/Expenses/ReceiptScanView.swift` — capture + review ekranı
-- `Models/Receipt.swift` — yeni SwiftData modeli (imageData, rawOCRText, parsedFields JSON, linkedExpenseId?)
-- Privacy: Bulut LLM kullanılırsa fotoğraf sunucuya gönderilmeden önce kullanıcı onayı + maskeleme (TC, plaka tespit edilirse)
+- `Models/Receipt.swift` — yeni SwiftData modeli (imageData, rawOCRText, parsedFields JSON)
+- Privacy: LLM'e gönderilmeden önce kullanıcı onayı + maskeleme (TC, plaka)
 
-**Fayda:**
-- Manuel veri girişi %80 azalır
-- Masraf/bakım kayıt tutma alışkanlığı güçlenir
-- Fiş kaybetme derdi biter (otomatik dijitalleştirme)
-- "Bu app benim için çalışıyor" hissi — pasif kullanıcıyı aktif yapar
-- Pro için günlük/haftalık kullanım tetikler (diğer Pro özellikleri yıllık; bu haftalık)
-
-**Pro değeri:** ⭐⭐⭐⭐⭐ En yüksek — somut zaman tasarrufu, fiş kaybetme korkusunu bitirir. Diğer Pro özellikleri yılda 1-2 kez değerli iken bu haftalık/aylık.
+**Pro değeri:** ⭐⭐⭐⭐⭐ En yüksek — somut zaman tasarrufu, haftalık/aylık kullanım. Diğer Pro özellikleri yılda 1-2 kez değerli iken bu haftalık.
 
 **Efor:** 4-6 gün
 - 1 gün: DocumentScannerService + OCR (yerel Vision) + Türkçe dil paketi
-- 1-2 gün: FaturaParserService (rule-based + test, regex pattern'leri)
+- 1-2 gün: FaturaParserService (rule-based + test)
 - 1 gün: ReceiptScanView UI + form integration + belge kasası bağlantısı
-- 1-2 gün: LLM entegrasyonu (opsiyonel, kullanıcı seçerse)
+- 1-2 gün: LLM entegrasyonu (opsiyonel)
 
 ---
 
@@ -293,41 +125,117 @@ Kullanıcının son 3-6 ayda girdiği masraf ve km kayıtlarından gerçek kulla
 
 | # | Öneri | Pro Değeri | Efor | Somutluk |
 |---|---|---|---|---|
-| 1 | 🧠 Akıllı Hatırlatıcı (km pattern) | ⭐⭐⭐⭐⭐ | 1-2 gün | Yüksek — #7'nin alt özelliği |
-| 2 | 📈 Yıllık Derin Rapor | ⭐⭐⭐⭐ | 3-4 gün | Yüksek |
-| 3 | 🔗 Sınırlı Süreli Satış Linki | ⭐⭐⭐⭐ | 4-5 gün | Çok yüksek |
-| 4 | 📊 CSV/PDF Export | ⭐⭐⭐ | 1-2 gün | Yüksek |
-| 5 | 📱 Home Screen Widget | ⭐⭐⭐ | 3-4 gün | Orta |
-| 6 | 💱 Çoklu Para Birimi | ⭐⭐⭐ | 2-3 gün | Niş ama gerçek |
-| 7 | 🤖 **Akıllı Sürüş Asistanı** | ⭐⭐⭐⭐⭐ | 5-7 gün | Çok yüksek — katman özellik |
-| 8 | 📸 **OCR + AI Fatura Tarama** | ⭐⭐⭐⭐⭐ | 4-6 gün | Çok yüksek — günlük/haftalık kullanım |
-
----
-
-## Önerilen Sıralama (kullanıcı verisi gelene kadar)
-
-1. **#1 Akıllı Hatırlatıcı** (hızlı kazanç) — en hızlı ROI, mevcut rehberi uzatır. Veya doğrudan #7'ye başlanabilir
-2. **#4 CSV/PDF Export** — düşük efor, yüksek değer
-3. **#6 Çoklu Para Birimi** — küçük kitle için fark yaratır
-4. **#2 Yıllık Rapor** — yeni ekran + chart'lar
-5. **#3 Satış Linki** — Faz 4.2 ile çakışıyor (usta QR), ama sadece okuma amaçlı, daha erken yapılabilir
-6. **#7 Akıllı Sürüş Asistanı** — en yüksek değer, en yüksek efor. Doğru temel yapıyı kurar (UsageProfile, PredictiveEngine) — sonra #1, #2'yi de emer
-7. **#5 Widget** — teknik setup ağır, sona kalmalı
-
-**Alternatif strateji:** Doğrudan #7'ye başla — UsageProfile ve PredictiveEngine temelini kur, sonra rehberi (#1) ve raporları (#2) bu temelin üstüne inşa et. **Daha büyük ama daha tutarlı mimari.**
+| 1 | 🤖 **Akıllı Sürüş Asistanı** | ⭐⭐⭐⭐⭐ | 5-7 gün | Çok yüksek — katman özellik |
+| 2 | 📸 **OCR + AI Fatura Tarama** | ⭐⭐⭐⭐⭐ | 4-6 gün | Çok yüksek — haftalık/aylık kullanım |
 
 ---
 
 ## Açık Sorular
 
-- Hangi 1-2 öneriyi önce yapalım?
-- Kullanıcı geri bildirimi geldikçe sıralama değişebilir mi?
-- #3 Satış Linki için Faz 4.2 (Usta) ile ortak QR altyapısı kurulabilir mi?
-- #5 Widget için bütçe var mı (extension target setup + App Group provisioning)?
-- **#7 Akıllı Sürüş Asistanı AI'sız başlayıp sonradan AI eklensin mi, yoksa AI ile mi başlasın?** (Kullanıcı: "belki AI dahil edebiliriz ama etmeden de olabilir, bakacağız")
-- **#7 onboarding tanışma akışı Pro'ya geçişte mi gösterilsin, yoksa ilk araç eklemede mi?**
-- **#8 OCR için yerel Vision yeterli mi, yoksa LLM gerekli mi?** (Çoğu Türk fişi için yerel Vision iyi sonuç veriyor)
-- **#8 LLM API maliyeti kim karşılar?** (Pro abonelik fiyatına dahil mi, kullanıcı kendi API key mi verir?)
-- **#8 taranan faturalar belge kasasına otomatik mi eklenir, ayrı `Receipt` modeli mi?**
-- **#8 hangi kategoriler desteklensin:** yakıt, yağ, servis, yedek parça, otopark (hepsi mi)?
-- **#8 KVKK:** fotoğraf işleme sırasında kişisel veri (TC, plaka) tespit edilirse maskeleme zorunlu mu?
+### #1 Akıllı Sürüş Asistanı
+
+**A. Tanışma Akışı (Katman A — kullanıcı profili)**
+
+1. **Tanışma akışı ne zaman gösterilsin?**
+   - (a) Pro'ya geçtiği anda (zaten ödeme yaptı, motivasyonu yüksek)
+   - (b) İlk araç eklediğinde (aracı bağlamadan kullanıcı neyi kullanacağını bilmiyor olabilir)
+   - (c) Pro aktifken ayarlardan tetikle (opsiyonel, hiç sorma)
+
+2. **Sorular zorunlu mu, yoksa "atla" seçeneği olsun mu?**
+   - Profil eksikse tahmin motoru düşük güvenle çalışır (az veri → jenerik öneri). Tüm soruları zorunlu tutmak mı yoksa "sonra doldururum" demek mi?
+
+3. **Profil araç başına mı yoksa kullanıcı başına mı?**
+   - (a) Her araç için ayrı profil (farklı araçlar farklı kullanım olabilir — ev arabası vs. iş arabası)
+   - (b) Tek profil tüm araçlara uygulanır
+   - (c) Varsayılan: araç başına, ama global profil de ayarlardan seçilebilir
+
+**B. Tahmin Motoru (Katman B)**
+
+4. **Veri azken ne yapacak?**
+   - (a) Hiç insight göstermez ("daha fazla veri lazım" mesajı)
+   - (b) Rule-based jenerik öneri gösterir (kullanıcı profili olmadan)
+   - (c) Profilden gelen cevaplara göre başlangıç tahmini üretir
+
+5. **Tahmini km güncelleme sıklığı ne olsun?**
+   - (a) 30 günden eski ise sor
+   - (b) 60 günden eski ise sor
+   - (c) Kullanıcı ayarlardan eşik seçsin (7/30/60/90 gün)
+
+**C. Proaktif Etkileşim (Katman C)**
+
+6. **Insight'lar Bildirim olarak da gitsin mi?**
+   - (a) Sadece uygulama içi (Garaj → Bugün Garajında)
+   - (b) Push bildirim (kritik insight'lar için: "30 gündür km güncellemedin")
+   - (c) Kullanıcı ayarlardan seçsin
+
+7. **"Bu doğru mu / Güncelle" onay mekanizması nasıl çalışsın?**
+   - (a) Dokun → doğrudan km input ekranı açılır
+   - (b) Tahmini kabul edince "şu an ~52.400 km" olarak kaydedilir (manuel girmek zorunda değil)
+   - (c) Sadece tahmini kabul et / reddet butonu, kabul edince onay olarak işaretlenir ama kayıt değişmez
+
+8. **AI katmanı (gelecek): Hangi LLM?** (Şimdilik planlaması bile yeterli)
+   - (a) OpenAI GPT-4o mini (maliyet orta, kalite yüksek)
+   - (b) Anthropic Claude Haiku (kaliteli, maliyet benzer)
+   - (c) On-device (Apple Intelligence, sadece iOS 18+)
+   - (d) Şimdilik düşünme, rule-based ile başla
+
+---
+
+### #2 OCR + AI Fatura Tarama
+
+**A. Akış ve Tetikleme**
+
+9. **"Fiş Tara" butonu nereye koyalım?**
+   - (a) Masraf ekleme ekranında, "Manuel Ekle" butonunun yanında
+   - (b) Bakım ekleme ekranında
+   - (c) Hem masraf hem bakımda + Garage ana sayfada kısayol
+   - (d) Floating Action Button (FAB) — her yerden erişim
+
+10. **Çoklu fotoğraf desteği nasıl olsun?**
+    - (a) Sadece tek fotoğraf (basit)
+    - (b) Çoklu fotoğraf → her birini ayrı parse et, sonra birleştir veya kullanıcı seçsin
+    - (c) Çoklu fotoğraf → tek bir belge olarak birleştirilir (2 sayfa fatura)
+
+11. **Sonuç ekranı: kullanıcı ne görecek?**
+    - (a) Parse edilmiş alanlar (tarih, tutar, kategori, KM, satıcı) otomatik dolu — kullanıcı sadece onaylar
+    - (b) Alanlar dolu + kullanıcı düzeltebilir (bugünkü masraf formuna benzer)
+    - (c) Yan yana: sol tarafta fotoğraf, sağ tarafta form
+
+**B. Akıllı Yönlendirme**
+
+12. **Masraf mı Bakım mı otomatik mi anlasın?**
+    - (a) LLM/rule-based otomatik karar verir
+    - (b) Kullanıcı toggle ile seçer ("Bu bir bakım faturası mı?")
+    - (c) OCR sonucu belirsizse sorar, net ise otomatik yapar
+
+13. **Kategori otomatik mi önerilsin?**
+    - (a) Anahtar kelime bazlı (YAKIT → yakıt, MOTOR YAĞI → bakım)
+    - (b) Kullanıcı seçer
+    - (c) LLM önerir + kullanıcı onaylar
+
+**C. LLM ve Maliyet**
+
+14. **LLM hangi durumda tetiklensin?**
+    - (a) Sadece yerel Vision yeterli mi yoksa karmaşık faturalar için LLM mi?
+    - (b) Her zaman LLM (en doğru sonuç, en yüksek maliyet)
+    - (c) Kullanıcı ayarlardan seçsin (yerel / bulut / otomatik)
+    - (d) İlk başta sadece yerel, LLM'i sonra ekleriz
+
+15. **LLM maliyeti modeli?**
+    - (a) Pro abonelik fiyatına dahil (sen karşılarsın)
+    - (b) Kullanıcı kendi API key'ini girer
+    - (c) Kullanıcı başına aylık kota (örn. ayda 50 tarama ücretsiz, sonrası küçük ücret)
+    - (d) Şimdilik planlama — sadece yerel Vision
+
+**D. Veri ve Saklama**
+
+16. **Taranan orijinal görsel nerede saklansın?**
+    - (a) Sadece cihazda (SwiftData local)
+    - (b) Supabase'e yedekle (kullanıcı hesabı varsa)
+    - (c) Belge kasasına otomatik eklenir (mevcut yapı)
+    - (d) Kullanıcı seçsin: sadece cihaz / bulut / her ikisi
+
+17. **"Receipt" ayrı model mi yoksa Expense'e mi gömülü?**
+    - (a) Ayrı Receipt modeli (imageData + ocrText + parsedFields), Expense'e bağlı (linkedExpenseId)
+    - (b) Expense modeline imageData + rawOCRText alanları ekle (tek model, basit)
+    - (c) Hibrit: ham OCR text Expense'te, orijinal görsel Receipt modelinde
