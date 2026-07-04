@@ -40,6 +40,7 @@ struct GarageView: View {
     @State private var showAddReminder = false
     @State private var showAddMTVReminder = false
     @State private var showAddFuelExpense = false
+    @State private var insightDismissTrigger = false
     @State private var showQuickKmUpdate = false
     @State private var showSaleFile = false
     @State private var paywallFeature: PaywallView.PaywallFeature = .secondVehicle
@@ -380,6 +381,7 @@ struct GarageView: View {
 
                     // 2. Bugün Garajında
                     if let vehicle = currentVehicle {
+                        let _ = insightDismissTrigger  // store değişince re-render
                         todayGarageSection(vehicle: vehicle)
                     }
 
@@ -621,6 +623,19 @@ struct GarageView: View {
                         )
                     }
                 }
+                .padding(.horizontal, AppSpacing.screenMarginH)
+            } else {
+                // Tüm öneriler kapatıldı — sakin boş state
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "checkmark.circle")
+                        .font(.body)
+                        .foregroundColor(AppColors.success.opacity(0.6))
+                    Text("Tüm önerileri inceledin.")
+                        .font(AppTypography.secondary)
+                        .foregroundColor(AppColors.textTertiary)
+                    Spacer()
+                }
+                .padding(AppSpacing.md)
                 .padding(.horizontal, AppSpacing.screenMarginH)
             }
         }
@@ -879,6 +894,8 @@ struct GarageView: View {
                 days: days
             )
         }
+        // Store ObservableObject olmadığı için manuel re-render tetikle
+        insightDismissTrigger.toggle()
     }
 
     private func hasReminderType(_ vehicle: Vehicle, _ type: ReminderType) -> Bool {
