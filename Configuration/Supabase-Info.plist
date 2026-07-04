@@ -6,6 +6,10 @@
 	<string>$(SUPABASE_URL)</string>
 	<key>SUPABASE_ANON_KEY</key>
 	<string>$(SUPABASE_ANON_KEY)</string>
+	<key>ARVIA_AI_PROXY_URL</key>
+	<string>$(ARVIA_AI_PROXY_URL)</string>
+	<key>ARVIA_AI_CLIENT_SECRET</key>
+	<string>$(ARVIA_AI_CLIENT_SECRET)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>JetBrainsMono-Bold.ttf</string>
