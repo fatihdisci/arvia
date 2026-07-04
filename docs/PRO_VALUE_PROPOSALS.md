@@ -130,43 +130,54 @@ Kullanıcının son 3-6 aydaki masraf ve km kayıtlarından gerçek kullanım pr
 
 ---
 
-## Açık Sorular (varsayılan cevaplarla — kullanıcı onayına açık)
-
-> Varsayımlar işaretli: **✓ KABUL** = benim önerim (değiştirilebilir). **[SEN]** = senin cevaplayacağın kritik karar.
+## Açık Sorular
 
 ### #1 Akıllı Sürüş Asistanı
 
 **A. Tanışma Akışı (Katman A — kullanıcı profili)**
 
 1. **Tanışma akışı ne zaman gösterilsin?**
-   - ✓ KABUL: **(a) Pro'ya geçtiği anda** — motivasyon en yüksek an, "şimdi kişiselleştirelim" hissi. 4-5 soru, 90 saniyede biter.
-   - Alt akış: Pro aktifleşince `OnboardingCoordinator` `UsageProfileOnboardingView`'i sunar → bitince `VehicleUsageProfile` kaydedilir → ana sayfaya döner.
+   - (a) Pro'ya geçtiği anda (zaten ödeme yaptı, motivasyonu yüksek)
+   - (b) İlk araç eklediğinde (aracı bağlamadan kullanıcı neyi kullanacağını bilmiyor olabilir)
+   - (c) Pro aktifken ayarlardan tetikle (opsiyonel, hiç sorma)
 
-2. **Sorular zorunlu mu?**
-   - ✓ KABUL: **Zorunlu + "atla" seçeneği** — varsayılan cevaplarla başla, kullanıcı sonra düzenleyebilir. "Şimdi doldurmak istemiyorum" → tüm soruları orta değerle kaydet, sonradan ayarlardan değiştir.
+2. **Sorular zorunlu mu, yoksa "atla" seçeneği olsun mu?**
+   - Profil eksikse tahmin motoru düşük güvenle çalışır (az veri → jenerik öneri). Tüm soruları zorunlu tutmak mı yoksa "sonra doldururum" demek mi?
 
-3. **Profil araç başına mı?**
-   - ✓ KABUL: **(a) Her araç için ayrı profil** — gerçek hayatta ev arabası vs. iş arabası farklı kullanım. Global profil yok (karmaşıklığı azaltır). SwiftData: `VehicleUsageProfile.vehicleId` foreign key.
+3. **Profil araç başına mı yoksa kullanıcı başına mı?**
+   - (a) Her araç için ayrı profil (farklı araçlar farklı kullanım olabilir — ev arabası vs. iş arabası)
+   - (b) Tek profil tüm araçlara uygulanır
+   - (c) Varsayılan: araç başına, ama global profil de ayarlardan seçilebilir
 
 **B. Tahmin Motoru (Katman B)**
 
 4. **Veri azken ne yapacak?**
-   - ✓ KABUL: **(c) Profil cevaplarına göre başlangıç tahmini üretir** — veri 0 olsa bile profil (günde 50 km + şehir içi) → "Tahmini şu anki km: 67.500" üretir, düşük güven badge'i ile gösterir. Veri arttıkça badge kaybolur.
-   - Uygulama: `PredictiveOdometerService.confidence: .low | .medium | .high` enum.
+   - (a) Hiç insight göstermez ("daha fazla veri lazım" mesajı)
+   - (b) Rule-based jenerik öneri gösterir (kullanıcı profili olmadan)
+   - (c) Profilden gelen cevaplara göre başlangıç tahmini üretir
 
-5. **Tahmini km güncelleme eşiği:**
-   - ✓ KABUL: **(c) Kullanıcı ayarlardan seçsin** — varsayılan 30 gün. Ayarlar → Predictive Insights → "Hatırlatma eşiği: [7/30/60/90 gün]".
+5. **Tahmini km güncelleme sıklığı ne olsun?**
+   - (a) 30 günden eski ise sor
+   - (b) 60 günden eski ise sor
+   - (c) Kullanıcı ayarlardan eşik seçsin (7/30/60/90 gün)
 
 **C. Proaktif Etkileşim (Katman C)**
 
-6. **Insight'lar push bildirim olarak da gitsin mi?**
-   - ✓ KABUL: **(c) Kullanıcı ayarlardan seçsin** — varsayılan kapalı. "Kritik" insight'lar (örn. 90+ gün km güncellemedi) için bildirim izni istenir. Ayarlar → Predictive Insights → "Push bildirim: açık/kapalı".
+6. **Insight'lar Bildirim olarak da gitsin mi?**
+   - (a) Sadece uygulama içi (Garaj → Bugün Garajında)
+   - (b) Push bildirim (kritik insight'lar için: "30 gündür km güncellemedin")
+   - (c) Kullanıcı ayarlardan seçsin
 
-7. **Onay mekanizması:**
-   - ✓ KABUL: **(b) Tahmini kabul edince doğrudan kaydedilir** — "Doğru, devam et" → odometer update olarak kaydedilir (tarih + km + kaynak: `predicted`). Geçmiş km kayıtlarında `source: .user | .predicted` ayrımı → PredictiveMaintenanceService sadece `.user` kayıtlardan öğrenir (kendi tahminini kendine referans almaz).
+7. **"Bu doğru mu / Güncelle" onay mekanizması nasıl çalışsın?**
+   - (a) Dokun → doğrudan km input ekranı açılır
+   - (b) Tahmini kabul edince "şu an ~52.400 km" olarak kaydedilir (manuel girmek zorunda değil)
+   - (c) Sadece tahmini kabul et / reddet butonu, kabul edince onay olarak işaretlenir ama kayıt değişmez
 
-8. **AI katmanı (gelecek):**
-   - ✓ KABUL: **(d) Şimdilik rule-based başla**, sonra LLM ekle. İlk sürüm tamamen yerel. Faz 2: kullanıcı kendi API key'i (OpenAI veya Anthropic) girerse LLM opsiyonel olarak devreye girer.
+8. **AI katmanı (gelecek): Hangi LLM?** (Şimdilik planlaması bile yeterli)
+   - (a) OpenAI GPT-4o mini (maliyet orta, kalite yüksek)
+   - (b) Anthropic Claude Haiku (kaliteli, maliyet benzer)
+   - (c) On-device (Apple Intelligence, sadece iOS 18+)
+   - (d) Şimdilik düşünme, rule-based ile başla
 
 ---
 
@@ -174,35 +185,57 @@ Kullanıcının son 3-6 aydaki masraf ve km kayıtlarından gerçek kullanım pr
 
 **A. Akış ve Tetikleme**
 
-9. **"Fiş Tara" butonu nereye?**
-   - ✓ KABUL: **(c) Hem masraf hem bakımda + Garage ana sayfada kısayol** — masraf eklemek için ana akış (fişler çoğunlukla masraf), bakım için de (faturalar), Garage'da hızlı erişim. FAB yok (tasarım anayasasına aykırı, iOS native his).
+9. **"Fiş Tara" butonu nereye koyalım?**
+   - (a) Masraf ekleme ekranında, "Manuel Ekle" butonunun yanında
+   - (b) Bakım ekleme ekranında
+   - (c) Hem masraf hem bakımda + Garage ana sayfada kısayol
+   - (d) Floating Action Button (FAB) — her yerden erişim
 
-10. **Çoklu fotoğraf desteği:**
-    - ✓ KABUL: **(a) Sadece tek fotoğraf (v1)** — basit, %90 fiş tek sayfa. Çoklu foto ihtiyacı gerçek ama MVP'de atlıyoruz. Faz 2: çoklu foto desteği (her biri ayrı parse, kullanıcı en iyisini seçer).
+10. **Çoklu fotoğraf desteği nasıl olsun?**
+    - (a) Sadece tek fotoğraf (basit)
+    - (b) Çoklu fotoğraf → her birini ayrı parse et, sonra birleştir veya kullanıcı seçsin
+    - (c) Çoklu fotoğraf → tek bir belge olarak birleştirilir (2 sayfa fatura)
 
-11. **Sonuç ekranı:**
-    - ✓ KABUL: **(b) Alanlar dolu + kullanıcı düzeltebilir** — bugünkü masraf formuna benzer ekran. Trust modeli: kullanıcı her zaman görür ve düzeltebilir, "otomatik kaydet" yok. Tasarım: üstte küçük fotoğraf önizleme (tap → büyüt), altta form alanları (tarih, tutar, kategori, KM, satıcı, not).
+11. **Sonuç ekranı: kullanıcı ne görecek?**
+    - (a) Parse edilmiş alanlar (tarih, tutar, kategori, KM, satıcı) otomatik dolu — kullanıcı sadece onaylar
+    - (b) Alanlar dolu + kullanıcı düzeltebilir (bugünkü masraf formuna benzer)
+    - (c) Yan yana: sol tarafta fotoğraf, sağ tarafta form
 
 **B. Akıllı Yönlendirme**
 
-12. **Masraf mı Bakım mı otomatik mi?**
-   - ✓ KABUL: **(c) Belirsizse sor, net ise otomatik** — rule-based tetikleyici: "SERVİS", "BAKIM", "YAĞ DEĞİŞİMİ", "TRİGER" kelimeleri geçiyorsa → bakım. Sadece tutar + tarih varsa → masraf. Belirsiz ise ("OPET", "SHELL" gibi sadece marka) → kullanıcıya sor.
+12. **Masraf mı Bakım mı otomatik mi anlasın?**
+    - (a) LLM/rule-based otomatik karar verir
+    - (b) Kullanıcı toggle ile seçer ("Bu bir bakım faturası mı?")
+    - (c) OCR sonucu belirsizse sorar, net ise otomatik yapar
 
-13. **Kategori otomatik mi?**
-   - ✓ KABUL: **(a) Anahtar kelime bazlı** — `CategoryClassifier` regex/sözlük: YAKIT/MOTORİN/BENZİN/LPG → yakıt; MOTOR YAĞI/FİLTRE/FREN → bakım; OTOPARK/OTOYOL → ulaşım. Belirsiz ise kullanıcı seçer. LLM yok (v1).
+13. **Kategori otomatik mi önerilsin?**
+    - (a) Anahtar kelime bazlı (YAKIT → yakıt, MOTOR YAĞI → bakım)
+    - (b) Kullanıcı seçer
+    - (c) LLM önerir + kullanıcı onaylar
 
 **C. LLM ve Maliyet**
 
 14. **LLM hangi durumda tetiklensin?**
-   - ✓ KABUL: **(d) v1 sadece yerel Vision** — Vision framework yeterli (Türkçe dil paketi dahili). Rule-based parser ile %80 doğruluk hedefi. LLM v2'de: belirsiz sonuç + kullanıcı onayı alırsa buluta gönder.
+    - (a) Sadece yerel Vision yeterli mi yoksa karmaşık faturalar için LLM mi?
+    - (b) Her zaman LLM (en doğru sonuç, en yüksek maliyet)
+    - (c) Kullanıcı ayarlardan seçsin (yerel / bulut / otomatik)
+    - (d) İlk başta sadece yerel, LLM'i sonra ekleriz
 
-15. **LLM maliyeti modeli:**
-   - ✓ KABUL: **(d) Şimdilik planlama yok** — v1 tamamen yerel Vision, maliyet 0. v2 LLM gelince bu soru tekrar açılır (büyük ihtimalle kullanıcı kendi API key'i + aylık kota).
+15. **LLM maliyeti modeli?**
+    - (a) Pro abonelik fiyatına dahil (sen karşılarsın)
+    - (b) Kullanıcı kendi API key'ini girer
+    - (c) Kullanıcı başına aylık kota (örn. ayda 50 tarama ücretsiz, sonrası küçük ücret)
+    - (d) Şimdilik planlama — sadece yerel Vision
 
 **D. Veri ve Saklama**
 
-16. **Taranan orijinal görsel nerede?**
-   - ✓ KABUL: **(c) Belge kasasına otomatik eklenir** — mevcut `BelgeKasası` yapısıyla entegre. Kullanıcı Pro olmasa bile fiş tarayabilir (belge kasası Free'de zaten var), ama OCR + parse Pro özelliği. SwiftData'da yerel + opsiyonel Supabase yedek (mevcut belge kasası mantığı).
+16. **Taranan orijinal görsel nerede saklansın?**
+    - (a) Sadece cihazda (SwiftData local)
+    - (b) Supabase'e yedekle (kullanıcı hesabı varsa)
+    - (c) Belge kasasına otomatik eklenir (mevcut yapı)
+    - (d) Kullanıcı seçsin: sadece cihaz / bulut / her ikisi
 
-17. **"Receipt" ayrı model mi?**
-   - ✓ KABUL: **(a) Ayrı Receipt modeli** — temiz mimari, Expense ve ServiceRecord'un ikisine de bağlanabilir. SwiftData: `Receipt.id, imageData, rawOCRText, parsedFields (JSON), linkedExpenseId?, linkedServiceRecordId?, createdAt`. Expense modeline `receiptId` (opsiyonel), ServiceRecord'a `receiptId` (opsiyonel).
+17. **"Receipt" ayrı model mi yoksa Expense'e mi gömülü?**
+    - (a) Ayrı Receipt modeli (imageData + ocrText + parsedFields), Expense'e bağlı (linkedExpenseId)
+    - (b) Expense modeline imageData + rawOCRText alanları ekle (tek model, basit)
+    - (c) Hibrit: ham OCR text Expense'te, orijinal görsel Receipt modelinde
