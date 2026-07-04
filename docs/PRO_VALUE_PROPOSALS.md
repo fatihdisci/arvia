@@ -247,6 +247,48 @@ Kullanıcının son 3-6 ayda girdiği masraf ve km kayıtlarından gerçek kulla
 
 ---
 
+## 8. 📸 OCR + AI ile Fatura Tarama (otomatik masraf/bakım ekleme)
+
+**Problem:** Kullanıcı benzin istasyonunda fiş alıyor, yağ değişiminde fatura geliyor, servis raporları PDF. Hepsini manuel girmek zahmetli — tarih, tutar, kategori, KM, satıcı. Pro kullanıcı için friction; kayıt tutma alışkanlığını kıran tek şey bu.
+
+**Çözüm:** Fotoğraf veya PDF yükle → OCR (Vision framework, iOS yerleşik) → alanları parse et (tarih, tutar, kategori, başlık, KM) → kullanıcıya onay ekranı göster → kaydet. Süreç 3-5 saniye. İki katman:
+- **Yerel (Vision + rule-based):** Ücretsiz, çevrimdışı, basit fişlerde iyi
+- **Bulut (LLM ile, opsiyonel):** Karmaşık belgeler, çok satırlı bakım faturaları, Türkçe fiş formatları için daha doğru
+
+**UI/UX:**
+- Masraf ekle ve Bakım ekranlarında yeni buton: **"📸 Fiş/Fatura Tara"**
+- Kamera veya galeriden seçim → çoklu fotoğraf destekli (örn. 2 sayfa fatura)
+- Yükleme sırasında skeleton + "Fiş okunuyor..." mesajı
+- Sonuç ekranı: Parse edilmiş alanlar form gibi — kullanıcı düzeltebilir
+- "Bu bir bakım faturası" toggle'ı → bakım kaydına dönüşür (yoksa masraf olarak kaydedilir)
+- Kaydet → onay toast
+- Ham görsel belge kasasına otomatik eklenir (sonradan erişim için)
+
+**Teknik:**
+- `Services/DocumentScannerService.swift` — VNDocumentCameraViewController entegrasyonu (VisionKit)
+- `Services/OCRService.swift` — VNRecognizeTextRequest (Türkçe dil paketi, iOS 16+)
+- `Services/FaturaParserService.swift` — rule-based (regex: TUTAR, TARİH, KDV, TOPLAM, T.C.) + opsiyonel LLM
+- `Features/Expenses/ReceiptScanView.swift` — capture + review ekranı
+- `Models/Receipt.swift` — yeni SwiftData modeli (imageData, rawOCRText, parsedFields JSON, linkedExpenseId?)
+- Privacy: Bulut LLM kullanılırsa fotoğraf sunucuya gönderilmeden önce kullanıcı onayı + maskeleme (TC, plaka tespit edilirse)
+
+**Fayda:**
+- Manuel veri girişi %80 azalır
+- Masraf/bakım kayıt tutma alışkanlığı güçlenir
+- Fiş kaybetme derdi biter (otomatik dijitalleştirme)
+- "Bu app benim için çalışıyor" hissi — pasif kullanıcıyı aktif yapar
+- Pro için günlük/haftalık kullanım tetikler (diğer Pro özellikleri yıllık; bu haftalık)
+
+**Pro değeri:** ⭐⭐⭐⭐⭐ En yüksek — somut zaman tasarrufu, fiş kaybetme korkusunu bitirir. Diğer Pro özellikleri yılda 1-2 kez değerli iken bu haftalık/aylık.
+
+**Efor:** 4-6 gün
+- 1 gün: DocumentScannerService + OCR (yerel Vision) + Türkçe dil paketi
+- 1-2 gün: FaturaParserService (rule-based + test, regex pattern'leri)
+- 1 gün: ReceiptScanView UI + form integration + belge kasası bağlantısı
+- 1-2 gün: LLM entegrasyonu (opsiyonel, kullanıcı seçerse)
+
+---
+
 ## Özet Tablo
 
 | # | Öneri | Pro Değeri | Efor | Somutluk |
@@ -258,6 +300,7 @@ Kullanıcının son 3-6 ayda girdiği masraf ve km kayıtlarından gerçek kulla
 | 5 | 📱 Home Screen Widget | ⭐⭐⭐ | 3-4 gün | Orta |
 | 6 | 💱 Çoklu Para Birimi | ⭐⭐⭐ | 2-3 gün | Niş ama gerçek |
 | 7 | 🤖 **Akıllı Sürüş Asistanı** | ⭐⭐⭐⭐⭐ | 5-7 gün | Çok yüksek — katman özellik |
+| 8 | 📸 **OCR + AI Fatura Tarama** | ⭐⭐⭐⭐⭐ | 4-6 gün | Çok yüksek — günlük/haftalık kullanım |
 
 ---
 
@@ -283,3 +326,8 @@ Kullanıcının son 3-6 ayda girdiği masraf ve km kayıtlarından gerçek kulla
 - #5 Widget için bütçe var mı (extension target setup + App Group provisioning)?
 - **#7 Akıllı Sürüş Asistanı AI'sız başlayıp sonradan AI eklensin mi, yoksa AI ile mi başlasın?** (Kullanıcı: "belki AI dahil edebiliriz ama etmeden de olabilir, bakacağız")
 - **#7 onboarding tanışma akışı Pro'ya geçişte mi gösterilsin, yoksa ilk araç eklemede mi?**
+- **#8 OCR için yerel Vision yeterli mi, yoksa LLM gerekli mi?** (Çoğu Türk fişi için yerel Vision iyi sonuç veriyor)
+- **#8 LLM API maliyeti kim karşılar?** (Pro abonelik fiyatına dahil mi, kullanıcı kendi API key mi verir?)
+- **#8 taranan faturalar belge kasasına otomatik mi eklenir, ayrı `Receipt` modeli mi?**
+- **#8 hangi kategoriler desteklensin:** yakıt, yağ, servis, yedek parça, otopark (hepsi mi)?
+- **#8 KVKK:** fotoğraf işleme sırasında kişisel veri (TC, plaka) tespit edilirse maskeleme zorunlu mu?
