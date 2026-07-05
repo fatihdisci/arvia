@@ -119,7 +119,7 @@ struct InspectionReportSection: View {
                             .frame(width: 24)
                         Text("Ekspertiz raporu ekle")
                             .font(AppTypography.bodyMedium)
-                            .foregroundColor(AppColors.accentPrimary)
+                            .foregroundColor(AppColors.textPrimary)
                         Spacer()
                         Image(systemName: "plus.circle")
                             .foregroundColor(AppColors.accentPrimary)

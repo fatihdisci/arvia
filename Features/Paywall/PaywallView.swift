@@ -149,8 +149,8 @@ struct PaywallView: View {
                 }
             }
         }
-        // Sheet yüksekliği: ekranın %85'i. Karosel + fiyat seçenekleri + CTA + yasal.
-        .presentationDetents([.fraction(0.85)])
+        // Sheet yüksekliği: ekranın %88'i. Karosel + fiyat seçenekleri + CTA + yasal.
+        .presentationDetents([.fraction(0.88)])
         .presentationDragIndicator(.hidden)
     }
 

@@ -128,7 +128,7 @@ struct VehicleDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 28) {
+            VStack(spacing: AppSpacing.sectionGap) {
                 let fileScore = computeFileScore()
 
                 // MARK: Visual Anchor — Hero Header
@@ -149,6 +149,10 @@ struct VehicleDetailView: View {
                 )
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
+                // MARK: Kişisel Bakım Planı — Hızlı İşlemler'in hemen altında
+                maintenancePlanEntry
+                    .padding(.horizontal, AppSpacing.screenMarginH)
+
                 CurrentStatusSection(
                     expenses: expenses,
                     upcomingTasks: upcomingTasks,
@@ -167,11 +171,6 @@ struct VehicleDetailView: View {
                     onAction: handleGuideAction,
                     onDismissInsight: handleGuideInsightDismiss
                 )
-                    .padding(.horizontal, AppSpacing.screenMarginH)
-
-                // MARK: Kişisel Bakım Planı (LLM — kullanıcı tetikler, Pro + AI onayı)
-                // Free kullanıcıda kilitli gösterilir, Pro'da normal çalışır.
-                maintenancePlanEntry
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
                 // MARK: Inspection Report
@@ -370,10 +369,10 @@ struct VehicleDetailView: View {
                     .foregroundColor(AppColors.accentPrimary)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Kişisel bakım planı oluştur")
-                        .font(AppTypography.bodyMedium)
+                        .font(AppTypography.cardTitle)
                         .foregroundColor(AppColors.textPrimary)
                     Text("Kullanımına göre yapay zekâ önerileri")
-                        .font(AppTypography.caption)
+                        .font(AppTypography.bodySecondary)
                         .foregroundColor(AppColors.textSecondary)
                 }
                 Spacer()
@@ -383,8 +382,8 @@ struct VehicleDetailView: View {
             }
             .padding(AppSpacing.md)
             .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+            .background(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).fill(Color.appSurface))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous).stroke(AppColors.border, lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
