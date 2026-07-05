@@ -129,10 +129,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (err instanceof MissingEnvError) {
       return json(500, { error: { code: "server_misconfigured", missing: err.vars } });
     }
-    // TEMP diagnostic: `detail` is the exception message only (never request
-    // content), returned in the HTTP response — not persisted/logged anywhere.
-    // Remove once the proxy is confirmed working end-to-end.
-    return json(500, { error: { code: "internal_error", detail: String(err) } });
+    return json(500, { error: { code: "internal_error" } });
   }
 
   try {
@@ -210,11 +207,9 @@ export default async function handler(req: Request): Promise<Response> {
     await redis.set(cacheKey, result, { ex: CACHE_TTL_SECONDS });
 
     return json(200, { result, cached: false });
-  } catch (err) {
+  } catch {
     // Any unforeseen failure (e.g. Redis unreachable) — never let the platform
     // surface an opaque crash; always return readable JSON.
-    // TEMP diagnostic: `detail` is the exception message only (never request
-    // content). Remove once the proxy is confirmed working end-to-end.
-    return json(500, { error: { code: "internal_error", detail: String(err) } });
+    return json(500, { error: { code: "internal_error" } });
   }
 }
