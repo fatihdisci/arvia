@@ -28,7 +28,7 @@ enum AppTab: String, CaseIterable {
     var icon: String {
         switch self {
         case .garage: return "car"
-        case .assistant: return "brain.head.profile"
+        case .assistant: return "steeringwheel"
         case .todos: return "checklist"
         case .records: return "tray.full"
         case .community: return "person.3"

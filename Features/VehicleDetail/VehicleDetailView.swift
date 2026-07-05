@@ -365,7 +365,7 @@ struct VehicleDetailView: View {
             }
         } label: {
             HStack(spacing: AppSpacing.sm) {
-                Image(systemName: "brain.head.profile")
+                Image(systemName: "steeringwheel")
                     .foregroundColor(AppColors.accentPrimary)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Kişisel bakım planı oluştur")

@@ -164,7 +164,7 @@ struct PaywallView: View {
 
     private let proHighlights: [ProHighlight] = [
         ProHighlight(
-            icon: "brain.head.profile",
+            icon: "steeringwheel",
             title: "Akıllı Sürüş Asistanı",
             description: "Sürüş alışkanlıklarını öğrenir, sana özel bakım planı oluşturur."
         ),

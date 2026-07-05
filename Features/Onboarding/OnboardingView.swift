@@ -18,7 +18,7 @@ struct OnboardingView: View {
             color: AppColors.accentPrimary
         ),
         OnboardingPage(
-            icon: "brain.head.profile",
+            icon: "steeringwheel",
             title: "Sana özel akıllı asistan",
             description: "Kullanım profilini oluştur; yapay zekâ destekli kişisel bakım planı ve kilometre tahmini seni yönlendirsin.",
             color: AppColors.accentPrimary

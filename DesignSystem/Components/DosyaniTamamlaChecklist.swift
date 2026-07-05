@@ -77,7 +77,7 @@ struct DosyaniTamamlaChecklist: View {
                 )
 
                 checklistItem(
-                    icon: "brain.head.profile",
+                    icon: "steeringwheel",
                     title: "Kişisel bakım planı",
                     subtitle: "Yapay zekâ ile sana özel bakım önerileri",
                     done: hasMaintenancePlan,

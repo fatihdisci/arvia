@@ -174,7 +174,7 @@ struct UsageProfileFlowView: View {
     // MARK: - Summary
     private var summaryStep: some View {
         questionScaffold(
-            icon: "brain.head.profile",
+            icon: "steeringwheel",
             title: "Profilin hazır",
             subtitle: "Bu bilgileri Ayarlar'dan istediğin zaman güncelleyebilirsin."
         ) {
@@ -596,7 +596,7 @@ struct AssistantView: View {
                     RoundedRectangle(cornerRadius: AppRadius.medium)
                         .fill(AppColors.accentPrimary.opacity(0.1))
                         .frame(width: 44, height: 44)
-                    Image(systemName: "brain.head.profile")
+                    Image(systemName: "steeringwheel")
                         .font(.title3)
                         .foregroundColor(AppColors.accentPrimary)
                 }

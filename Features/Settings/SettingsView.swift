@@ -184,7 +184,7 @@ struct SettingsView: View {
                 }
             } label: {
                 HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: "brain.head.profile")
+                    Image(systemName: "steeringwheel")
                         .foregroundColor(AppColors.accentPrimary)
                         .frame(width: 24)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {

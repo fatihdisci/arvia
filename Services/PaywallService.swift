@@ -239,7 +239,7 @@ final class PaywallService: ObservableObject {
     ]
 
     static let proFeatures: [(icon: String, title: String)] = [
-        ("brain.head.profile", "Akıllı Sürüş Asistanı — seni tanıyan öneriler"),
+        ("steeringwheel", "Akıllı Sürüş Asistanı — seni tanıyan öneriler"),
         ("doc.viewfinder", "Fiş/Fatura Tarama"),
         ("car.2", "Sınırsız araç"),
         ("folder", "Araç bazlı belge kasası"),
