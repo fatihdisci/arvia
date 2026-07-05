@@ -716,8 +716,11 @@ struct SettingsView: View {
                 try await communityAuth.deleteAccount()
             }
 
-            // 5. Pro state'i sıfırla
-            paywallService.disableProForDev()
+            // 5. Pro state'i sıfırla — sadece dev mode simülasyonunda; gerçek StoreKit
+            // entitlement'ı asla ezilmemeli.
+            if paywallService.isDevMode {
+                paywallService.disableProForDev()
+            }
 
             dismiss()
         } catch {
@@ -766,8 +769,10 @@ struct SettingsView: View {
 
         try? modelContext.save()
 
-        // Dev mode'da Pro'yu sıfırla
-        paywallService.disableProForDev()
+        // Dev mode'da Pro'yu sıfırla — gerçek StoreKit entitlement'ı asla ezilmemeli.
+        if paywallService.isDevMode {
+            paywallService.disableProForDev()
+        }
 
         dismiss()
     }

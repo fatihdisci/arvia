@@ -416,6 +416,7 @@ struct VehicleInsightService {
             title: "Asistanı kişiselleştir",
             body: "5 kısa soruyla önerileri tam sana göre ayarlayalım.",
             action: .openAssistantProfile,
+            secondaryAction: .noAction,
             snoozeDays: 30
         )
     }

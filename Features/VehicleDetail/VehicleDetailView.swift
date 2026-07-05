@@ -289,7 +289,11 @@ struct VehicleDetailView: View {
             InspectionReportFormView(existingReport: report)
         }
         .sheet(isPresented: $showSaleFile) {
-            SaleFileView(vehicle: vehicle)
+            if PaywallService.shared.canCreateSaleFile() {
+                SaleFileView(vehicle: vehicle)
+            } else {
+                PaywallView(feature: .saleFileExport)
+            }
         }
         .sheet(isPresented: $showAddDocument) {
             DocumentFormView(preselectedVehicleId: vehicle.id)

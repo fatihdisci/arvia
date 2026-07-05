@@ -179,7 +179,11 @@ struct GarageView: View {
             }
             .sheet(isPresented: $showSaleFile) {
                 if let vehicle = currentVehicle {
-                    SaleFileView(vehicle: vehicle)
+                    if paywallService.canCreateSaleFile() {
+                        SaleFileView(vehicle: vehicle)
+                    } else {
+                        PaywallView(feature: .saleFileExport)
+                    }
                 }
             }
             .sheet(isPresented: $showPaywall) {

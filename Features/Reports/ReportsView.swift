@@ -18,6 +18,7 @@ struct ReportsView: View {
     @State private var saleFileVehicle: Vehicle?
     @State private var showVehiclePicker = false
     @State private var showAddExpense = false
+    @State private var showReportsPaywall = false
 
     private let currentYear = Calendar.current.component(.year, from: Date())
 
@@ -120,7 +121,15 @@ struct ReportsView: View {
     // olası bir List eklenmesi için aynı yerleşim korunuyor.
     var body: some View {
         Group {
-            if allExpenses.isEmpty {
+            if !PaywallService.shared.canAccessAdvancedReports() {
+                EmptyStateView(
+                    icon: "lock.fill",
+                    title: "Gelişmiş raporlar Pro'da",
+                    description: "Aylık/yıllık maliyet özeti ve kırılımlar için Pro'ya geç.",
+                    actionTitle: "Pro'ya Geç",
+                    action: { showReportsPaywall = true }
+                )
+            } else if allExpenses.isEmpty {
                 EmptyStateView(
                     icon: "chart.bar.fill",
                     title: "Henüz rapor oluşmadı",
@@ -147,8 +156,13 @@ struct ReportsView: View {
             }
         }
         .sheet(isPresented: $showAddExpense) { ExpenseFormView() }
+        .sheet(isPresented: $showReportsPaywall) { PaywallView(feature: .advancedReports) }
         .sheet(item: $saleFileVehicle) { vehicle in
-            SaleFileView(vehicle: vehicle)
+            if PaywallService.shared.canCreateSaleFile() {
+                SaleFileView(vehicle: vehicle)
+            } else {
+                PaywallView(feature: .saleFileExport)
+            }
         }
         .confirmationDialog("Satış dosyası hangi araç için?", isPresented: $showVehiclePicker) {
             ForEach(vehicles) { v in

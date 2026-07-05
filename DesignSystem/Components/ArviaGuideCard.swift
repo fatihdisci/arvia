@@ -96,11 +96,13 @@ struct VehicleInsightCard: View {
                     .buttonStyle(.primary)
                 }
                 if let secondary = insight.secondaryAction {
-                    Button { onAction(secondary) } label: {
-                        Text(secondary.title)
-                            .frame(maxWidth: .infinity)
+                    if secondary != .noAction {
+                        Button { onAction(secondary) } label: {
+                            Text(secondary.title)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.secondary)
                     }
-                    .buttonStyle(.secondary)
                 } else {
                     Button(action: onDismiss) {
                         Text("Şimdi Değil")
