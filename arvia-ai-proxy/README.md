@@ -4,7 +4,9 @@ Stateless Vercel **Edge Function** that proxies chat-completion requests to
 DeepSeek V4 for the Arvia iOS app. The client never holds the model API key.
 
 - One endpoint: `POST /api/complete`
-- Model is a single const (`DEEPSEEK_MODEL`) — swapping to Gemini is one edit + one adapter.
+- Model is a single const (`DEEPSEEK_MODEL = "deepseek-v4-flash"`) — swapping to Gemini is one edit + one adapter.
+- Runs in **non-thinking mode** (`thinking: {type:"disabled"}`) with `temperature: 0` and forced JSON output — deterministic, cheap, clean JSON. `deepseek-v4-flash` defaults to thinking mode, so this is set explicitly.
+- Endpoint (OpenAI-compatible format): `https://api.deepseek.com/chat/completions`.
 - Per-`clientId` monthly quotas + 30-day response cache via Upstash Redis.
 - **No payload content is ever logged.** Only counters and cache keys (SHA-256 hashes) touch Redis.
 

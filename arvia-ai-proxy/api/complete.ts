@@ -5,8 +5,13 @@ export const config = { runtime: "edge" };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Model is a single const so switching to Gemini later = one edit + one adapter.
-const DEEPSEEK_MODEL = "deepseek-v4";
+const DEEPSEEK_MODEL = "deepseek-v4-flash";
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
+// deepseek-v4-flash defaults to THINKING mode. For strict-JSON extraction we
+// force NON-thinking mode: deterministic, cheaper (no reasoning tokens), and it
+// keeps json_object output clean. Flip to {type:"enabled"} only if you ever want
+// reasoning for a task.
+const DEEPSEEK_THINKING = { type: "disabled" } as const;
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MAX_PAYLOAD_CHARS = 20_000;
@@ -125,6 +130,7 @@ export default async function handler(req: Request): Promise<Response> {
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         temperature: 0,
+        thinking: DEEPSEEK_THINKING,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPTS[task] },
