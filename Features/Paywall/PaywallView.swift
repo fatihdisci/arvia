@@ -72,6 +72,7 @@ struct PaywallView: View {
     @State private var selectedProductId = "com.ruhsatim.pro.yearly" // Varsayılan: yıllık
     @State private var isPurchasing = false
     @State private var isRestoring = false
+    @State private var currentPage = 0
 
     // MARK: - Pricing Options (StoreKit veya dev mode fallback)
     struct PricingOption: Identifiable {
@@ -123,8 +124,8 @@ struct PaywallView: View {
                     .padding(.top, AppSpacing.xs)
                     .padding(.bottom, AppSpacing.xs)
 
-                // Pro özellik listesi — asistan + tarama öncü sırada
-                proFeaturesList
+                // Pro özellik karoseli — tüm özellikler arası geçiş
+                proFeaturesCarousel
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
                 // Orta — fiyatlar + CTA + yasal (scroll gerektirmeyen içerik)
@@ -148,30 +149,59 @@ struct PaywallView: View {
                 }
             }
         }
-        // Sheet yüksekliği: ekranın %65'i (~555pt). Tek detent — swipe kapalı.
-        // Pro özellikleri arttıkça fraction büyütülür.
-        .presentationDetents([.fraction(0.78)])
+        // Sheet yüksekliği: ekranın %85'i. Karosel + fiyat seçenekleri + CTA + yasal.
+        .presentationDetents([.fraction(0.85)])
         .presentationDragIndicator(.hidden)
     }
 
-    // MARK: - Pro Features List
-    private var proFeaturesList: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            ForEach(Array(PaywallService.proFeatures.prefix(4).enumerated()), id: \.offset) { _, item in
-                HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: item.icon)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(AppColors.accentPrimary)
-                        .frame(width: 22)
-                    Text(item.title)
-                        .font(AppTypography.secondary)
-                        .foregroundColor(AppColors.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 0)
+    // MARK: - Feature Pages (carousel)
+    private var featurePages: [[(icon: String, title: String)]] {
+        let features = PaywallService.proFeatures
+        var pages: [[(icon: String, title: String)]] = []
+        for i in stride(from: 0, to: features.count, by: 2) {
+            let end = min(i + 2, features.count)
+            pages.append(Array(features[i..<end]))
+        }
+        return pages
+    }
+
+    // MARK: - Pro Features Carousel
+    private var proFeaturesCarousel: some View {
+        VStack(spacing: AppSpacing.xs) {
+            TabView(selection: $currentPage) {
+                ForEach(Array(featurePages.enumerated()), id: \.offset) { index, page in
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        ForEach(Array(page.enumerated()), id: \.offset) { _, item in
+                            HStack(spacing: AppSpacing.sm) {
+                                Image(systemName: item.icon)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(AppColors.accentPrimary)
+                                    .frame(width: 22)
+                                Text(item.title)
+                                    .font(AppTypography.secondary)
+                                    .foregroundColor(AppColors.textPrimary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .tag(index)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(height: 110)
+
+            // Page dots
+            HStack(spacing: 6) {
+                ForEach(0..<featurePages.count, id: \.self) { index in
+                    Circle()
+                        .fill(currentPage == index ? AppColors.accentPrimary : AppColors.border)
+                        .frame(width: 6, height: 6)
+                        .animation(.easeInOut(duration: 0.2), value: currentPage)
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, AppSpacing.xs)
     }
 
@@ -190,7 +220,7 @@ struct PaywallView: View {
                 Text("Arvia Pro")
                     .font(AppTypography.bodyMedium)
                     .foregroundColor(AppColors.textPrimary)
-                Text(feature.shortPitch)
+                Text("Akıllı asistan, fiş tarama, sınırsız araç ve daha fazlası.")
                     .font(AppTypography.caption)
                     .foregroundColor(AppColors.textSecondary)
                     .lineLimit(1)

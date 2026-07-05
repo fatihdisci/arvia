@@ -153,7 +153,7 @@ struct SettingsView: View {
                 Button {
                     showPaywall = true
                 } label: {
-                    Label("Birden fazla araç eklemek için Pro’ya geç", systemImage: "car.2")
+                    Label("Pro özellikleri keşfet", systemImage: "sparkles")
                         .foregroundColor(AppColors.accentPrimary)
                 }
             }
