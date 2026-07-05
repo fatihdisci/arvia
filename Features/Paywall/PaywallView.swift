@@ -69,7 +69,7 @@ struct PaywallView: View {
         }
     }
 
-    @State private var selectedProductId = "com.ruhsatim.pro.yearly" // Varsayılan: yıllık
+    @State private var selectedProductId = "com.arvia.pro.yearly" // Varsayılan: yıllık
     @State private var isPurchasing = false
     @State private var isRestoring = false
     @State private var currentPage = 0
@@ -88,9 +88,9 @@ struct PaywallView: View {
         if paywallService.products.isEmpty {
             #if DEBUG
             return [
-                PricingOption(id: "com.ruhsatim.pro.monthly", title: "Aylık", price: "₺79,99", period: "/ay", badge: nil, sortOrder: 0),
-                PricingOption(id: "com.ruhsatim.pro.yearly", title: "Yıllık", price: "₺599,99", period: "/yıl", badge: "En Avantajlı", sortOrder: 1),
-                PricingOption(id: "com.ruhsatim.pro.lifetime", title: "Ömür Boyu", price: "₺1.499,99", period: "", badge: "Tek Seferlik", sortOrder: 2),
+                PricingOption(id: "com.arvia.pro.monthly", title: "Aylık", price: "₺49,99", period: "/ay", badge: nil, sortOrder: 0),
+                PricingOption(id: "com.arvia.pro.yearly", title: "Yıllık", price: "₺399,99", period: "/yıl", badge: "En Avantajlı", sortOrder: 1),
+                PricingOption(id: "com.arvia.pro.lifetime", title: "Ömür Boyu", price: "₺1.499,99", period: "", badge: "Tek Seferlik", sortOrder: 2),
             ]
             #else
             return []

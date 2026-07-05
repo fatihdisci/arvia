@@ -26,14 +26,24 @@ final class PaywallService: ObservableObject {
         static let assistantRequiresPro = true
     }
 
-    // Ürün ID'leri — App Store Connect'te tanımlanmalı
-    static let proProductIDs = [
-        "com.ruhsatim.pro.monthly",
-        "com.ruhsatim.pro.yearly",
-        "com.ruhsatim.pro.lifetime",
+    // MARK: - Product IDs
+    // Auto-Renewable Subscriptions (App Store Connect → Subscriptions grubu)
+    static let subscriptionProductIDs = [
+        "com.arvia.pro.monthly",
+        "com.arvia.pro.yearly",
     ]
 
-    private let productIDs = PaywallService.proProductIDs
+    // Non-Consumable IAP (App Store Connect → In-App Purchases, "Tek Seferlik")
+    static let nonConsumableProductIDs = [
+        "com.arvia.pro.lifetime",
+    ]
+
+    // StoreKit'ten yüklenecek ve entitlement kontrolünde kullanılacak birleşik set
+    static var allProProductIDs: [String] {
+        subscriptionProductIDs + nonConsumableProductIDs
+    }
+
+    private let productIDs = PaywallService.allProProductIDs
 
     // Dev mode: App Store Connect olmadan test için
     private let devModeKey = "paywall_dev_is_pro"
@@ -72,11 +82,11 @@ final class PaywallService: ObservableObject {
     }
 
     // MARK: - Dev Mode
-    /// App Store Connect ürünleri tanımlanana kadar dev mode aktif.
-    /// UserDefaults ile Pro durumunu simüle eder.
+    /// DEBUG'ta dev mode varsayılan açık (UserDefaults ile Pro simülasyonu).
+    /// `-DisableDevPaywall` launch argümanı ile kapatılır → gerçek StoreKit test edilir.
     var isDevMode: Bool {
         #if DEBUG
-        return true
+        return !ProcessInfo.processInfo.arguments.contains("-DisableDevPaywall")
         #else
         return false
         #endif

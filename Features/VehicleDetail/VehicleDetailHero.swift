@@ -17,7 +17,7 @@ struct VehicleDetailHero: View {
     private var detailHeroPhotoCard: some View {
         ZStack {
             if let photoFileName = vehicle.photoFileName,
-               let image = VehiclePhotoStorageService.shared.loadPhoto(fileName: photoFileName) {
+               let image = VehiclePhotoStorageService.shared.loadPhoto(fileName: photoFileName, syncedData: vehicle.photoData) {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)

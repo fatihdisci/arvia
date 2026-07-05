@@ -52,6 +52,8 @@ struct VehicleDossierApp: App {
             )
             // Backfill addedToHistoryAt for existing completed reminders
             migrateCompletedReminderHistoryFlags(context: modelContainer.mainContext)
+            // Backfill vehicle photo data for CloudKit sync readiness
+            backfillVehiclePhotoData(context: modelContainer.mainContext)
         } catch {
             fatalError("SwiftData ModelContainer başlatılamadı: \(error.localizedDescription)")
         }
@@ -183,5 +185,18 @@ struct VehicleDossierApp: App {
             reminder.addedToHistoryAt = reminder.completedAt
         }
         try? context.save()
+    }
+
+    /// Mevcut araçların disk fotoğrafını photoData'ya taşır (CloudKit senkron hazırlığı).
+    private func backfillVehiclePhotoData(context: ModelContext) {
+        guard let vehicles = try? context.fetch(FetchDescriptor<Vehicle>()) else { return }
+        var changed = false
+        for vehicle in vehicles where vehicle.photoData == nil {
+            guard let fileName = vehicle.photoFileName,
+                  let data = VehiclePhotoStorageService.shared.readPhotoData(fileName: fileName) else { continue }
+            vehicle.photoData = data
+            changed = true
+        }
+        if changed { try? context.save() }
     }
 }

@@ -31,6 +31,9 @@ final class Vehicle {
     var usageTypeRaw: String = VehicleUsageType.personal.rawValue
     var notes: String = ""
     var photoFileName: String?
+    // CloudKit yansıması: fotoğrafın ikili içeriği. Yerel VehiclePhotos/ çalışma kopyası
+    // korunur; CloudKit açıldığında bu alan CKAsset olarak senkronlanır (belge deseniyle aynı).
+    @Attribute(.externalStorage) var photoData: Data?
     var createdAt: Date = Date()
     var archivedAt: Date?
 

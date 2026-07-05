@@ -247,7 +247,7 @@ struct VehicleEditView: View {
                                 .foregroundColor(AppColors.critical)
                         }
                     } else if hasExistingPhoto, let fileName = vehicle.photoFileName,
-                              let existingImage = VehiclePhotoStorageService.shared.loadPhoto(fileName: fileName) {
+                              let existingImage = VehiclePhotoStorageService.shared.loadPhoto(fileName: fileName, syncedData: vehicle.photoData) {
                         // Mevcut kayıtlı fotoğraf önizleme
                         Image(uiImage: existingImage)
                             .resizable()
@@ -351,6 +351,7 @@ struct VehicleEditView: View {
                         VehiclePhotoStorageService.shared.deletePhoto(fileName: fileName)
                     }
                     vehicle.photoFileName = nil
+                    vehicle.photoData = nil
                     hasExistingPhoto = false
                     selectedPhotoImage = nil
                     selectedPhotoItem = nil
@@ -473,7 +474,9 @@ struct VehicleEditView: View {
                 VehiclePhotoStorageService.shared.deletePhoto(fileName: oldFileName)
             }
             do {
-                vehicle.photoFileName = try VehiclePhotoStorageService.shared.savePhoto(newImage)
+                let saved = try VehiclePhotoStorageService.shared.savePhotoReturningData(newImage)
+                vehicle.photoFileName = saved.fileName
+                vehicle.photoData = saved.data
             } catch {
                 photoError = error.localizedDescription
                 return false

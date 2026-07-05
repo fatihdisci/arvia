@@ -489,9 +489,10 @@ struct GarageView: View {
             do {
                 guard let data = try await item.loadTransferable(type: Data.self) else { return }
                 guard let image = UIImage(data: data) else { return }
-                let fileName = try VehiclePhotoStorageService.shared.savePhoto(image)
+                let saved = try VehiclePhotoStorageService.shared.savePhotoReturningData(image)
                 await MainActor.run {
-                    vehicle.photoFileName = fileName
+                    vehicle.photoFileName = saved.fileName
+                    vehicle.photoData = saved.data
                     try? modelContext.save()
                     garagePhotoItem = nil
                     let generator = UINotificationFeedbackGenerator()
@@ -510,7 +511,7 @@ struct GarageView: View {
     private func heroCardContent(vehicle: Vehicle) -> some View {
         ZStack {
             if let photoFileName = vehicle.photoFileName,
-               let image = VehiclePhotoStorageService.shared.loadPhoto(fileName: photoFileName) {
+               let image = VehiclePhotoStorageService.shared.loadPhoto(fileName: photoFileName, syncedData: vehicle.photoData) {
                 // Color.clear boyutu belirler (layout sabiti), fotoğraf sadece
                 // arka planı doldurur — Image'ın kendi piksel boyutlarının
                 // layout'a sızıp VStack genişliğini patlatmasını engeller.

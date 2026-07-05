@@ -316,9 +316,12 @@ struct VehicleWizardView: View {
     private func performSave() {
         // Fotoğraf kaydet.
         var savedPhotoFileName: String?
+        var savedPhotoData: Data?
         if let image = draft.selectedPhotoImage {
             do {
-                savedPhotoFileName = try VehiclePhotoStorageService.shared.savePhoto(image)
+                let saved = try VehiclePhotoStorageService.shared.savePhotoReturningData(image)
+                savedPhotoFileName = saved.fileName
+                savedPhotoData = saved.data
             } catch {
                 draft.photoError = error.localizedDescription
                 return
@@ -345,6 +348,7 @@ struct VehicleWizardView: View {
             notes: "",
             photoFileName: savedPhotoFileName
         )
+        vehicle.photoData = savedPhotoData
         modelContext.insert(vehicle)
 
         // Step 3 — seçilen hatırlatıcıları oluştur.
