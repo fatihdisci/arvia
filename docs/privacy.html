@@ -30,12 +30,13 @@
   <a class="back" href="index.html">← Arvia</a>
   <div class="card">
     <h1>Gizlilik Politikası</h1>
-    <p class="updated">Son güncelleme: 24 Haziran 2026</p>
+    <p class="updated">Son güncelleme: 5 Temmuz 2026</p>
 
     <h2>Genel Bakış</h2>
-    <p>Arvia, gizliliğinize saygı duyar. Bu uygulama <strong>hiçbir kullanıcı verisini toplamaz, üçüncü taraflarla paylaşmaz veya cihaz dışına çıkarmaz.</strong> Tüm veriler yalnızca cihazınızda saklanır.</p>
+    <p>Arvia, gizliliğinize saygı duyar ve <strong>yerel-öncelikli (local-first)</strong> çalışır. Uygulamanın <strong>tüm temel özellikleri tamamen cihazınızda</strong>, internet olmadan çalışır ve verileriniz cihazınızdan çıkmaz.</p>
+    <p>Yalnızca <strong>siz açıkça açtığınızda</strong> devreye giren iki isteğe bağlı özellik veri gönderir: <strong>Topluluk</strong> (giriş yaparsanız) ve <strong>Bulut Yapay Zekâ</strong> (onay verirseniz). Bu iki özellik de <strong>varsayılan olarak kapalıdır</strong>. Ayrıntılar aşağıdadır.</p>
 
-    <h2>Hangi Veriler Saklanır?</h2>
+    <h2>Cihazda Saklanan Veriler</h2>
     <p>Aşağıdaki veriler <strong>yalnızca cihazınızda</strong>, uygulamanın kendi depolama alanında saklanır:</p>
     <ul>
       <li><strong>Araç bilgileri:</strong> Plaka, marka, model, yıl, kilometre, yakıt tipi, vites tipi, satın alma bilgileri.</li>
@@ -43,26 +44,43 @@
       <li><strong>Hatırlatıcılar:</strong> Muayene, sigorta, kasko, MTV ve bakım tarihleri.</li>
       <li><strong>Belgeler:</strong> Kullanıcının eklediği fotoğraf, PDF ve diğer dosyalar.</li>
       <li><strong>Satış dosyası PDF'i:</strong> Kullanıcı kayıtlarından oluşturulan paylaşım dosyası.</li>
+      <li><strong>Fiş/fatura görselleri ve okunan metin:</strong> Kamerayla taranan veya seçilen fiş görüntüleri ve bunlardan cihaz üstünde çıkarılan metin.</li>
+      <li><strong>Kullanım profili:</strong> Günlük kilometre, güzergâh tipi, yakıt tüketimi gibi Akıllı Sürüş Asistanı tercihleri.</li>
     </ul>
-    <p>Bu verilerin hiçbiri uygulama tarafından bir sunucuya gönderilmez, analiz edilmez veya üçüncü kişilerle paylaşılmaz.</p>
+    <p>Bu verilerin hiçbiri, siz aşağıdaki isteğe bağlı özellikleri açmadıkça bir sunucuya gönderilmez.</p>
 
-    <h2>Veriler Nerede Saklanır?</h2>
-    <p>Tüm veriler Apple'ın iOS işletim sistemi tarafından sağlanan <strong>cihaz içi depolama</strong> alanında saklanır (SwiftData ve uygulama sandbox).</p>
+    <h2>Kamera ve Fiş Tarama</h2>
+    <p>Fiş/fatura tarama özelliği kamera erişimi ister. Kamera <strong>yalnızca</strong> siz bir belge/fiş taradığınızda kullanılır. Görüntülerden metin çıkarma (OCR) işlemi <strong>tamamen cihazınızda</strong> Apple Vision çerçevesiyle yapılır; görüntüler bir sunucuya gönderilmez. Görüntüler araç belge kasanızda cihazınızda saklanır.</p>
+
+    <h2>Topluluk (İsteğe Bağlı)</h2>
+    <p>Topluluk özelliğini kullanmak için Apple ile Giriş (Sign in with Apple) yaparsınız. Yalnızca bu durumda; görünen adınız, e-posta adresiniz (Apple Gizli Aktarma / Private Relay ile gizlenmiş olabilir) ve paylaştığınız gönderi/yorumlar <strong>Supabase</strong> altyapısında saklanır. Giriş yapmazsanız topluluk verisi oluşmaz. Hesabınızı ve topluluk verilerinizi uygulama içinden <strong>Ayarlar → Hesabı ve Verileri Sil</strong> ile kalıcı olarak silebilirsiniz.</p>
+
+    <h2>Bulut Yapay Zekâ (İsteğe Bağlı, Varsayılan Kapalı)</h2>
+    <p>Fiş okuma doğruluğunu artırmak ve kişiselleştirilmiş bakım önerileri üretmek için isteğe bağlı bir <strong>Bulut Yapay Zekâ</strong> özelliği sunulur. Bu özellik <strong>varsayılan olarak kapalıdır</strong> ve yalnızca siz <em>Ayarlar → Yapay Zekâ</em> altından açıp <strong>tek seferlik onay ekranını kabul ederseniz</strong> çalışır.</p>
+    <p>Açtığınızda:</p>
+    <ul>
+      <li><strong>Gönderilen:</strong> Yalnızca <strong>metin</strong> gönderilir (fiş görselleri değil). Metin, cihazınızdan çıkmadan <strong>önce maskelenir</strong>: T.C. kimlik numarası, plaka, IBAN ve telefon numaraları otomatik olarak <span class="highlight">[MASKED]</span> ile gizlenir.</li>
+      <li><strong>Nereye:</strong> Metin, tarafımızca işletilen bir ara sunucu (Vercel) üzerinden bir <strong>üçüncü taraf yapay zekâ sağlayıcısına (DeepSeek)</strong> iletilir. Bu sunucular <strong>yurt dışında</strong> bulunabilir.</li>
+      <li><strong>Kimlik:</strong> Kimliğinizle eşleşen bir hesap oluşturulmaz. Yalnızca cihazda üretilen <strong>anonim bir kimlik</strong> (kota sayacı için) kullanılır.</li>
+      <li><strong>Saklama:</strong> Ara sunucu, gönderdiğiniz metin içeriğini <strong>kaydetmez/loglamaz</strong>. Yalnızca kötüye kullanımı önlemek için anonim kullanım sayaçları ve tekrarları önlemek için içeriğin geri döndürülemez bir <strong>özet (hash)</strong> değeri tutulur.</li>
+      <li><strong>Kapatma:</strong> Özelliği istediğiniz zaman <em>Ayarlar → Yapay Zekâ</em>'dan kapatabilirsiniz. Kapalıyken hiçbir metin gönderilmez; özellikler cihaz üstü kurallarla çalışmaya devam eder.</li>
+    </ul>
 
     <h2>Üçüncü Taraf Hizmetleri</h2>
-    <p>Arvia <strong>hiçbir</strong> üçüncü taraf analytics, crash reporting, reklam veya kullanıcı takip aracı kullanmaz. Uygulama şu hizmetleri <strong>kullanmaz:</strong></p>
+    <p>Arvia <strong>hiçbir</strong> analytics, crash reporting, reklam veya kullanıcı takip (tracking) aracı kullanmaz. Şunları <strong>kullanmaz:</strong></p>
     <ul>
       <li>Firebase / Google Analytics</li>
       <li>Crashlytics / Sentry</li>
       <li>Amplitude / Mixpanel</li>
       <li>Reklam SDK'ları</li>
     </ul>
+    <p>Kullanılan altyapı hizmetleri yalnızca yukarıda açıklanan isteğe bağlı özellikler içindir: <strong>Supabase</strong> (topluluk kimlik doğrulama ve içerik), <strong>Vercel + DeepSeek</strong> (bulut yapay zekâ). Bunlar kullanıcıyı izleme (tracking) amacıyla kullanılmaz.</p>
 
     <h2>Satın Alma İşlemleri</h2>
     <p>Pro abonelik ve diğer satın alma işlemleri Apple'ın <strong>StoreKit</strong> çerçevesi üzerinden yönetilir. Ödeme bilgileri Apple tarafından işlenir; uygulama kredi kartı veya ödeme bilgilerine erişmez.</p>
 
     <h2>Veri Paylaşımı</h2>
-    <p>Uygulama tarafından oluşturulan belgeler (satış dosyası PDF'i) <strong>yalnızca sizin başlattığınız paylaşım işlemiyle</strong> iletilir. Siz paylaşmadıkça hiçbir veri veya belge cihazınızdan çıkmaz.</p>
+    <p>Uygulama tarafından oluşturulan belgeler (satış dosyası PDF'i) <strong>yalnızca sizin başlattığınız paylaşım işlemiyle</strong> iletilir. Yukarıda açıklanan isteğe bağlı özellikler (Topluluk, Bulut Yapay Zekâ) dışında, siz paylaşmadıkça hiçbir belge veya veri cihazınızdan çıkmaz. Verileriniz hiçbir zaman satılmaz veya reklam amacıyla kullanılmaz.</p>
 
     <h2>iCloud Eşzamanlama (Gelecek Özellik)</h2>
     <p>Uygulamanın ilerideki bir sürümünde, isteğe bağlı iCloud eşzamanlama özelliği sunulabilir. Bu özellik etkinleştirildiğinde araç kayıtları ve belgeleriniz Apple iCloud hesabınızın <strong>özel veritabanında</strong> saklanır ve aynı Apple Kimliği ile giriş yaptığınız cihazlarınız arasında eşzamanlanır. iCloud eşzamanlama <strong>varsayılan olarak kapalıdır</strong> ve yalnızca siz etkinleştirirseniz çalışır.</p>
