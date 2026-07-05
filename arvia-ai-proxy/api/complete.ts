@@ -46,7 +46,25 @@ const SYSTEM_PROMPTS: Record<Task, string> = {
     "En fazla 3 öneri.",
 };
 
-const redis = Redis.fromEnv(); // UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN
+// Lazily constructed — NOT at module load. `Redis.fromEnv()` throws
+// synchronously if the env vars are missing; doing that at the top level
+// crashes the whole function for every request before `handler` even runs
+// (opaque "FUNCTION_INVOCATION_FAILED" instead of a readable JSON error).
+// Connect Upstash Redis via Vercel → Storage tab to populate these two vars.
+function getRedis(): Redis {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    throw new MissingEnvError(["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"]);
+  }
+  return new Redis({ url, token });
+}
+
+class MissingEnvError extends Error {
+  constructor(public readonly vars: string[]) {
+    super(`Missing env vars: ${vars.join(", ")}`);
+  }
+}
 
 function json(status: number, obj: unknown): Response {
   return new Response(JSON.stringify(obj), {
@@ -101,78 +119,97 @@ export default async function handler(req: Request): Promise<Response> {
     return json(413, { error: { code: "payload_too_large", limit: MAX_PAYLOAD_CHARS } });
   }
 
-  // ── Cache: SHA-256(task + payload). A hit returns without calling the model
-  //    and WITHOUT incrementing the quota counter. Only hashes touch Redis.
-  const cacheKey = `cache:${task}:${await sha256Hex(task + payload)}`;
-  const cached = await redis.get(cacheKey);
-  if (cached !== null && cached !== undefined) {
-    return json(200, { result: cached, cached: true });
-  }
-
-  // ── Rate limit: per clientId monthly counter.
-  const counterKey = `count:${task}:${clientId}:${monthKey()}`;
-  const used = Number((await redis.get<number>(counterKey)) ?? 0);
-  if (used >= MONTHLY_LIMITS[task]) {
-    return json(429, {
-      error: { code: "quota_exceeded", task, limit: MONTHLY_LIMITS[task] },
-    });
-  }
-
-  // ── Call DeepSeek (temperature 0, forced JSON).
-  let upstream: Response;
+  // Constructed here (not at module load) so a missing/misconfigured Upstash
+  // connection returns a clean, readable JSON error instead of crashing the
+  // whole function invocation for every request.
+  let redis: Redis;
   try {
-    upstream = await fetch(DEEPSEEK_URL, {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
-        temperature: 0,
-        thinking: DEEPSEEK_THINKING,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: SYSTEM_PROMPTS[task] },
-          { role: "user", content: payload },
-        ],
-      }),
-    });
-  } catch {
-    return json(502, { error: { code: "upstream_unreachable" } });
+    redis = getRedis();
+  } catch (err) {
+    if (err instanceof MissingEnvError) {
+      return json(500, { error: { code: "server_misconfigured", missing: err.vars } });
+    }
+    return json(500, { error: { code: "internal_error" } });
   }
 
-  if (!upstream.ok) {
-    return json(502, { error: { code: "upstream_error", status: upstream.status } });
-  }
-
-  const completion = await upstream.json();
-  const content: string | undefined = completion?.choices?.[0]?.message?.content;
-  if (!content) {
-    return json(502, { error: { code: "empty_completion" } });
-  }
-
-  let parsed: unknown;
   try {
-    parsed = JSON.parse(content);
+    // ── Cache: SHA-256(task + payload). A hit returns without calling the
+    //    model and WITHOUT incrementing the quota counter. Only hashes touch Redis.
+    const cacheKey = `cache:${task}:${await sha256Hex(task + payload)}`;
+    const cached = await redis.get(cacheKey);
+    if (cached !== null && cached !== undefined) {
+      return json(200, { result: cached, cached: true });
+    }
+
+    // ── Rate limit: per clientId monthly counter.
+    const counterKey = `count:${task}:${clientId}:${monthKey()}`;
+    const used = Number((await redis.get<number>(counterKey)) ?? 0);
+    if (used >= MONTHLY_LIMITS[task]) {
+      return json(429, {
+        error: { code: "quota_exceeded", task, limit: MONTHLY_LIMITS[task] },
+      });
+    }
+
+    // ── Call DeepSeek (temperature 0, forced JSON).
+    let upstream: Response;
+    try {
+      upstream = await fetch(DEEPSEEK_URL, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: DEEPSEEK_MODEL,
+          temperature: 0,
+          thinking: DEEPSEEK_THINKING,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: SYSTEM_PROMPTS[task] },
+            { role: "user", content: payload },
+          ],
+        }),
+      });
+    } catch {
+      return json(502, { error: { code: "upstream_unreachable" } });
+    }
+
+    if (!upstream.ok) {
+      return json(502, { error: { code: "upstream_error", status: upstream.status } });
+    }
+
+    const completion = await upstream.json();
+    const content: string | undefined = completion?.choices?.[0]?.message?.content;
+    if (!content) {
+      return json(502, { error: { code: "empty_completion" } });
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      return json(502, { error: { code: "model_returned_invalid_json" } });
+    }
+
+    // maintenance_plan external contract is a JSON array; the model returns
+    // {suggestions:[...]} to satisfy json_object mode, so unwrap it here.
+    let result: unknown = parsed;
+    if (task === "maintenance_plan") {
+      const suggestions = (parsed as { suggestions?: unknown })?.suggestions;
+      result = Array.isArray(suggestions) ? suggestions.slice(0, 3) : Array.isArray(parsed) ? parsed : [];
+    }
+
+    // Increment quota (first write sets the monthly TTL) and cache the result.
+    const count = await redis.incr(counterKey);
+    if (count === 1) {
+      await redis.expire(counterKey, COUNTER_TTL_SECONDS);
+    }
+    await redis.set(cacheKey, result, { ex: CACHE_TTL_SECONDS });
+
+    return json(200, { result, cached: false });
   } catch {
-    return json(502, { error: { code: "model_returned_invalid_json" } });
+    // Any unforeseen failure (e.g. Redis unreachable) — never let the platform
+    // surface an opaque crash; always return readable JSON.
+    return json(500, { error: { code: "internal_error" } });
   }
-
-  // maintenance_plan external contract is a JSON array; the model returns
-  // {suggestions:[...]} to satisfy json_object mode, so unwrap it here.
-  let result: unknown = parsed;
-  if (task === "maintenance_plan") {
-    const suggestions = (parsed as { suggestions?: unknown })?.suggestions;
-    result = Array.isArray(suggestions) ? suggestions.slice(0, 3) : Array.isArray(parsed) ? parsed : [];
-  }
-
-  // Increment quota (first write sets the monthly TTL) and cache the result.
-  const count = await redis.incr(counterKey);
-  if (count === 1) {
-    await redis.expire(counterKey, COUNTER_TTL_SECONDS);
-  }
-  await redis.set(cacheKey, result, { ex: CACHE_TTL_SECONDS });
-
-  return json(200, { result, cached: false });
 }
