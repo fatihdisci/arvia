@@ -1253,10 +1253,11 @@ final class PaywallLimitTests: XCTestCase {
         XCTAssertTrue(service.canAddDocument(currentCount: 100))
     }
 
-    func testCurrentSingleVehicleMVPFeaturesAreFree() {
+    func testSingleVehicleFreeUserFeatureGating() {
         let free = PaywallService(isProForTesting: false)
-        XCTAssertTrue(free.canCreateSaleFile())
-        XCTAssertTrue(free.canAccessAdvancedReports())
+        // Satış dosyası + gelişmiş raporlar Pro; muayene raporu free kalır.
+        XCTAssertFalse(free.canCreateSaleFile())
+        XCTAssertFalse(free.canAccessAdvancedReports())
         XCTAssertTrue(free.canCreateInspectionReport())
 
         let pro = PaywallService(isProForTesting: true)
@@ -1265,23 +1266,28 @@ final class PaywallLimitTests: XCTestCase {
         XCTAssertTrue(pro.canCreateInspectionReport())
     }
 
-    func testFreeUserCurrentMVPFeatureSurfacesRemainUnlocked() {
+    func testFreeUserDocumentAndInspectionRemainUnlocked() {
         let free = PaywallService(isProForTesting: false)
 
+        // Belge + muayene raporu free kullanıcıda açık kalır.
         XCTAssertTrue(free.canSaveNewDocument(currentCount: 500))
         XCTAssertTrue(free.canAddDocument(currentCount: 500))
-        XCTAssertTrue(free.canCreateSaleFile())
-        XCTAssertTrue(free.canAccessAdvancedReports())
         XCTAssertTrue(free.canCreateInspectionReport())
+        // Satış dosyası + gelişmiş raporlar Pro'ya taşındı.
+        XCTAssertFalse(free.canCreateSaleFile())
+        XCTAssertFalse(free.canAccessAdvancedReports())
     }
 
-    func testOnlySecondVehicleIsProGatedForFreeUsers() {
+    func testFreeUserProGating() {
         let free = PaywallService(isProForTesting: false)
 
+        // İkinci araç Pro.
         XCTAssertTrue(free.canAddVehicle(currentCount: 0))
         XCTAssertFalse(free.canAddVehicle(currentCount: 1))
-        XCTAssertTrue(free.canCreateSaleFile())
-        XCTAssertTrue(free.canAccessAdvancedReports())
+        // Satış dosyası + gelişmiş raporlar Pro.
+        XCTAssertFalse(free.canCreateSaleFile())
+        XCTAssertFalse(free.canAccessAdvancedReports())
+        // Muayene raporu + belge free.
         XCTAssertTrue(free.canCreateInspectionReport())
         XCTAssertTrue(free.canAddDocument(currentCount: 1_000))
     }
@@ -1296,11 +1302,21 @@ final class PaywallLimitTests: XCTestCase {
         XCTAssertTrue(pro.canSaveNewDocument(currentCount: 500))
     }
 
-    func testProProductIDsRemainRuhsatimForAppStoreConnectCompatibility() {
-        XCTAssertEqual(PaywallService.proProductIDs, [
-            "com.ruhsatim.pro.monthly",
-            "com.ruhsatim.pro.yearly",
-            "com.ruhsatim.pro.lifetime",
+    // "Garajım Pro" grubu App Store Connect'te silindikten sonra ID'ler
+    // com.arvia.pro.* olarak yeniden tanımlandı. Silinen ID'ler Apple'da bir daha
+    // kullanılamaz; bu test yeni ID sözleşmesini kilitler.
+    func testProProductIDsUseArviaNamespace() {
+        XCTAssertEqual(PaywallService.subscriptionProductIDs, [
+            "com.arvia.pro.monthly",
+            "com.arvia.pro.yearly",
+        ])
+        XCTAssertEqual(PaywallService.nonConsumableProductIDs, [
+            "com.arvia.pro.lifetime",
+        ])
+        XCTAssertEqual(PaywallService.allProProductIDs, [
+            "com.arvia.pro.monthly",
+            "com.arvia.pro.yearly",
+            "com.arvia.pro.lifetime",
         ])
     }
 
