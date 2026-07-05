@@ -1184,7 +1184,7 @@ struct FloatingQuickActionButton: View {
                 .accessibilityLabel(isExpanded ? "Kapat" : "Hızlı İşlemler")
             }
             .padding(.trailing, AppSpacing.md)
-            .padding(.bottom, AppSpacing.floatingTabBarContentInset + AppSpacing.sm)
+            .padding(.bottom, AppSpacing.floatingTabBarContentInset - AppSpacing.xs)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
         }
         .animation(spring, value: isExpanded)
