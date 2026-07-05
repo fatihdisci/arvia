@@ -511,10 +511,17 @@ struct GarageView: View {
         ZStack {
             if let photoFileName = vehicle.photoFileName,
                let image = VehiclePhotoStorageService.shared.loadPhoto(fileName: photoFileName) {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Color.clear boyutu belirler (layout sabiti), fotoğraf sadece
+                // arka planı doldurur — Image'ın kendi piksel boyutlarının
+                // layout'a sızıp VStack genişliğini patlatmasını engeller.
+                Color.clear
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 220)
+                    .background(
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    )
                     .clipped()
             } else {
                 // Fotoğraf eklemeye teşvik eden placeholder

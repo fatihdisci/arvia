@@ -110,7 +110,7 @@ enum AppNotificationRoute: Equatable {
 final class AppNavigationRouter: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
     static let shared = AppNavigationRouter()
 
-    @Published var selectedTab: AppTab = .records // TEMP-TEST: revert to .garage
+    @Published var selectedTab: AppTab = .garage
     @Published var pendingNotificationRoute: AppNotificationRoute?
 
     private override init() {
