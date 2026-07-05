@@ -359,35 +359,11 @@ struct AssistantView: View {
     @EnvironmentObject private var paywallService: PaywallService
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
     @Query private var allUsageProfiles: [VehicleUsageProfile]
-    @Query(sort: \ServiceRecord.date, order: .reverse) private var allServiceRecords: [ServiceRecord]
 
     @State private var selectedVehicleId: UUID?
     @State private var showProfileFlow = false
     @State private var maintenancePlanVehicle: Vehicle?
     @State private var showPaywall = false
-
-    // MARK: - Inline Maintenance Plan State
-    private enum PlanStage: Equatable {
-        case waiting
-        case generating
-        case ready
-        case unavailable
-        case failed(String)
-    }
-
-    @State private var planStage: PlanStage = .waiting
-    @State private var planSuggestions: [MaintenancePlanSuggestion] = []
-    @State private var isPlanExpanded = true
-    @State private var planFromCache = false
-    @State private var planVehicleId: UUID?
-    @State private var reminderDraft: ReminderDraft?
-
-    private struct ReminderDraft: Identifiable {
-        let id = UUID()
-        let title: String
-        let dueOdometer: Int?
-        let dueInMonths: Int?
-    }
 
     private var activeVehicles: [Vehicle] {
         vehicles.filter { $0.archivedAt == nil }
@@ -421,7 +397,7 @@ struct AssistantView: View {
                             vehiclePicker
                                 .padding(.horizontal, AppSpacing.screenMarginH)
                         }
-                        maintenancePlanSection(for: vehicle)
+                        maintenancePlanCard(for: vehicle)
                             .padding(.horizontal, AppSpacing.screenMarginH)
                         usageProfileCard
                             .padding(.horizontal, AppSpacing.screenMarginH)
@@ -448,16 +424,6 @@ struct AssistantView: View {
             .sheet(isPresented: $showPaywall) {
                 PaywallView(feature: .assistant)
             }
-            .sheet(item: $reminderDraft) { draft in
-                ReminderFormView(
-                    preselectedVehicleId: selectedVehicle?.id,
-                    prefilledTitle: draft.title,
-                    prefilledDueOdometer: draft.dueOdometer,
-                    prefilledDueInMonths: draft.dueInMonths
-                )
-            }
-            .onAppear { loadCachedPlan() }
-            .onChange(of: selectedVehicle?.id) { _, _ in loadCachedPlan() }
         }
     }
 
@@ -607,450 +573,74 @@ struct AssistantView: View {
         }
     }
 
-    // MARK: - Maintenance Plan Section (Expandable, Inline)
-    @ViewBuilder
-    private func maintenancePlanSection(for vehicle: Vehicle) -> some View {
+    // MARK: - Maintenance Plan Card
+    // Not: Bilinçli olarak sayfa içinde açılıp kapanan bir akordeon DEĞİL —
+    // dokununca MaintenancePlanView'i native bir sheet olarak açar. Önceki
+    // "satır içi genişleyen bölüm" denemesi (ScrollView içinde expand/collapse)
+    // hem "açılır liste" hissi veriyordu hem kapanışta komşu kartların yeniden
+    // yerleşmesiyle birlikte gözle görülür bir takılma yaratıyordu. Sheet,
+    // MaintenancePlanView.swift'te tanımlı sabit presentationDetents + drag
+    // indicator sayesinde native ve akıcı açılıp kapanıyor.
+    private func maintenancePlanCard(for vehicle: Vehicle) -> some View {
         let canUse = paywallService.canUseAssistant && AIConsentStore.shared.isCloudAIEnabled
-
-        VStack(spacing: 0) {
-            // Header — always visible
-            Button {
+        let cached = MaintenancePlanCacheStore.load(vehicleId: vehicle.id)
+        return Button {
+            if canUse {
+                maintenancePlanVehicle = vehicle
+            } else {
+                showPaywall = true
+            }
+        } label: {
+            HStack(spacing: AppSpacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppRadius.medium)
+                        .fill(AppColors.accentPrimary.opacity(0.1))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "brain.head.profile")
+                        .font(.title3)
+                        .foregroundColor(AppColors.accentPrimary)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Kişisel Bakım Planı")
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text(maintenancePlanSubtitle(canUse: canUse, cached: cached))
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 0)
                 if canUse {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        isPlanExpanded.toggle()
-                    }
-                    if isPlanExpanded, planStage == .waiting {
-                        generatePlan(for: vehicle)
-                    }
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
                 } else {
-                    showPaywall = true
+                    Text("Pro")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(AppColors.textOnAccent)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(AppColors.accentPrimary))
                 }
-            } label: {
-                HStack(spacing: AppSpacing.md) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: AppRadius.medium)
-                            .fill(AppColors.accentPrimary.opacity(0.1))
-                            .frame(width: 44, height: 44)
-                        Image(systemName: "brain.head.profile")
-                            .font(.title3)
-                            .foregroundColor(AppColors.accentPrimary)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Kişisel Bakım Planı")
-                            .font(AppTypography.bodyMedium)
-                            .foregroundColor(AppColors.textPrimary)
-                        Text(planSubtitle(canUse: canUse))
-                            .font(AppTypography.caption)
-                            .foregroundColor(AppColors.textSecondary)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    if canUse {
-                        Image(systemName: isPlanExpanded ? "chevron.down" : "chevron.right")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
-                    } else {
-                        Text("Pro")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(AppColors.textOnAccent)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(Capsule().fill(AppColors.accentPrimary))
-                    }
-                }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: isPlanExpanded && canUse
-                        ? AppRadius.heroCard : AppRadius.card)
-                        .fill(Color.appSurface)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: isPlanExpanded && canUse
-                        ? AppRadius.heroCard : AppRadius.card)
-                        .stroke(AppColors.border, lineWidth: 0.5)
-                )
             }
-            .buttonStyle(.plain)
-
-            // Expanded content
-            if isPlanExpanded, canUse {
-                VStack(spacing: AppSpacing.sm) {
-                    Divider().overlay(AppColors.border)
-
-                    planExpandedContent(for: vehicle)
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.bottom, AppSpacing.md)
-                }
-                .background(
-                    UnevenRoundedRectangle(
-                        bottomLeadingRadius: AppRadius.card,
-                        bottomTrailingRadius: AppRadius.card
-                    )
-                    .fill(Color.appSurface)
-                )
-                .overlay(
-                    UnevenRoundedRectangle(
-                        bottomLeadingRadius: AppRadius.card,
-                        bottomTrailingRadius: AppRadius.card
-                    )
-                    .stroke(AppColors.border, lineWidth: 0.5)
-                )
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+            .padding(AppSpacing.md)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
         }
+        .buttonStyle(.plain)
     }
 
-    private func planSubtitle(canUse: Bool) -> String {
+    private func maintenancePlanSubtitle(canUse: Bool, cached: MaintenancePlanCacheStore.Cached?) -> String {
         guard canUse else {
             return "Yapay zekâ ile sana özel bakım önerileri (Pro)"
         }
-        switch planStage {
-        case .waiting:
-            return "Plan yükleniyor…"
-        case .generating:
-            return "Plan hazırlanıyor…"
-        case .ready:
-            let count = planSuggestions.count
-            if count == 0 {
-                return "Şu an için özel bir öneri yok"
-            }
-            let prefix = planFromCache ? "Son plan" : "Planın hazır"
-            return "\(prefix) · \(count) öneri"
-        case .unavailable:
-            return "Bulut AI kapalı — ayarlardan açabilirsin"
-        case .failed(let msg):
-            return msg
+        if let cached {
+            let date = cached.createdAt.formatted(date: .abbreviated, time: .omitted)
+            return "Son plan hazır · \(date). Araç verisi değiştikçe yenilenir."
         }
-    }
-
-    // MARK: - Expanded Content
-    @ViewBuilder
-    private func planExpandedContent(for vehicle: Vehicle) -> some View {
-        switch planStage {
-        case .waiting:
-            HStack(spacing: AppSpacing.sm) {
-                ProgressView().tint(AppColors.accentPrimary).scaleEffect(0.8)
-                Text("Plan yükleniyor…")
-                    .font(AppTypography.secondary)
-                    .foregroundColor(AppColors.textSecondary)
-            }
-            .padding(.vertical, AppSpacing.lg)
-            .frame(maxWidth: .infinity)
-
-        case .generating:
-            VStack(spacing: AppSpacing.md) {
-                ProgressView().tint(AppColors.accentPrimary).scaleEffect(1.1)
-                Text("Kullanım profiline göre öneriler oluşturuluyor")
-                    .font(AppTypography.secondary)
-                    .foregroundColor(AppColors.textTertiary)
-            }
-            .padding(.vertical, AppSpacing.xl)
-            .frame(maxWidth: .infinity)
-
-        case .ready:
-            if planSuggestions.isEmpty {
-                VStack(spacing: AppSpacing.sm) {
-                    Image(systemName: "checkmark.shield.fill")
-                        .font(.title2)
-                        .foregroundColor(AppColors.success)
-                    Text("Şu an için özel bir öneri yok.")
-                        .font(AppTypography.secondary)
-                        .foregroundColor(AppColors.textSecondary)
-                    Text("Kayıtların arttıkça plan daha isabetli olur.")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textTertiary)
-                }
-                .padding(.vertical, AppSpacing.lg)
-                .frame(maxWidth: .infinity)
-            } else {
-                VStack(spacing: AppSpacing.sm) {
-                    ForEach(Array(planSuggestions.enumerated()), id: \.offset) { index, suggestion in
-                        premiumSuggestionCard(suggestion, index: index + 1)
-                    }
-
-                    HStack(spacing: AppSpacing.sm) {
-                        if planFromCache {
-                            Label("Önbellekten", systemImage: "clock.arrow.circlepath")
-                                .font(AppTypography.caption)
-                                .foregroundColor(AppColors.textTertiary)
-                        }
-                        Spacer()
-                        Button {
-                            generatePlan(for: vehicle, force: true)
-                        } label: {
-                            Image(systemName: "arrow.clockwise")
-                                .font(.caption)
-                                .foregroundColor(AppColors.accentPrimary)
-                        }
-                        .accessibilityLabel("Planı yenile")
-                    }
-                    .padding(.top, AppSpacing.xxs)
-                }
-            }
-
-        case .unavailable:
-            VStack(spacing: AppSpacing.sm) {
-                Image(systemName: "sparkles")
-                    .font(.title3)
-                    .foregroundColor(AppColors.textTertiary)
-                Text("Bulut AI kapalı")
-                    .font(AppTypography.secondary)
-                    .foregroundColor(AppColors.textSecondary)
-                Text("Kişisel bakım planı için Pro ve bulut AI özelliklerinin açık olması gerekir.")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
-                    .multilineTextAlignment(.center)
-                Button("Bulut AI'yı aç") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                }
-                .buttonStyle(.secondary)
-                .padding(.top, AppSpacing.xxs)
-            }
-            .padding(.vertical, AppSpacing.md)
-            .frame(maxWidth: .infinity)
-
-        case .failed(let message):
-            VStack(spacing: AppSpacing.sm) {
-                Image(systemName: "wifi.exclamationmark")
-                    .font(.title3)
-                    .foregroundColor(AppColors.textTertiary)
-                Text(message)
-                    .font(AppTypography.secondary)
-                    .foregroundColor(AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-                Button {
-                    generatePlan(for: vehicle, force: true)
-                } label: {
-                    Text("Tekrar dene")
-                        .font(AppTypography.secondaryMedium)
-                        .foregroundColor(AppColors.accentPrimary)
-                }
-            }
-            .padding(.vertical, AppSpacing.md)
-            .frame(maxWidth: .infinity)
-        }
-    }
-
-    // MARK: - Premium Suggestion Card
-    private func premiumSuggestionCard(_ suggestion: MaintenancePlanSuggestion, index: Int) -> some View {
-        let color = severityColor(suggestion.severity)
-
-        return HStack(spacing: 0) {
-            // Left accent bar
-            RoundedRectangle(cornerRadius: 2)
-                .fill(color)
-                .frame(width: 4)
-
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                // Header row: severity dot + title
-                HStack(spacing: AppSpacing.xs) {
-                    Circle()
-                        .fill(color)
-                        .frame(width: 8, height: 8)
-                    Text(suggestion.title)
-                        .font(AppTypography.cardTitle)
-                        .foregroundColor(AppColors.textPrimary)
-                    Spacer(minLength: 0)
-                }
-
-                Text(suggestion.message)
-                    .font(AppTypography.secondary)
-                    .foregroundColor(AppColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                // Interval chips
-                if suggestion.suggestedIntervalKm != nil || suggestion.suggestedIntervalMonths != nil {
-                    HStack(spacing: AppSpacing.xs) {
-                        if let km = suggestion.suggestedIntervalKm {
-                            intervalChip(text: "~\(km.formatted()) km", icon: "gauge.with.needle")
-                        }
-                        if let months = suggestion.suggestedIntervalMonths {
-                            intervalChip(text: "~\(months) ay", icon: "calendar")
-                        }
-                    }
-                }
-
-                // Action
-                Button {
-                    reminderDraft = ReminderDraft(
-                        title: suggestion.title,
-                        dueOdometer: suggestion.suggestedIntervalKm.map { vehicleOdometer + $0 },
-                        dueInMonths: suggestion.suggestedIntervalMonths
-                    )
-                } label: {
-                    Label("Hatırlatıcı oluştur", systemImage: "bell.badge")
-                        .font(AppTypography.captionMedium)
-                        .foregroundColor(AppColors.accentPrimary)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.leading, AppSpacing.md)
-            .padding(.vertical, AppSpacing.md)
-            .padding(.trailing, AppSpacing.md)
-        }
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .fill(Color.appSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.border, lineWidth: 0.5)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-    }
-
-    private var vehicleOdometer: Int {
-        selectedVehicle?.currentOdometer ?? 0
-    }
-
-    private func intervalChip(text: String, icon: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 9, weight: .medium))
-            Text(text)
-                .font(AppTypography.caption)
-        }
-        .foregroundColor(AppColors.textSecondary)
-        .padding(.horizontal, AppSpacing.xs)
-        .padding(.vertical, 4)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(AppColors.backgroundSecondary)
-        )
-    }
-
-    // MARK: - Plan Logic
-    private func loadCachedPlan() {
-        guard let vehicle = selectedVehicle else { return }
-
-        if planVehicleId != vehicle.id {
-            planVehicleId = vehicle.id
-            planSuggestions = []
-            planStage = .waiting
-            planFromCache = false
-        }
-
-        guard planStage == .waiting else { return }
-
-        guard paywallService.canUseAssistant, AIConsentStore.shared.isCloudAIEnabled else {
-            planStage = .unavailable
-            return
-        }
-
-        // Try cache
-        if let cached = MaintenancePlanCacheStore.load(vehicleId: vehicle.id),
-           MaintenancePlanCacheStore.isFresh(cached) {
-            let payload = buildPlanPayload(for: vehicle)
-            if cached.inputHash == MaintenancePlanCacheStore.fingerprint(payload) {
-                planSuggestions = cached.suggestions
-                planStage = .ready
-                planFromCache = true
-                return
-            }
-        }
-
-        // Auto-generate if expanded
-        if isPlanExpanded {
-            generatePlan(for: vehicle)
-        }
-    }
-
-    private func generatePlan(for vehicle: Vehicle, force: Bool = false) {
-        guard paywallService.canUseAssistant,
-              AIConsentStore.shared.isCloudAIEnabled else {
-            planStage = .unavailable
-            return
-        }
-
-        // Generate only from waiting or failed states, unless forced
-        if !force {
-            switch planStage {
-            case .waiting, .failed: break
-            default: return
-            }
-        }
-
-        planStage = .generating
-        let payload = buildPlanPayload(for: vehicle)
-        let inputHash = MaintenancePlanCacheStore.fingerprint(payload)
-
-        // Check cache for force=false
-        if !force,
-           let cached = MaintenancePlanCacheStore.load(vehicleId: vehicle.id),
-           MaintenancePlanCacheStore.isFresh(cached),
-           cached.inputHash == inputHash {
-            planSuggestions = cached.suggestions
-            planStage = .ready
-            planFromCache = true
-            return
-        }
-
-        Task {
-            do {
-                let result = try await AIProxyService.shared.maintenancePlan(profileJSON: payload)
-                await MainActor.run {
-                    planSuggestions = Array(result.prefix(3))
-                    MaintenancePlanCacheStore.save(planSuggestions, vehicleId: vehicle.id, inputHash: inputHash)
-                    planStage = .ready
-                    planFromCache = false
-                }
-            } catch let error as AIProxyError {
-                await MainActor.run {
-                    switch error {
-                    case .disabled:
-                        planStage = .unavailable
-                    case .quotaExceeded:
-                        planStage = .failed("Yapay zekâ ay limitine ulaşıldı. Kural tabanlı öneriler çalışmaya devam ediyor.")
-                    default:
-                        planStage = .failed("Plan oluşturulamadı. Daha sonra tekrar dene.")
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    planStage = .failed("Plan oluşturulamadı. Daha sonra tekrar dene.")
-                }
-            }
-        }
-    }
-
-    private func buildPlanPayload(for vehicle: Vehicle) -> String {
-        let profile = UsageProfileService.resolve(for: vehicle.id, from: allUsageProfiles)
-        let recent = allServiceRecords
-            .filter { $0.vehicleId == vehicle.id }
-            .sorted { $0.date > $1.date }
-            .prefix(5)
-            .map { MaintenancePlanPayloadBuilder.ServiceLine(title: $0.serviceType.displayName, km: $0.odometer) }
-
-        let input = MaintenancePlanPayloadBuilder.Input(
-            brand: vehicle.brand,
-            model: vehicle.model,
-            year: vehicle.year,
-            fuelType: vehicle.fuelType.rawValue,
-            odometer: vehicle.currentOdometer,
-            dailyKmBand: profile?.dailyKmBand.rawValue,
-            routeType: profile?.routeType.rawValue,
-            fuelConsumptionCity: profile?.fuelConsumptionCity,
-            fuelConsumptionHighway: profile?.fuelConsumptionHighway,
-            primaryUser: profile?.primaryUser,
-            tripTypes: profile?.tripTypes ?? [],
-            recentServices: Array(recent)
-        )
-        return MaintenancePlanPayloadBuilder.build(input)
-    }
-
-    // MARK: - Helpers
-    private func severityColor(_ severity: String) -> Color {
-        switch severity {
-        case "important": return AppColors.critical
-        case "warning":   return AppColors.warning
-        default:          return AppColors.accentPrimary
-        }
+        return "Yapay zekâ ile sana özel bakım önerileri"
     }
 
     // MARK: - Add Vehicle Hint

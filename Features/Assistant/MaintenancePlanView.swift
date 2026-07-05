@@ -196,10 +196,15 @@ struct MaintenancePlanView: View {
                 .foregroundColor(AppColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            if let intervalText = intervalText(suggestion) {
-                Text(intervalText)
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
+            if suggestion.suggestedIntervalKm != nil || suggestion.suggestedIntervalMonths != nil {
+                HStack(spacing: AppSpacing.xs) {
+                    if let km = suggestion.suggestedIntervalKm {
+                        intervalChip(text: "~\(km.formatted()) km", icon: "gauge.with.needle")
+                    }
+                    if let months = suggestion.suggestedIntervalMonths {
+                        intervalChip(text: "~\(months) ay", icon: "calendar")
+                    }
+                }
             }
 
             Button {
@@ -371,11 +376,17 @@ struct MaintenancePlanView: View {
         return MaintenancePlanPayloadBuilder.build(input)
     }
 
-    private func intervalText(_ s: MaintenancePlanSuggestion) -> String? {
-        var parts: [String] = []
-        if let km = s.suggestedIntervalKm { parts.append("~\(km.formatted()) km") }
-        if let months = s.suggestedIntervalMonths { parts.append("~\(months) ay") }
-        return parts.isEmpty ? nil : "Önerilen aralık: " + parts.joined(separator: " / ")
+    private func intervalChip(text: String, icon: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 9, weight: .medium))
+            Text(text)
+                .font(AppTypography.caption)
+        }
+        .foregroundColor(AppColors.textSecondary)
+        .padding(.horizontal, AppSpacing.xs)
+        .padding(.vertical, 4)
+        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.backgroundSecondary))
     }
 
     private func severityIcon(_ severity: String) -> String {
