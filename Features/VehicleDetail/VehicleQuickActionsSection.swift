@@ -9,7 +9,6 @@ struct VehicleQuickActionsSection: View {
     let onAddFuelExpense: () -> Void
     let onAddDocument: () -> Void
     let onAddReminder: () -> Void
-    let onAddInspection: () -> Void
     let onScanReceipt: () -> Void
 
     var body: some View {
@@ -40,16 +39,9 @@ struct VehicleQuickActionsSection: View {
                     vehicleDetailActionButton(icon: "bell.badge", label: "Hatırlatıcı Ekle", color: AppColors.success) {
                         onAddReminder()
                     }
-                    vehicleDetailActionButton(icon: "magnifyingglass", label: "Ekspertiz Ekle", color: AppColors.accentPrimary) {
-                        onAddInspection()
-                    }
-                }
-                HStack(spacing: 8) {
                     vehicleDetailActionButton(icon: "doc.viewfinder", label: "Fiş/Fatura Tara", color: AppColors.accentPrimary) {
                         onScanReceipt()
                     }
-                    // Simetri için boş yer tutucu — tek butonu tam genişliğe yaymamak adına.
-                    Color.clear.frame(maxWidth: .infinity)
                 }
             }
         }

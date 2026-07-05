@@ -144,7 +144,6 @@ struct VehicleDetailView: View {
                     onAddFuelExpense: { showAddFuelExpense = true },
                     onAddDocument: { showAddDocument = true },
                     onAddReminder: { showAddReminder = true },
-                    onAddInspection: { showAddInspection = true },
                     onScanReceipt: handleScanReceipt
                 )
                     .padding(.horizontal, AppSpacing.screenMarginH)
