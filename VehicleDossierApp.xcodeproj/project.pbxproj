@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		LLM1MRGE0002LLM1MRGE0002 /* AIReceiptMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = LLM1MRGE0001LLM1MRGE0001 /* AIReceiptMerge.swift */; };
+		LLM1MPSV0002LLM1MPSV0002 /* MaintenancePlanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LLM1MPSV0001LLM1MPSV0001 /* MaintenancePlanService.swift */; };
+		LLM1MPVW0002LLM1MPVW0002 /* MaintenancePlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LLM1MPVW0001LLM1MPVW0001 /* MaintenancePlanView.swift */; };
+		LLM1TMRG0002LLM1TMRG0002 /* AIReceiptMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LLM1TMRG0001LLM1TMRG0001 /* AIReceiptMergeTests.swift */; };
+		LLM1TMPB0002LLM1TMPB0002 /* MaintenancePlanPayloadBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LLM1TMPB0001LLM1TMPB0001 /* MaintenancePlanPayloadBuilderTests.swift */; };
 		AIP1MASK0002AIP1MASK0002 /* PIIMaskingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1MASK0001AIP1MASK0001 /* PIIMaskingService.swift */; };
 		AIP1PROX0002AIP1PROX0002 /* AIProxyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1PROX0001AIP1PROX0001 /* AIProxyService.swift */; };
 		AIP1CLID0002AIP1CLID0002 /* AIClientID.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1CLID0001AIP1CLID0001 /* AIClientID.swift */; };
@@ -166,6 +171,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		LLM1MRGE0001LLM1MRGE0001 /* AIReceiptMerge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIReceiptMerge.swift; sourceTree = SOURCE_ROOT; };
+		LLM1MPSV0001LLM1MPSV0001 /* MaintenancePlanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/MaintenancePlanService.swift; sourceTree = SOURCE_ROOT; };
+		LLM1MPVW0001LLM1MPVW0001 /* MaintenancePlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Assistant/MaintenancePlanView.swift; sourceTree = SOURCE_ROOT; };
+		LLM1TMRG0001LLM1TMRG0001 /* AIReceiptMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/AIReceiptMergeTests.swift; sourceTree = SOURCE_ROOT; };
+		LLM1TMPB0001LLM1TMPB0001 /* MaintenancePlanPayloadBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MaintenancePlanPayloadBuilderTests.swift; sourceTree = SOURCE_ROOT; };
 		AIP1MASK0001AIP1MASK0001 /* PIIMaskingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PIIMaskingService.swift; sourceTree = SOURCE_ROOT; };
 		AIP1PROX0001AIP1PROX0001 /* AIProxyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIProxyService.swift; sourceTree = SOURCE_ROOT; };
 		AIP1CLID0001AIP1CLID0001 /* AIClientID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIClientID.swift; sourceTree = SOURCE_ROOT; };
@@ -598,6 +608,7 @@
 			isa = PBXGroup;
 			children = (
 				SDA1FLOW0001SDA1FLOW0001 /* UsageProfileFlowView.swift */,
+				LLM1MPVW0001LLM1MPVW0001 /* MaintenancePlanView.swift */,
 			);
 			path = Assistant;
 			sourceTree = "<group>";
@@ -645,6 +656,8 @@
 				AIP1MASK0001AIP1MASK0001 /* PIIMaskingService.swift */,
 				AIP1PROX0001AIP1PROX0001 /* AIProxyService.swift */,
 				AIP1CLID0001AIP1CLID0001 /* AIClientID.swift */,
+				LLM1MRGE0001LLM1MRGE0001 /* AIReceiptMerge.swift */,
+				LLM1MPSV0001LLM1MPSV0001 /* MaintenancePlanService.swift */,
 				65B13317EA9D40DE9A31EA7C /* ReminderRepeatEngine.swift */,
 				60619A1D363143F3840752AB /* RetentionNotificationService.swift */,
 				C4349C93A9B5494B85D140E6 /* DocumentStorageService.swift */,
@@ -713,6 +726,8 @@
 				SDA1TUP10001SDA1TUP10001 /* UsageProfileServiceTests.swift */,
 				AIP1TMSK0001AIP1TMSK0001 /* PIIMaskingServiceTests.swift */,
 				AIP1TPRX0001AIP1TPRX0001 /* AIProxyServiceTests.swift */,
+				LLM1TMRG0001LLM1TMRG0001 /* AIReceiptMergeTests.swift */,
+				LLM1TMPB0001LLM1TMPB0001 /* MaintenancePlanPayloadBuilderTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -909,6 +924,9 @@
 				AIP1PROX0002AIP1PROX0002 /* AIProxyService.swift in Sources */,
 				AIP1CLID0002AIP1CLID0002 /* AIClientID.swift in Sources */,
 				AIP1CONV0002AIP1CONV0002 /* AIConsentView.swift in Sources */,
+				LLM1MRGE0002LLM1MRGE0002 /* AIReceiptMerge.swift in Sources */,
+				LLM1MPSV0002LLM1MPSV0002 /* MaintenancePlanService.swift in Sources */,
+				LLM1MPVW0002LLM1MPVW0002 /* MaintenancePlanView.swift in Sources */,
 				RCPTSCAN0002RCPTSCAN0002 /* DocumentScannerService.swift in Sources */,
 				RCPTOCRS0002RCPTOCRS0002 /* OCRService.swift in Sources */,
 				RCPTPARS0002RCPTPARS0002 /* ReceiptParserService.swift in Sources */,
@@ -971,6 +989,8 @@
 				SDA1TUP10002SDA1TUP10002 /* UsageProfileServiceTests.swift in Sources */,
 				AIP1TMSK0002AIP1TMSK0002 /* PIIMaskingServiceTests.swift in Sources */,
 				AIP1TPRX0002AIP1TPRX0002 /* AIProxyServiceTests.swift in Sources */,
+				LLM1TMRG0002LLM1TMRG0002 /* AIReceiptMergeTests.swift in Sources */,
+				LLM1TMPB0002LLM1TMPB0002 /* MaintenancePlanPayloadBuilderTests.swift in Sources */,
 				C32ADF231A8F497281953818 /* InsightSnoozeStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

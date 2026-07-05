@@ -37,7 +37,14 @@ struct ReminderFormView: View {
 
     @State private var validationErrors: [String] = []
 
-    init(existingReminder: Reminder? = nil, preselectedVehicleId: UUID? = nil, preselectedTemplate: ReminderType? = nil) {
+    init(
+        existingReminder: Reminder? = nil,
+        preselectedVehicleId: UUID? = nil,
+        preselectedTemplate: ReminderType? = nil,
+        prefilledTitle: String? = nil,
+        prefilledDueOdometer: Int? = nil,
+        prefilledDueInMonths: Int? = nil
+    ) {
         self.existingReminder = existingReminder
         if let r = existingReminder {
             _selectedTemplate = State(initialValue: r.type)
@@ -50,13 +57,26 @@ struct ReminderFormView: View {
             _priority = State(initialValue: r.priority)
             _selectedVehicleId = State(initialValue: r.vehicleId)
             _notes = State(initialValue: r.notes)
-        } else if let vid = preselectedVehicleId {
-            _selectedVehicleId = State(initialValue: vid)
+        } else {
+            if let vid = preselectedVehicleId {
+                _selectedVehicleId = State(initialValue: vid)
+            }
             if let preselectedTemplate {
                 _selectedTemplate = State(initialValue: preselectedTemplate)
             }
-        } else if let preselectedTemplate {
-            _selectedTemplate = State(initialValue: preselectedTemplate)
+            // AI/plan önerisinden önden doldurma (additive).
+            if let prefilledTitle, !prefilledTitle.isEmpty {
+                _selectedTemplate = State(initialValue: .custom)
+                _customTitle = State(initialValue: prefilledTitle)
+            }
+            if let prefilledDueOdometer {
+                _hasDueOdometer = State(initialValue: true)
+                _dueOdometerText = State(initialValue: String(prefilledDueOdometer))
+            }
+            if let prefilledDueInMonths {
+                _hasDueDate = State(initialValue: true)
+                _dueDate = State(initialValue: Calendar.current.date(byAdding: .month, value: prefilledDueInMonths, to: Date()) ?? Date())
+            }
         }
     }
 

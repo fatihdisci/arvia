@@ -50,6 +50,25 @@ struct ReceiptScanView: View {
 
     @State private var validationErrors: [String] = []
 
+    // AI (yapay zekâ) yükseltme durumu
+    @State private var aiInFlight = false
+    @State private var aiNotice: String?
+    @State private var aiAttempted = false
+    @State private var showAIConsent = false
+    // Yerel prefill sonrası taban değerler — kullanıcı düzenlemesini tespit için.
+    @State private var baselineVendor = ""
+    @State private var baselineAmount = ""
+    @State private var baselineOdometer = ""
+    @State private var baselineDate = Date()
+    @State private var baselineCategory: ExpenseCategory = .other
+    @State private var baselineMaintenance = false
+
+    /// Üç koşul: Pro + AI onayı + ana toggle. AIConsentStore.isCloudAIEnabled
+    /// (toggle && onay) ile Pro birlikte doğrulanır.
+    private var aiAvailable: Bool {
+        PaywallService.shared.isPro && AIConsentStore.shared.isCloudAIEnabled
+    }
+
     private var amount: Double? {
         Double(amountText.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: "."))
     }
@@ -193,6 +212,7 @@ struct ReceiptScanView: View {
     private var reviewView: some View {
         Form {
             thumbnailsSection
+            aiSection
             targetSection
             fieldsSection
             vehicleSection
@@ -200,6 +220,53 @@ struct ReceiptScanView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Color.appBackground)
+        .sheet(isPresented: $showAIConsent) {
+            AIConsentView(
+                onAccept: {
+                    UserDefaults.standard.set(true, forKey: AIConsentStore.consentKey)
+                    UserDefaults.standard.set(true, forKey: AIConsentStore.enabledKey)
+                    escalateToAI(userInitiated: true)
+                },
+                onDecline: {}
+            )
+        }
+    }
+
+    // MARK: - AI Section
+    private var aiSection: some View {
+        Section {
+            Button {
+                escalateToAI(userInitiated: true)
+            } label: {
+                HStack(spacing: AppSpacing.sm) {
+                    if aiInFlight {
+                        ProgressView().tint(AppColors.accentPrimary)
+                        Text("Yapay zekâ ile düzeltiliyor…")
+                            .font(AppTypography.bodyMedium)
+                            .foregroundColor(AppColors.textSecondary)
+                    } else {
+                        Image(systemName: "sparkles").foregroundColor(AppColors.accentPrimary)
+                        Text("Yapay zekâ ile düzelt")
+                            .font(AppTypography.bodyMedium)
+                            .foregroundColor(AppColors.accentPrimary)
+                    }
+                    Spacer()
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(aiInFlight)
+
+            if let aiNotice {
+                Label(aiNotice, systemImage: "info.circle")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+        } footer: {
+            Text("Okuma zayıfsa yapay zekâ boş/şüpheli alanları doldurur. Metin, cihazdan çıkmadan önce maskelenir.")
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .listRowBackground(Color.appSurface)
     }
 
     private var thumbnailsSection: some View {
@@ -400,6 +467,10 @@ struct ReceiptScanView: View {
                 parsed = result
                 prefill(from: result)
                 stage = .review
+                // Düşük güven + AI uygun ise sessizce AI'ya yükselt.
+                if AIReceiptEscalation.shouldAutoEscalate(overallConfidence: result.overallConfidence, aiAvailable: aiAvailable) {
+                    escalateToAI(userInitiated: false)
+                }
             }
         }
     }
@@ -415,6 +486,90 @@ struct ReceiptScanView: View {
             category = c
             if c == .service { isMaintenance = true }
         }
+        // Taban değerleri kaydet (kullanıcı düzenlemesini AI birleştirmesinde ayırt etmek için).
+        baselineVendor = vendor
+        baselineAmount = amountText
+        baselineOdometer = odometerText
+        baselineDate = date
+        baselineCategory = category
+        baselineMaintenance = isMaintenance
+    }
+
+    // MARK: - AI escalation
+    /// Düşük güven → otomatik; kullanıcı "Yapay zekâ ile düzelt" → userInitiated.
+    private func escalateToAI(userInitiated: Bool) {
+        guard aiAvailable else {
+            // Üç koşuldan biri eksik. Kullanıcı istediyse onay ekranını sun; oto ise sessiz.
+            if userInitiated { showAIConsent = true }
+            return
+        }
+        guard !aiInFlight else { return }
+        aiAttempted = true
+        aiInFlight = true
+        aiNotice = nil
+        let masked = PIIMaskingService.mask(rawOCRText)
+        Task {
+            do {
+                let ai = try await AIProxyService.shared.parseReceipt(ocrText: masked)
+                await MainActor.run {
+                    applyAI(ai)
+                    aiInFlight = false
+                }
+            } catch let error as AIProxyError {
+                await MainActor.run {
+                    aiInFlight = false
+                    aiNotice = AIReceiptEscalation.notice(for: error) // .disabled → nil (sessiz)
+                }
+            } catch {
+                await MainActor.run { aiInFlight = false }
+            }
+        }
+    }
+
+    /// AI alanlarını yalnızca boş/düşük güvenli ve kullanıcı düzenlememişse uygular.
+    private func applyAI(_ ai: ParsedReceiptAI) {
+        if let v = ai.vendor, AIReceiptMerge.shouldApply(
+            currentIsEmpty: vendor.isEmpty, userEdited: vendor != baselineVendor,
+            localConfidence: parsed.vendorConfidence, aiHasValue: true) {
+            vendor = v
+        }
+        if let total = ai.total, AIReceiptMerge.shouldApply(
+            currentIsEmpty: amountText.isEmpty, userEdited: amountText != baselineAmount,
+            localConfidence: parsed.totalConfidence, aiHasValue: true) {
+            amountText = formatAmount(total)
+        }
+        if let dateStr = ai.date, let parsedDate = Self.parseDMY(dateStr), AIReceiptMerge.shouldApply(
+            currentIsEmpty: parsed.date == nil, userEdited: date != baselineDate,
+            localConfidence: parsed.dateConfidence, aiHasValue: true) {
+            date = parsedDate
+        }
+        if let odo = ai.odometer, AIReceiptMerge.shouldApply(
+            currentIsEmpty: odometerText.isEmpty, userEdited: odometerText != baselineOdometer,
+            localConfidence: parsed.odometerConfidence, aiHasValue: true) {
+            odometerText = String(odo)
+        }
+        // Kategori: AI önerisi önden seçili gelir, kullanıcı değiştirmediyse.
+        if category == baselineCategory, let aiCategory = AIReceiptMerge.category(from: ai.category) {
+            category = aiCategory
+        }
+        // isMaintenance: net ise otomatik, belirsizse nötr.
+        if let decision = AIReceiptMerge.maintenanceDecision(
+            aiIsMaintenance: ai.isMaintenanceInvoice, aiCategory: ai.category,
+            toggleTouched: isMaintenance != baselineMaintenance) {
+            isMaintenance = decision
+        }
+    }
+
+    private func formatAmount(_ value: Double) -> String {
+        value == value.rounded() ? String(format: "%.0f", value) : String(value)
+    }
+
+    /// "dd.MM.yyyy" → Date.
+    static func parseDMY(_ s: String) -> Date? {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "tr_TR")
+        f.dateFormat = "dd.MM.yyyy"
+        return f.date(from: s)
     }
 
     // MARK: - Save

@@ -42,6 +42,8 @@ struct VehicleDetailView: View {
     @State private var showReceiptScan = false
     @State private var showReceiptPaywall = false
     @State private var showAssistantProfile = false
+    @State private var showMaintenancePlan = false
+    @State private var showAIConsent = false
     private let snoozeStore = InsightSnoozeStore.shared
 
     // Filtered data
@@ -166,6 +168,12 @@ struct VehicleDetailView: View {
                     onDismissInsight: handleGuideInsightDismiss
                 )
                     .padding(.horizontal, AppSpacing.screenMarginH)
+
+                // MARK: Kişisel Bakım Planı (LLM — kullanıcı tetikler, Pro + AI onayı)
+                if PaywallService.shared.canUseAssistant {
+                    maintenancePlanEntry
+                        .padding(.horizontal, AppSpacing.screenMarginH)
+                }
 
                 // MARK: Inspection Report
                 InspectionReportSection(
@@ -298,6 +306,19 @@ struct VehicleDetailView: View {
         .sheet(isPresented: $showAssistantProfile) {
             UsageProfileFlowView()
         }
+        .sheet(isPresented: $showMaintenancePlan) {
+            MaintenancePlanView(vehicle: vehicle)
+        }
+        .sheet(isPresented: $showAIConsent) {
+            AIConsentView(
+                onAccept: {
+                    UserDefaults.standard.set(true, forKey: AIConsentStore.consentKey)
+                    UserDefaults.standard.set(true, forKey: AIConsentStore.enabledKey)
+                    showMaintenancePlan = true
+                },
+                onDecline: {}
+            )
+        }
         .quickLookPreview($previewDocumentURL)
         .confirmationDialog("Aracı Arşivle", isPresented: $showArchiveConfirmation) {
             Button("Arşivle") { archiveVehicle() }
@@ -324,6 +345,40 @@ struct VehicleDetailView: View {
         } else {
             showReceiptPaywall = true
         }
+    }
+
+    // MARK: - Kişisel Bakım Planı girişi
+    private var maintenancePlanEntry: some View {
+        Button {
+            // Üç koşul — Pro + onay + toggle. Eksikse onay ekranı, tam ise plan.
+            if PaywallService.shared.isPro && AIConsentStore.shared.isCloudAIEnabled {
+                showMaintenancePlan = true
+            } else {
+                showAIConsent = true
+            }
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "brain.head.profile")
+                    .foregroundColor(AppColors.accentPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Kişisel bakım planı oluştur")
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("Kullanımına göre yapay zekâ önerileri")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .padding(AppSpacing.md)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Akıllı Sürüş Asistanı
