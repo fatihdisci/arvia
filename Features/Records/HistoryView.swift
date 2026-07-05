@@ -58,32 +58,36 @@ struct HistoryView: View {
     // Not: "Kayıtlar" sekmesi altında (RecordsView) segment olarak gösterilir.
     // Kendi NavigationStack'i yok — üst konteynerin nav bar'ını kullanır;
     // toolbar/sheet modifier'ları konteyner nav bar'ına bağlanır.
+    //
+    // Önemli: Başlık metni + filtre çipleri bilinçli olarak historyList'in
+    // (List) bir safeAreaInset'i. Önceden plain VStack sibling'iydi — List
+    // kendi üst güvenli alanını nav bar'a göre otomatik hesapladığı için
+    // Geçmiş sekmesi seçiliyken bu çipler üst bara "gömülüyordu" (RecordsView'daki
+    // dış segment picker'ında görülen aynı hatanın, HistoryView içinde tekrarı).
     var body: some View {
-        VStack(spacing: 0) {
-            // Compact supporting copy
-            Text("Bakım, masraf, belge ve tamamlanan işleri tek arşivde gör.")
-                .font(AppTypography.secondary)
-                .foregroundColor(AppColors.textSecondary)
-                .padding(.horizontal, AppSpacing.screenMarginH)
-                .padding(.bottom, AppSpacing.xs)
-
-            // Filtre çipleri
-            filterRail
-            dateFilterRail
-
-            // İçerik
-            Group {
-                if isEmpty {
-                    emptyState
-                } else {
-                    historyList
-                }
-            }
-
-            // Boş state'te son öğenin tab bar altına girmemesi için
+        Group {
             if isEmpty {
-                Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
+                VStack(spacing: 0) {
+                    emptyState
+                    // Boş state'te son öğenin tab bar altına girmemesi için
+                    Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
+                }
+            } else {
+                historyList
             }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            VStack(spacing: 0) {
+                Text("Bakım, masraf, belge ve tamamlanan işleri tek arşivde gör.")
+                    .font(AppTypography.secondary)
+                    .foregroundColor(AppColors.textSecondary)
+                    .padding(.horizontal, AppSpacing.screenMarginH)
+                    .padding(.bottom, AppSpacing.xs)
+
+                filterRail
+                dateFilterRail
+            }
+            .background(Color.appBackground)
         }
         .background(Color.appBackground.ignoresSafeArea())
         .toolbar {
