@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 // MARK: - Maintenance Plan Payload Builder (pure, testable)
 // Kompakt JSON payload'u üretir ve savunma amaçlı (defense-in-depth) tümünü
@@ -84,6 +85,16 @@ enum MaintenancePlanCacheStore {
     struct Cached: Codable, Equatable {
         let suggestions: [MaintenancePlanSuggestion]
         let createdAt: Date
+        /// Bu plan üretilirken AI'a gönderilen payload'un parmak izi.
+        /// Araç verisi değişmediyse (parmak izi aynıysa) plan yeniden üretilmez —
+        /// aynı veriyle AI'ın farklı sonuç verme ihtimaline karşı son cache kullanılır.
+        var inputHash: String? = nil
+    }
+
+    /// Payload'un deterministik parmak izini üretir (SHA-256).
+    static func fingerprint(_ payload: String) -> String {
+        let digest = SHA256.hash(data: Data(payload.utf8))
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
 
     private static var directory: URL {
@@ -103,8 +114,8 @@ enum MaintenancePlanCacheStore {
         return try? JSONDecoder().decode(Cached.self, from: data)
     }
 
-    static func save(_ suggestions: [MaintenancePlanSuggestion], vehicleId: UUID, now: Date = Date()) {
-        let cached = Cached(suggestions: suggestions, createdAt: now)
+    static func save(_ suggestions: [MaintenancePlanSuggestion], vehicleId: UUID, inputHash: String? = nil, now: Date = Date()) {
+        let cached = Cached(suggestions: suggestions, createdAt: now, inputHash: inputHash)
         guard let data = try? JSONEncoder().encode(cached) else { return }
         try? data.write(to: fileURL(for: vehicleId))
     }

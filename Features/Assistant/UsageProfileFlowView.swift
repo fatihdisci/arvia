@@ -349,3 +349,313 @@ struct UsageProfileFlowView: View {
     UsageProfileFlowView()
         .modelContainer(MockDataProvider.previewContainer)
 }
+
+// MARK: - Assistant Tab (Akıllı Sürüş Asistanı ana ekranı)
+// Kullanım profili + kişisel bakım planı tek sekmede toplanır.
+// Kullanım profili doldurulduysa pasif (salt-okunur) ve tikli gösterilir,
+// yanında "Düzenle" butonuyla; boşsa kurulum kartı çıkar.
+struct AssistantView: View {
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var paywallService: PaywallService
+    @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
+    @Query private var allUsageProfiles: [VehicleUsageProfile]
+
+    @State private var selectedVehicleId: UUID?
+    @State private var showProfileFlow = false
+    @State private var maintenancePlanVehicle: Vehicle?
+    @State private var showPaywall = false
+
+    private var activeVehicles: [Vehicle] {
+        vehicles.filter { $0.archivedAt == nil }
+    }
+
+    private var selectedVehicle: Vehicle? {
+        if let id = selectedVehicleId, let v = activeVehicles.first(where: { $0.id == id }) {
+            return v
+        }
+        return activeVehicles.first
+    }
+
+    private var globalProfile: VehicleUsageProfile? {
+        allUsageProfiles
+            .filter { $0.appliesToAllVehicles }
+            .sorted { $0.updatedAt > $1.updatedAt }
+            .first
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                    Text("Sürüş alışkanlıklarına göre sana özel bakım önerileri ve kilometre tahmini.")
+                        .font(AppTypography.secondary)
+                        .foregroundColor(AppColors.textSecondary)
+                        .padding(.horizontal, AppSpacing.screenMarginH)
+
+                    usageProfileCard
+                        .padding(.horizontal, AppSpacing.screenMarginH)
+
+                    if let vehicle = selectedVehicle {
+                        if activeVehicles.count > 1 {
+                            vehiclePicker
+                                .padding(.horizontal, AppSpacing.screenMarginH)
+                        }
+                        maintenancePlanCard(for: vehicle)
+                            .padding(.horizontal, AppSpacing.screenMarginH)
+                    } else {
+                        addVehicleHint
+                            .padding(.horizontal, AppSpacing.screenMarginH)
+                    }
+
+                    Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
+                }
+                .padding(.vertical, AppSpacing.md)
+            }
+            .background(Color.appBackground.ignoresSafeArea())
+            .navigationTitle("Asistan")
+            .toolbarTitleDisplayMode(.inlineLarge)
+            .sheet(isPresented: $showProfileFlow) {
+                UsageProfileFlowView()
+            }
+            .sheet(item: $maintenancePlanVehicle) { vehicle in
+                MaintenancePlanView(vehicle: vehicle)
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView(feature: .assistant)
+            }
+        }
+    }
+
+    // MARK: - Usage Profile Card
+    @ViewBuilder
+    private var usageProfileCard: some View {
+        if let profile = globalProfile {
+            filledProfileCard(profile)
+        } else {
+            emptyProfileCard
+        }
+    }
+
+    /// Doldurulmuş profil — pasif (salt-okunur) + tikli, yanında "Düzenle".
+    private func filledProfileCard(_ profile: VehicleUsageProfile) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(AppColors.success)
+                Text("Kullanım Profilin")
+                    .font(AppTypography.cardTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer(minLength: 0)
+                Button {
+                    showProfileFlow = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pencil")
+                            .font(.caption)
+                        Text("Düzenle")
+                            .font(AppTypography.captionMedium)
+                    }
+                    .foregroundColor(AppColors.accentPrimary)
+                    .padding(.horizontal, AppSpacing.sm)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(AppColors.accentPrimary.opacity(0.1)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Kullanım profilini düzenle")
+            }
+
+            VStack(spacing: 0) {
+                profileRow(label: "Günlük yol", value: profile.dailyKmBand.displayName)
+                Divider().overlay(AppColors.border)
+                profileRow(label: "Sürüş bölgesi", value: profile.routeType.displayName)
+                if let city = profile.fuelConsumptionCity {
+                    Divider().overlay(AppColors.border)
+                    profileRow(label: "Şehir tüketimi", value: String(format: "%.1f L/100km", city))
+                }
+                if let hw = profile.fuelConsumptionHighway {
+                    Divider().overlay(AppColors.border)
+                    profileRow(label: "Otoyol tüketimi", value: String(format: "%.1f L/100km", hw))
+                }
+                if let user = profile.primaryUser, !user.isEmpty {
+                    Divider().overlay(AppColors.border)
+                    profileRow(label: "Sürücü", value: user)
+                }
+                if !profile.tripTypes.isEmpty {
+                    Divider().overlay(AppColors.border)
+                    profileRow(label: "Sürüş tipleri", value: profile.tripTypes.joined(separator: ", "))
+                }
+            }
+            .padding(.vertical, AppSpacing.xxs)
+            .background(RoundedRectangle(cornerRadius: AppRadius.medium).fill(AppColors.backgroundSecondary.opacity(0.5)))
+
+            Text("Bu bilgiler kişisel bakım planı ve kilometre tahmini için kullanılır.")
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+    }
+
+    private func profileRow(label: String, value: String) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            Text(label)
+                .font(AppTypography.secondary)
+                .foregroundColor(AppColors.textSecondary)
+            Spacer(minLength: AppSpacing.sm)
+            Text(value)
+                .font(AppTypography.secondaryMedium)
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Profil yoksa — kurulum kartı.
+    private var emptyProfileCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "person.text.rectangle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(AppColors.accentPrimary)
+                Text("Kullanım profilini oluştur")
+                    .font(AppTypography.cardTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer(minLength: 0)
+            }
+            Text("Günlük yolun, sürüş bölgen ve alışkanlıkların birkaç adımda kaydedilir; öneriler buna göre kişiselleşir.")
+                .font(AppTypography.secondary)
+                .foregroundColor(AppColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                showProfileFlow = true
+            } label: {
+                Text("Başla").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.primary)
+            .padding(.top, AppSpacing.xxs)
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+    }
+
+    // MARK: - Vehicle Picker (çoklu araç)
+    private var vehiclePicker: some View {
+        Menu {
+            ForEach(activeVehicles) { v in
+                Button {
+                    selectedVehicleId = v.id
+                } label: {
+                    HStack {
+                        Text(v.plate.isEmpty ? v.fullName : v.plate)
+                        if selectedVehicle?.id == v.id { Image(systemName: "checkmark") }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "car.fill").font(.caption2)
+                Text(selectedVehicle.map { $0.plate.isEmpty ? $0.fullName : $0.plate } ?? "Araç")
+                    .font(AppTypography.captionMedium)
+                Image(systemName: "chevron.down").font(.caption2)
+            }
+            .foregroundColor(AppColors.accentPrimary)
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.vertical, AppSpacing.xs)
+            .background(Capsule().fill(AppColors.accentPrimary.opacity(0.1)))
+        }
+    }
+
+    // MARK: - Maintenance Plan Card
+    private func maintenancePlanCard(for vehicle: Vehicle) -> some View {
+        let canUse = paywallService.canUseAssistant
+        let cached = MaintenancePlanCacheStore.load(vehicleId: vehicle.id)
+        return Button {
+            if canUse {
+                maintenancePlanVehicle = vehicle
+            } else {
+                showPaywall = true
+            }
+        } label: {
+            HStack(spacing: AppSpacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppRadius.medium)
+                        .fill(AppColors.accentPrimary.opacity(0.1))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "brain.head.profile")
+                        .font(.title3)
+                        .foregroundColor(AppColors.accentPrimary)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Kişisel Bakım Planı")
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text(maintenancePlanSubtitle(canUse: canUse, cached: cached))
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 0)
+                if canUse {
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                } else {
+                    Text("Pro")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(AppColors.textOnAccent)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(AppColors.accentPrimary))
+                }
+            }
+            .padding(AppSpacing.md)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func maintenancePlanSubtitle(canUse: Bool, cached: MaintenancePlanCacheStore.Cached?) -> String {
+        guard canUse else {
+            return "Yapay zekâ ile sana özel bakım önerileri (Pro)"
+        }
+        if let cached {
+            let date = cached.createdAt.formatted(date: .abbreviated, time: .omitted)
+            return "Son plan hazır · \(date). Araç verisi değiştikçe yenilenir."
+        }
+        return "Yapay zekâ ile sana özel bakım önerileri"
+    }
+
+    // MARK: - Add Vehicle Hint
+    private var addVehicleHint: some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: "car.badge.gearshape")
+                .font(.body)
+                .foregroundColor(AppColors.textTertiary)
+            Text("Kişisel bakım planı için Garaj'dan bir araç ekle.")
+                .font(AppTypography.secondary)
+                .foregroundColor(AppColors.textSecondary)
+            Spacer(minLength: 0)
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(AppColors.backgroundSecondary.opacity(0.5)))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+    }
+}
+
+#Preview("Asistan") {
+    AssistantView()
+        .modelContainer(MockDataProvider.previewContainer)
+        .environmentObject(PaywallService.shared)
+}
+

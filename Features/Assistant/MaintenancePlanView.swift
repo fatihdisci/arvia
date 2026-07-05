@@ -229,8 +229,9 @@ struct MaintenancePlanView: View {
     // MARK: - Logic
     private func loadInitial() {
         guard case .idle = stage else { return }
-        // Her açılışta taze veri gönder — araç durumu değişmiş olabilir.
-        generate(force: true)
+        // Araç verisi değişmediyse son cache'i kullan; değiştiyse yeniden üret.
+        // (force: false → parmak izi karşılaştırması generate içinde yapılır.)
+        generate(force: false)
     }
 
     private func generate(force: Bool) {
@@ -240,22 +241,30 @@ struct MaintenancePlanView: View {
             stage = .unavailable
             return
         }
+
+        // Payload'u önden kur (saf, ağ yok) — hem parmak izi hem gönderim için.
+        let payload = buildPayload()
+        let inputHash = MaintenancePlanCacheStore.fingerprint(payload)
+
+        // Zorlanmadıysa ve cache taze + aynı girdilerle üretilmişse: son cache'i göster.
+        // Böylece araç detayında bir değişiklik olmadıkça AI yeniden çağrılmaz
+        // (aynı veriyle farklı sonuç riski ortadan kalkar).
         if !force,
            let cached = MaintenancePlanCacheStore.load(vehicleId: vehicle.id),
-           MaintenancePlanCacheStore.isFresh(cached) {
+           MaintenancePlanCacheStore.isFresh(cached),
+           cached.inputHash == inputHash {
             suggestions = cached.suggestions
             stage = .loaded(fromCache: true)
             return
         }
 
         stage = .loading
-        let payload = buildPayload()
         Task {
             do {
                 let result = try await AIProxyService.shared.maintenancePlan(profileJSON: payload)
                 await MainActor.run {
                     suggestions = Array(result.prefix(3))
-                    MaintenancePlanCacheStore.save(suggestions, vehicleId: vehicle.id)
+                    MaintenancePlanCacheStore.save(suggestions, vehicleId: vehicle.id, inputHash: inputHash)
                     stage = .loaded(fromCache: false)
                 }
             } catch let error as AIProxyError {

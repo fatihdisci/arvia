@@ -1,8 +1,9 @@
 import SwiftUI
 
 // MARK: - Onboarding View
-// İlk kurulumda gösterilen 4 ekranlı rehber. Premium, sakin, Apple-native.
+// İlk kurulumda gösterilen 5 ekranlı rehber. Premium, sakin, Apple-native.
 // Emoji yok, mavi-mor gradient yok, gereksiz illüstrasyon yok.
+// Sekme yapısıyla uyumlu: Garaj · Asistan · Yapılacaklar · Kayıtlar (+ satış dosyası).
 
 struct OnboardingView: View {
     @AppStorage("onboarding_completed") private var onboardingCompleted = false
@@ -17,15 +18,21 @@ struct OnboardingView: View {
             color: AppColors.accentPrimary
         ),
         OnboardingPage(
+            icon: "brain.head.profile",
+            title: "Sana özel akıllı asistan",
+            description: "Kullanım profilini oluştur; yapay zekâ destekli kişisel bakım planı ve kilometre tahmini seni yönlendirsin.",
+            color: AppColors.accentPrimary
+        ),
+        OnboardingPage(
             icon: "checklist",
             title: "Yapılacakları kaçırma",
             description: "Muayene, sigorta, MTV ve bakım tarihlerini Yapılacaklar'da takip et.",
             color: AppColors.warning
         ),
         OnboardingPage(
-            icon: "clock.arrow.circlepath",
-            title: "Geçmişini düzenli tut",
-            description: "Bakım, masraf, belge ve ekspertiz kayıtlarını Geçmiş'te sakla.",
+            icon: "tray.full",
+            title: "Tüm kayıtların bir arada",
+            description: "Bakım, masraf, belge ve ekspertiz geçmişini; yıllık maliyet raporlarını Kayıtlar'da gör.",
             color: AppColors.vehicle
         ),
         OnboardingPage(

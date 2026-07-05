@@ -55,69 +55,67 @@ struct HistoryView: View {
         }
     }
 
+    // Not: "Kayıtlar" sekmesi altında (RecordsView) segment olarak gösterilir.
+    // Kendi NavigationStack'i yok — üst konteynerin nav bar'ını kullanır;
+    // toolbar/sheet modifier'ları konteyner nav bar'ına bağlanır.
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Compact supporting copy
-                Text("Bakım, masraf, belge ve tamamlanan işleri tek arşivde gör.")
-                    .font(AppTypography.secondary)
-                    .foregroundColor(AppColors.textSecondary)
-                    .padding(.horizontal, AppSpacing.screenMarginH)
-                    .padding(.bottom, AppSpacing.xs)
+        VStack(spacing: 0) {
+            // Compact supporting copy
+            Text("Bakım, masraf, belge ve tamamlanan işleri tek arşivde gör.")
+                .font(AppTypography.secondary)
+                .foregroundColor(AppColors.textSecondary)
+                .padding(.horizontal, AppSpacing.screenMarginH)
+                .padding(.bottom, AppSpacing.xs)
 
-                // Filtre çipleri
-                filterRail
-                dateFilterRail
+            // Filtre çipleri
+            filterRail
+            dateFilterRail
 
-                // İçerik
-                Group {
-                    if isEmpty {
-                        emptyState
-                    } else {
-                        historyList
-                    }
+            // İçerik
+            Group {
+                if isEmpty {
+                    emptyState
+                } else {
+                    historyList
                 }
             }
-            .background(Color.appBackground.ignoresSafeArea())
-            .navigationTitle("Geçmiş")
-            .toolbarTitleDisplayMode(.inlineLarge)
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button { showAddExpense = true } label: {
-                            Label("Masraf Ekle", systemImage: "turkishlirasign.circle")
-                        }
-                        Button { showAddService = true } label: {
-                            Label("Bakım Ekle", systemImage: "wrench.and.screwdriver")
-                        }
-                        Button { handleAddDocument() } label: {
-                            Label("Belge Ekle", systemImage: "doc.text")
-                        }
-                        Button { handleAddInspection() } label: {
-                            Label("Ekspertiz Ekle", systemImage: "magnifyingglass")
-                        }
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.body)
-                            .foregroundColor(AppColors.accentPrimary)
-                    }
-                    .accessibilityLabel("Kayıt Ekle")
-                }
-            }
-            .sheet(isPresented: $showAddExpense) { ExpenseFormView() }
-            .sheet(isPresented: $showAddService) { ServiceRecordFormView() }
-            .sheet(isPresented: $showAddDocument) { DocumentFormView() }
-            .sheet(isPresented: $showAddInspection) { InspectionReportFormView() }
-            .sheet(item: $editingExpense) { expense in ExpenseFormView(existingExpense: expense) }
-            .sheet(item: $editingService) { service in ServiceRecordFormView(existingRecord: service) }
-            .sheet(item: $editingInspection) { report in InspectionReportFormView(existingReport: report) }
-            .confirmationDialog("Kayıt Silinsin mi?", isPresented: $showDeleteConfirmation, actions: {
-                Button("Sil", role: .destructive) { performDelete() }
-                Button("Vazgeç", role: .cancel) {}
-            }, message: { Text("Bu işlem geri alınamaz.") })
-            .quickLookPreview($previewURL)
         }
+        .background(Color.appBackground.ignoresSafeArea())
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button { showAddExpense = true } label: {
+                        Label("Masraf Ekle", systemImage: "turkishlirasign.circle")
+                    }
+                    Button { showAddService = true } label: {
+                        Label("Bakım Ekle", systemImage: "wrench.and.screwdriver")
+                    }
+                    Button { handleAddDocument() } label: {
+                        Label("Belge Ekle", systemImage: "doc.text")
+                    }
+                    Button { handleAddInspection() } label: {
+                        Label("Ekspertiz Ekle", systemImage: "magnifyingglass")
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.body)
+                        .foregroundColor(AppColors.accentPrimary)
+                }
+                .accessibilityLabel("Kayıt Ekle")
+            }
+        }
+        .sheet(isPresented: $showAddExpense) { ExpenseFormView() }
+        .sheet(isPresented: $showAddService) { ServiceRecordFormView() }
+        .sheet(isPresented: $showAddDocument) { DocumentFormView() }
+        .sheet(isPresented: $showAddInspection) { InspectionReportFormView() }
+        .sheet(item: $editingExpense) { expense in ExpenseFormView(existingExpense: expense) }
+        .sheet(item: $editingService) { service in ServiceRecordFormView(existingRecord: service) }
+        .sheet(item: $editingInspection) { report in InspectionReportFormView(existingReport: report) }
+        .confirmationDialog("Kayıt Silinsin mi?", isPresented: $showDeleteConfirmation, actions: {
+            Button("Sil", role: .destructive) { performDelete() }
+            Button("Vazgeç", role: .cancel) {}
+        }, message: { Text("Bu işlem geri alınamaz.") })
+        .quickLookPreview($previewURL)
     }
 
     // MARK: - Filter Rails
@@ -745,11 +743,17 @@ struct HistoryView: View {
 }
 
 #Preview("Geçmiş — Dolu") {
-    HistoryView()
-        .modelContainer(MockDataProvider.previewContainer)
+    NavigationStack {
+        HistoryView()
+            .navigationTitle("Kayıtlar")
+    }
+    .modelContainer(MockDataProvider.previewContainer)
 }
 
 #Preview("Geçmiş — Dark") {
-    HistoryView()
-        .modelContainer(MockDataProvider.previewContainer)
+    NavigationStack {
+        HistoryView()
+            .navigationTitle("Kayıtlar")
+    }
+    .modelContainer(MockDataProvider.previewContainer)
 }

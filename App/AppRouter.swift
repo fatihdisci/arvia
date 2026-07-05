@@ -3,22 +3,24 @@ import UserNotifications
 
 // MARK: - App Router
 // Ana tab navigation yapısı.
-// 5 sekme: Garaj, Yapılacaklar, Geçmiş, Raporlar, Topluluk
+// 5 sekme: Garaj, Asistan, Yapılacaklar, Kayıtlar, Topluluk
 // Not: Belgeler sekmesi kaldırıldı — belge erişimi Araç Detay'da.
+// Not: "Geçmiş" ve "Raporlar" tek "Kayıtlar" sekmesinde birleşti.
+//       Akıllı sürüş asistanı (kullanım profili + kişisel bakım planı) "Asistan" sekmesinde toplandı.
 
 enum AppTab: String, CaseIterable {
     case garage
+    case assistant
     case todos
-    case history
-    case reports
+    case records
     case community
 
     var title: LocalizedStringKey {
         switch self {
         case .garage: return "Garaj"
+        case .assistant: return "Asistan"
         case .todos: return "Yapılacaklar"
-        case .history: return "Geçmiş"
-        case .reports: return "Raporlar"
+        case .records: return "Kayıtlar"
         case .community: return "Topluluk"
         }
     }
@@ -26,9 +28,9 @@ enum AppTab: String, CaseIterable {
     var icon: String {
         switch self {
         case .garage: return "car"
+        case .assistant: return "brain.head.profile"
         case .todos: return "checklist"
-        case .history: return "clock.arrow.circlepath"
-        case .reports: return "chart.bar"
+        case .records: return "tray.full"
         case .community: return "person.3"
         }
     }
@@ -85,7 +87,8 @@ enum AppNotificationRoute: Equatable {
         case .vehicle:
             return .garage
         case .reports:
-            return .reports
+            // "Raporlar" artık "Kayıtlar" sekmesinin altında.
+            return .records
         }
     }
 
@@ -189,12 +192,12 @@ struct AppRouter: View {
         switch tab {
         case .garage:
             GarageView()
+        case .assistant:
+            AssistantView()
         case .todos:
             TodosView()
-        case .history:
-            HistoryView()
-        case .reports:
-            ReportsView()
+        case .records:
+            RecordsView()
         case .community:
             CommunityFeedView()
         }

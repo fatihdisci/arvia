@@ -109,35 +109,33 @@ struct ReportsView: View {
         return "Geçen yıla benzer seviyede"
     }
 
+    // Not: "Kayıtlar" sekmesi altında (RecordsView) segment olarak gösterilir.
+    // Kendi NavigationStack'i yok — üst konteynerin nav bar'ını kullanır.
     var body: some View {
-        NavigationStack {
-            Group {
-                if allExpenses.isEmpty {
-                    EmptyStateView(
-                        icon: "chart.bar.fill",
-                        title: "Henüz rapor oluşmadı",
-                        description: "Masraf ve bakım kayıtları ekledikçe aracının maliyet özeti burada oluşur.",
-                        actionTitle: "Masraf Ekle",
-                        action: { showAddExpense = true }
-                    )
-                } else {
-                    reportContent
+        Group {
+            if allExpenses.isEmpty {
+                EmptyStateView(
+                    icon: "chart.bar.fill",
+                    title: "Henüz rapor oluşmadı",
+                    description: "Masraf ve bakım kayıtları ekledikçe aracının maliyet özeti burada oluşur.",
+                    actionTitle: "Masraf Ekle",
+                    action: { showAddExpense = true }
+                )
+            } else {
+                reportContent
+            }
+        }
+        .sheet(isPresented: $showAddExpense) { ExpenseFormView() }
+        .sheet(item: $saleFileVehicle) { vehicle in
+            SaleFileView(vehicle: vehicle)
+        }
+        .confirmationDialog("Satış dosyası hangi araç için?", isPresented: $showVehiclePicker) {
+            ForEach(vehicles) { v in
+                Button(v.plate.isEmpty ? v.fullName : "\(v.plate) · \(v.fullName)") {
+                    openSaleFile(for: v)
                 }
             }
-            .navigationTitle("Raporlar")
-            .toolbarTitleDisplayMode(.inlineLarge)
-            .sheet(isPresented: $showAddExpense) { ExpenseFormView() }
-            .sheet(item: $saleFileVehicle) { vehicle in
-                SaleFileView(vehicle: vehicle)
-            }
-            .confirmationDialog("Satış dosyası hangi araç için?", isPresented: $showVehiclePicker) {
-                ForEach(vehicles) { v in
-                    Button(v.plate.isEmpty ? v.fullName : "\(v.plate) · \(v.fullName)") {
-                        openSaleFile(for: v)
-                    }
-                }
-                Button("Vazgeç", role: .cancel) {}
-            }
+            Button("Vazgeç", role: .cancel) {}
         }
     }
 
@@ -592,17 +590,26 @@ struct ReportsView: View {
 
 // MARK: - Preview
 #Preview("Raporlar — Dolu") {
-    ReportsView()
-        .modelContainer(MockDataProvider.previewContainer)
+    NavigationStack {
+        ReportsView()
+            .navigationTitle("Kayıtlar")
+    }
+    .modelContainer(MockDataProvider.previewContainer)
 }
 
 #Preview("Raporlar — Dark Mode") {
-    ReportsView()
-        .modelContainer(MockDataProvider.previewContainer)
+    NavigationStack {
+        ReportsView()
+            .navigationTitle("Kayıtlar")
+    }
+    .modelContainer(MockDataProvider.previewContainer)
 }
 
 #Preview("Raporlar — Dynamic Type") {
-    ReportsView()
-        .modelContainer(MockDataProvider.previewContainer)
-        .environment(\.dynamicTypeSize, .accessibility1)
+    NavigationStack {
+        ReportsView()
+            .navigationTitle("Kayıtlar")
+    }
+    .modelContainer(MockDataProvider.previewContainer)
+    .environment(\.dynamicTypeSize, .accessibility1)
 }

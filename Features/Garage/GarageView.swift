@@ -403,12 +403,8 @@ struct GarageView: View {
                         .padding(.horizontal, AppSpacing.screenMarginH)
                     }
 
-                    // 1.6. Kişisel Bakım Planı teaser — Dosya Skoru altında
-                    // Free: kilitli + paywall, Pro: işlevsel giriş
-                    if let vehicle = currentVehicle {
-                        maintenancePlanTeaser(vehicle: vehicle)
-                            .padding(.horizontal, AppSpacing.screenMarginH)
-                    }
+                    // 1.6. Kişisel bakım planı ve kullanım profili artık "Asistan"
+                    // sekmesinde toplanıyor — Garaj'daki teaser kaldırıldı.
 
                     // 2. Bugün Garajında
                     if let vehicle = currentVehicle {
@@ -716,45 +712,6 @@ struct GarageView: View {
             }
         )
         }
-    }
-
-    // MARK: - Maintenance Plan Teaser (Pro keşfedilebilirliği)
-    /// Dosya Skoru altında, "Bugün Garajında" üstünde.
-    /// Free: kilit ikonu + paywall, Pro: işlevsel giriş.
-    private func maintenancePlanTeaser(vehicle: Vehicle) -> some View {
-        let canUse = paywallService.canUseAssistant
-        return Button {
-            if canUse {
-                showMaintenancePlan = true
-            } else {
-                paywallFeature = .assistant
-                showPaywall = true
-            }
-        } label: {
-            HStack(spacing: AppSpacing.sm) {
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(AppColors.accentPrimary)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Kişisel bakım planı")
-                        .font(AppTypography.secondaryMedium)
-                        .foregroundColor(AppColors.textPrimary)
-                    Text("Yapay zekâ ile sana özel bakım önerileri")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-                Spacer()
-                Image(systemName: canUse ? "chevron.right" : "lock.fill")
-                    .font(.caption)
-                    .foregroundColor(canUse ? AppColors.textTertiary : AppColors.warning)
-            }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
-            .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Recent Activity
