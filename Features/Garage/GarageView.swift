@@ -47,6 +47,9 @@ struct GarageView: View {
     @State private var insightDismissTrigger = false
     @State private var showQuickKmUpdate = false
     @State private var showSaleFile = false
+    @State private var showReceiptScan = false
+    @State private var showReceiptPaywall = false
+    @State private var showMaintenancePlan = false
     @State private var paywallFeature: PaywallView.PaywallFeature = .secondVehicle
     @State private var activeVehicleId: UUID?
     @State private var navigationPath: [UUID] = []
@@ -181,6 +184,19 @@ struct GarageView: View {
             }
             .sheet(isPresented: $showPaywall) {
                 PaywallView(feature: paywallFeature)
+            }
+            .sheet(isPresented: $showReceiptScan) {
+                if let vehicle = currentVehicle {
+                    ReceiptScanView(preselectedVehicleId: vehicle.id)
+                }
+            }
+            .sheet(isPresented: $showReceiptPaywall) {
+                PaywallView(feature: .receiptScan)
+            }
+            .sheet(isPresented: $showMaintenancePlan) {
+                if let vehicle = currentVehicle {
+                    MaintenancePlanView(vehicle: vehicle)
+                }
             }
             .sheet(isPresented: $showAssistantProfile) {
                 UsageProfileFlowView()
@@ -387,6 +403,13 @@ struct GarageView: View {
                         .padding(.horizontal, AppSpacing.screenMarginH)
                     }
 
+                    // 1.6. Kişisel Bakım Planı teaser — Dosya Skoru altında
+                    // Free: kilitli + paywall, Pro: işlevsel giriş
+                    if let vehicle = currentVehicle {
+                        maintenancePlanTeaser(vehicle: vehicle)
+                            .padding(.horizontal, AppSpacing.screenMarginH)
+                    }
+
                     // 2. Bugün Garajında
                     if let vehicle = currentVehicle {
                         let _ = insightDismissTrigger  // store değişince re-render
@@ -421,12 +444,29 @@ struct GarageView: View {
                 .animation(.easeOut(duration: 0.35), value: hasAppeared)
             }
         }
+        .overlay(alignment: .bottomTrailing) {
+            FloatingQuickActionButton(
+                onAddExpense: { showAddExpense = true },
+                onScanReceipt: { handleGarageScanReceipt() },
+                onAddReminder: { showAddReminder = true },
+                showReceiptProBadge: !paywallService.canUseReceiptScan
+            )
+        }
         .onAppear { hasAppeared = true }
         .onChange(of: activeVehicles.count) { _, newCount in
             guard newCount > 0 else { return }
             if let id = activeVehicleId, !activeVehicles.contains(where: { $0.id == id }) {
                 activeVehicleId = activeVehicles.first?.id
             }
+        }
+    }
+
+    private func handleGarageScanReceipt() {
+        if paywallService.canUseReceiptScan {
+            showReceiptScan = true
+        } else {
+            paywallFeature = .receiptScan
+            showReceiptPaywall = true
         }
     }
 
@@ -652,19 +692,69 @@ struct GarageView: View {
 
     // MARK: - Dosyani Tamamla Checklist
     /// Garaj hero altında gösterilen interaktif rehber kartı.
-    /// 5 kriterden <5 tamamlandıysa gösterir, hepsi tamamlandıysa gizler.
+    /// 6 kriterden hepsi tamamlandıysa gizler (bakım planı dahil).
     /// Mevcut `DosyaniTamamlaChecklist` component'ini yeniden kullanır (Karar 3.1).
     @ViewBuilder
     private func dosyaniTamamlaSection(vehicle: Vehicle) -> some View {
-        if checklistDoneCount(vehicle) < 5 {
+        let hasPlan = paywallService.isPro && MaintenancePlanCacheStore.load(vehicleId: vehicle.id) != nil
+        // Temel 5 kriter tamamlandıysa ama bakım planı yoksa hâlâ göster (Pro nudge).
+        if checklistDoneCount(vehicle) < 5 || (paywallService.isPro && !hasPlan) {
             DosyaniTamamlaChecklist(
-                vehicle: vehicle,
-                hasInspectionReminder: hasReminderType(vehicle, .inspection),
-                hasInsuranceReminder: hasReminderType(vehicle, .trafficInsurance) || hasReminderType(vehicle, .casco),
-                hasAnyExpenseOrService: !recentExpenses(for: vehicle).isEmpty || !recentServices(for: vehicle).isEmpty,
-                hasAnyDocument: !recentDocuments(for: vehicle).isEmpty
-            )
+            vehicle: vehicle,
+            hasInspectionReminder: hasReminderType(vehicle, .inspection),
+            hasInsuranceReminder: hasReminderType(vehicle, .trafficInsurance) || hasReminderType(vehicle, .casco),
+            hasAnyExpenseOrService: !recentExpenses(for: vehicle).isEmpty || !recentServices(for: vehicle).isEmpty,
+            hasAnyDocument: !recentDocuments(for: vehicle).isEmpty,
+            hasMaintenancePlan: paywallService.isPro && MaintenancePlanCacheStore.load(vehicleId: vehicle.id) != nil,
+            onMaintenancePlan: {
+                if paywallService.canUseAssistant {
+                    showMaintenancePlan = true
+                } else {
+                    paywallFeature = .assistant
+                    showPaywall = true
+                }
+            }
+        )
         }
+    }
+
+    // MARK: - Maintenance Plan Teaser (Pro keşfedilebilirliği)
+    /// Dosya Skoru altında, "Bugün Garajında" üstünde.
+    /// Free: kilit ikonu + paywall, Pro: işlevsel giriş.
+    private func maintenancePlanTeaser(vehicle: Vehicle) -> some View {
+        let canUse = paywallService.canUseAssistant
+        return Button {
+            if canUse {
+                showMaintenancePlan = true
+            } else {
+                paywallFeature = .assistant
+                showPaywall = true
+            }
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(AppColors.accentPrimary)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Kişisel bakım planı")
+                        .font(AppTypography.secondaryMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("Yapay zekâ ile sana özel bakım önerileri")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                Spacer()
+                Image(systemName: canUse ? "chevron.right" : "lock.fill")
+                    .font(.caption)
+                    .foregroundColor(canUse ? AppColors.textTertiary : AppColors.warning)
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
+            .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Recent Activity

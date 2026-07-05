@@ -18,29 +18,36 @@ struct VehicleQuickActionsSection: View {
                 .foregroundColor(AppColors.textPrimary)
                 .accessibilityAddTraits(.isHeader)
 
-            VStack(spacing: 8) {
-                HStack(spacing: 8) {
+            VStack(spacing: AppSpacing.xs) {
+                // Row 1: Km Güncelle + Fiş/Fatura Tara (Pro rozetli)
+                HStack(spacing: AppSpacing.xs) {
                     vehicleDetailActionButton(icon: "gauge.with.needle", label: "Km Güncelle", color: AppColors.vehicle) {
                         onKmUpdate()
                     }
+                    vehicleDetailActionButton(
+                        icon: "doc.viewfinder", label: "Fiş/Fatura Tara",
+                        color: AppColors.accentPrimary,
+                        showProBadge: !PaywallService.shared.canUseReceiptScan
+                    ) {
+                        onScanReceipt()
+                    }
+                }
+                // Row 2: Masraf Ekle + Yakıt Ekle
+                HStack(spacing: AppSpacing.xs) {
                     vehicleDetailActionButton(icon: "turkishlirasign.circle", label: "Masraf Ekle", color: AppColors.accentPrimary) {
                         onAddExpense()
                     }
-                }
-                HStack(spacing: 8) {
                     vehicleDetailActionButton(icon: "fuelpump", label: "Yakıt Ekle", color: AppColors.warning) {
                         onAddFuelExpense()
                     }
+                }
+                // Row 3: Belge Ekle + Hatırlatıcı Ekle
+                HStack(spacing: AppSpacing.xs) {
                     vehicleDetailActionButton(icon: "doc.text.viewfinder", label: "Belge Ekle", color: AppColors.document) {
                         onAddDocument()
                     }
-                }
-                HStack(spacing: 8) {
                     vehicleDetailActionButton(icon: "bell.badge", label: "Hatırlatıcı Ekle", color: AppColors.success) {
                         onAddReminder()
-                    }
-                    vehicleDetailActionButton(icon: "doc.viewfinder", label: "Fiş/Fatura Tara", color: AppColors.accentPrimary) {
-                        onScanReceipt()
                     }
                 }
             }
@@ -61,6 +68,7 @@ struct VehicleQuickActionsSection: View {
         icon: String,
         label: String,
         color: Color,
+        showProBadge: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -82,8 +90,19 @@ struct VehicleQuickActionsSection: View {
                 RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
                     .fill(AppColors.backgroundSecondary.opacity(0.65))
             )
+            .overlay(alignment: .topTrailing) {
+                if showProBadge {
+                    Text("Pro")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(AppColors.textOnAccent)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(AppColors.accentPrimary))
+                        .offset(x: 2, y: -4)
+                }
+            }
         }
         .buttonStyle(PlainCardButtonStyle())
-        .accessibilityLabel(label)
+        .accessibilityLabel(showProBadge ? "\(label), Pro" : label)
     }
 }

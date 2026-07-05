@@ -43,6 +43,7 @@ struct VehicleDetailView: View {
     @State private var showReceiptPaywall = false
     @State private var showAssistantProfile = false
     @State private var showMaintenancePlan = false
+    @State private var showAssistantPaywall = false
     @State private var showAIConsent = false
     private let snoozeStore = InsightSnoozeStore.shared
 
@@ -169,10 +170,9 @@ struct VehicleDetailView: View {
                     .padding(.horizontal, AppSpacing.screenMarginH)
 
                 // MARK: Kişisel Bakım Planı (LLM — kullanıcı tetikler, Pro + AI onayı)
-                if PaywallService.shared.canUseAssistant {
-                    maintenancePlanEntry
-                        .padding(.horizontal, AppSpacing.screenMarginH)
-                }
+                // Free kullanıcıda kilitli gösterilir, Pro'da normal çalışır.
+                maintenancePlanEntry
+                    .padding(.horizontal, AppSpacing.screenMarginH)
 
                 // MARK: Inspection Report
                 InspectionReportSection(
@@ -302,6 +302,10 @@ struct VehicleDetailView: View {
             PaywallView(feature: .receiptScan)
                 .environmentObject(PaywallService.shared)
         }
+        .sheet(isPresented: $showAssistantPaywall) {
+            PaywallView(feature: .assistant)
+                .environmentObject(PaywallService.shared)
+        }
         .sheet(isPresented: $showAssistantProfile) {
             UsageProfileFlowView()
         }
@@ -348,12 +352,17 @@ struct VehicleDetailView: View {
 
     // MARK: - Kişisel Bakım Planı girişi
     private var maintenancePlanEntry: some View {
-        Button {
-            // Üç koşul — Pro + onay + toggle. Eksikse onay ekranı, tam ise plan.
-            if PaywallService.shared.isPro && AIConsentStore.shared.isCloudAIEnabled {
-                showMaintenancePlan = true
+        let canUse = PaywallService.shared.canUseAssistant
+        return Button {
+            if canUse {
+                // Pro + onay + toggle. Eksikse onay ekranı, tam ise plan.
+                if PaywallService.shared.isPro && AIConsentStore.shared.isCloudAIEnabled {
+                    showMaintenancePlan = true
+                } else {
+                    showAIConsent = true
+                }
             } else {
-                showAIConsent = true
+                showAssistantPaywall = true
             }
         } label: {
             HStack(spacing: AppSpacing.sm) {
@@ -368,9 +377,9 @@ struct VehicleDetailView: View {
                         .foregroundColor(AppColors.textSecondary)
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
+                Image(systemName: canUse ? "chevron.right" : "lock.fill")
                     .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(canUse ? AppColors.textTertiary : AppColors.warning)
             }
             .padding(AppSpacing.md)
             .frame(maxWidth: .infinity)

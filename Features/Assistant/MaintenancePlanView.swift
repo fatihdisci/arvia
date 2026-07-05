@@ -229,14 +229,8 @@ struct MaintenancePlanView: View {
     // MARK: - Logic
     private func loadInitial() {
         guard case .idle = stage else { return }
-        // Taze yerel kopya varsa kullan (yeniden üretme).
-        if let cached = MaintenancePlanCacheStore.load(vehicleId: vehicle.id),
-           MaintenancePlanCacheStore.isFresh(cached) {
-            suggestions = cached.suggestions
-            stage = .loaded(fromCache: true)
-            return
-        }
-        generate(force: false)
+        // Her açılışta taze veri gönder — araç durumu değişmiş olabilir.
+        generate(force: true)
     }
 
     private func generate(force: Bool) {
