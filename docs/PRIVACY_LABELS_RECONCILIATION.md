@@ -3,8 +3,8 @@
 > Bu dosya, `Resources/PrivacyInfo.xcprivacy` ile App Store Connect privacy labels arasında mutabakat sağlamak içindir.
 > App Store Connect'te privacy sorularını yanıtlarken bu tabloyu referans al.
 >
-> **Son güncelleme:** 2026-07-02
-> **Referans:** `docs/lastchecks.md` madde 8
+> **Son güncelleme:** 2026-07-05 (Bulut Yapay Zekâ + Kamera/Fiş Tarama eklendi)
+> **Referans:** `docs/lastchecks.md` madde 8, `docs/appstore-yayin-rehberi.html`
 
 ---
 
@@ -17,6 +17,11 @@
 | 3 | `NSPrivacyCollectedDataTypeEmailAddress` | Email Address (Apple Sign In) | Yes | No | App Functionality | "Does your app collect any data?" → Email Address → "Yes, collected" | Yes, linked to user identity, for app functionality (Supabase Auth). Apple Private Relay ile gizlenmiş e-posta da olabilir. |
 | 4 | `NSPrivacyCollectedDataTypePhotosorVideos` | Photos or Videos (belge fotoğrafları) | No | No | App Functionality | "Does your app collect any data?" → Photos or Videos → "Yes, collected" | Yes, NOT linked to user identity, for app functionality. Yerel cihazda saklanır, cihaz dışına gönderilmez (iCloud sync opsiyonel). |
 | 5 | `NSPrivacyCollectedDataTypePurchaseHistory` | Purchase History (StoreKit abonelik) | No | No | App Functionality | "Does your app collect any data?" → Purchase History → "Yes, collected" | Yes, NOT linked to user identity, for app functionality. StoreKit 2 tarafından yönetilir, uygulama kendi veritabanını tutmaz. |
+| 6 | `NSPrivacyCollectedDataTypeOtherUserContent` (Bulut AI) | Other User Content — maskelenmiş fiş/araç metni | No | No | App Functionality | "Other Data" → "Yes, collected" | Yes, NOT linked to identity. **Yalnızca kullanıcı Bulut AI'yı açarsa** gönderilir (varsayılan kapalı). PII cihazda maskelenir, anonim clientId kullanılır, ara sunucu içeriği loglamaz. Zaten #1 (User Content) altında beyan edildiyse ayrı satır gerekmez; ancak kaynağı ayrı olduğu için ("Other") not düş. |
+
+> **Bulut Yapay Zekâ notu:** Özellik varsayılan kapalı ve opt-in olsa da, uygulama bu veriyi gönderme *yeteneğine* sahip olduğu için App Privacy'de beyan edilir. "Linked to You" = **No** (anonim), "Used for Tracking" = **No**. Sağlayıcı: DeepSeek (ara sunucu: Vercel). Bu, tracking değil app-functionality amaçlıdır.
+
+> **Kamera notu:** `NSCameraUsageDescription` bir *purpose string*'tir, Required Reason API değildir. Kameradan gelen görüntüler cihazda işlenir (Vision OCR) ve #4 (Photos or Videos) altında zaten kapsanır; yeni bir veri türü eklemez.
 
 ---
 

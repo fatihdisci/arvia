@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arvia — App Store Yayın & Review Rehberi</title>
+<style>
+  :root { --bg:#f9fafb; --card:#fff; --text:#1a1a2e; --muted:#6b7280; --accent:#0f766e; --border:#e5e7eb; --warn:#fef3c7; --warnb:#fcd34d; --code:#0f172a; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); line-height:1.7; padding:2rem 1rem; }
+  .container { max-width:820px; margin:0 auto; }
+  .card { background:var(--card); border-radius:12px; padding:1.75rem 2rem; margin-bottom:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,.06); border:1px solid var(--border); }
+  h1 { font-size:1.9rem; font-weight:800; margin-bottom:.5rem; color:var(--accent); }
+  h2 { font-size:1.3rem; font-weight:700; margin-top:.5rem; margin-bottom:1rem; padding-top:.5rem; }
+  h3 { font-size:1.05rem; font-weight:700; margin-top:1.25rem; margin-bottom:.5rem; }
+  p { margin-bottom:.75rem; }
+  ul,ol { margin-bottom:1rem; padding-left:1.4rem; }
+  li { margin-bottom:.4rem; }
+  .muted { color:var(--muted); font-size:.9rem; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  code { background:#eef2f7; padding:.1rem .35rem; border-radius:4px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.88em; }
+  pre { background:var(--code); color:#e2e8f0; padding:1rem; border-radius:8px; overflow-x:auto; font-size:.82rem; margin:.75rem 0; line-height:1.5; }
+  pre code { background:none; color:inherit; padding:0; }
+  table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.9rem; }
+  th,td { border:1px solid var(--border); padding:.55rem .7rem; text-align:left; vertical-align:top; }
+  th { background:#f1f5f9; font-weight:700; }
+  .warn { background:var(--warn); border:1px solid var(--warnb); border-radius:8px; padding:1rem; margin:1rem 0; font-size:.92rem; }
+  .ok { background:#ecfdf5; border:1px solid #6ee7b7; border-radius:8px; padding:1rem; margin:1rem 0; font-size:.92rem; }
+  .toc { columns:2; column-gap:2rem; }
+  .toc a { display:block; padding:.15rem 0; font-size:.92rem; }
+  .pill { display:inline-block; background:#ecfdf5; color:#065f46; padding:.2rem .55rem; border-radius:6px; font-size:.78rem; font-weight:600; }
+  .updated { font-size:.85rem; color:var(--muted); margin-bottom:1rem; }
+  hr { border:none; border-top:1px solid var(--border); margin:1.5rem 0; }
+  kbd { background:#eef2f7; border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:5px; padding:.05rem .4rem; font-size:.85em; }
+  .step { border-left:3px solid var(--accent); padding-left:1rem; margin:1rem 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a class="muted" href="index.html">← Arvia</a>
+  <div class="card">
+    <span class="pill">İç kullanım · yayın hazırlık</span>
+    <h1>App Store Yayın &amp; Review Rehberi</h1>
+    <p class="updated">Güncel sürüm hedefi · Son güncelleme: 5 Temmuz 2026</p>
+    <p>Bu rehber, mevcut sürümü (fiş/fatura tarama, Akıllı Sürüş Asistanı, isteğe bağlı Bulut Yapay Zekâ, Topluluk) App Store'a gönderirken <strong>hangi kutuya ne yazılacağını, hangi tikin işaretleneceğini</strong> adım adım anlatır. Kopyala-yapıştır metinler hazırdır.</p>
+    <div class="warn"><strong>Ön koşul:</strong> Bu belge yalnızca App Store Connect tarafını kapsar. Xcode derleme, testler, Vercel/Upstash kurulumu ve xcconfig secret'ları için repo'daki teknik hand-off listesine / açılan GitHub issue'ya bak. Kod tarafı Mac'te derlenip test edilmeden mağazaya <em>archive</em> alınamaz.</div>
+  </div>
+
+  <div class="card">
+    <h2>İçindekiler</h2>
+    <div class="toc">
+      <a href="#a">0 · Bu sürümde ne değişti</a>
+      <a href="#b">1 · Xcode: Info.plist izin metinleri</a>
+      <a href="#c">2 · Şifreleme / Export Compliance</a>
+      <a href="#d">3 · App Privacy (gizlilik etiketleri)</a>
+      <a href="#e">4 · Required Reason API'ler</a>
+      <a href="#f">5 · Uygulama içi satın alma (IAP)</a>
+      <a href="#g">6 · Yaş sınırı &amp; kategori</a>
+      <a href="#h">7 · Review Notes (kopyala-yapıştır)</a>
+      <a href="#i">8 · Demo / test erişimi</a>
+      <a href="#j">9 · Metadata (açıklama, anahtar kelime)</a>
+      <a href="#k">10 · Sık takılınan red sebepleri</a>
+      <a href="#z">11 · Gönderim öncesi son checklist</a>
+    </div>
+  </div>
+
+  <div class="card" id="a">
+    <h2>0 · Bu sürümde ne değişti (review'ı etkileyen)</h2>
+    <ul>
+      <li><strong>Kamera izni</strong> eklendi — fiş/fatura ve belge tarama için (<code>VNDocumentCameraViewController</code>). Yeni <em>purpose string</em> gerekiyor.</li>
+      <li><strong>Fiş/fatura tarama</strong> — OCR tamamen cihazda (Apple Vision). Görseller cihazda saklanır.</li>
+      <li><strong>Akıllı Sürüş Asistanı</strong> — kural tabanlı, cihaz üstü. Veri göndermez.</li>
+      <li><strong>Bulut Yapay Zekâ (opsiyonel, varsayılan KAPALI)</strong> — kullanıcı açarsa <em>maskelenmiş metin</em> bir ara sunucu (Vercel) üzerinden DeepSeek'e gider. → App Privacy + Review Notes'ta beyan gerekir.</li>
+      <li><strong>Topluluk</strong> (mevcut) — Sign in with Apple + Supabase. Zaten beyan kapsamında.</li>
+    </ul>
+    <div class="ok"><strong>Kritik mesaj (her yerde tutarlı olmalı):</strong> Uygulama <em>yerel-öncelikli</em>dir. Bulut özellikleri isteğe bağlı ve varsayılan kapalıdır. Kişisel veriler buluta gitmeden önce cihazda maskelenir. Uygulama resmî bir kurum uygulaması değildir; kullanıcıyı izlemez (no tracking).</div>
+  </div>
+
+  <div class="card" id="b">
+    <h2>1 · Xcode: Info.plist izin metinleri</h2>
+    <p>Kamera izni <code>NSCameraUsageDescription</code> anahtarıyla eklendi (repo: <code>Configuration/Supabase-Info.plist</code>). Metin Türkçe ve <strong>amacı açık</strong> olmalı — Apple genel/boş izin metinlerini reddeder.</p>
+    <h3>Kamera — mevcut metin</h3>
+    <pre><code>NSCameraUsageDescription =
+"Fiş, fatura ve belgeleri tarayıp aracının dosyasına eklemek
+için kameraya erişim gerekir."</code></pre>
+    <div class="warn"><strong>Fotoğraf kütüphanesi:</strong> Uygulama <code>PhotosPicker</code> (PHPicker) kullanır; bu, <code>NSPhotoLibraryUsageDescription</code> gerektirmez (sistem seçici, izin sormaz). Bu anahtarı <strong>eklemene gerek yok</strong>; eklersen Apple "neden istiyorsun?" diye sorabilir.</div>
+    <p class="muted">Kontrol: Xcode → hedef → derlenmiş Info.plist'te <code>NSCameraUsageDescription</code> görünüyor mu? (<code>Configuration/Config.xcconfig</code> üzerinden geliyor.)</p>
+  </div>
+
+  <div class="card" id="c">
+    <h2>2 · Şifreleme / Export Compliance</h2>
+    <p>Uygulama yalnızca standart HTTPS (TLS) kullanır; özel/patentli şifreleme içermez. Bu, ihracat istisnası kapsamındadır.</p>
+    <ul>
+      <li>Info.plist'e ekle (henüz yoksa): <code>ITSAppUsesNonExemptEncryption = NO</code></li>
+      <li>App Store Connect gönderiminde "Export Compliance" sorusu çıkarsa: <strong>"Does your app use encryption?" → Yes</strong> (HTTPS kullanıyor) → <strong>"Does your app qualify for any of the exemptions?" → Yes</strong> (yalnızca standart TLS). Sonuç: ek belge gerekmez.</li>
+    </ul>
+    <div class="warn"><code>ITSAppUsesNonExemptEncryption = NO</code> plist'te varsa App Store Connect bu soruyu <strong>hiç sormaz</strong> — en temiz yol budur.</div>
+  </div>
+
+  <div class="card" id="d">
+    <h2>3 · App Privacy (Gizlilik Etiketleri)</h2>
+    <p>App Store Connect → uygulaman → <kbd>App Privacy</kbd> → <kbd>Edit</kbd>. "Data Types" bölümünde aşağıdakileri işaretle. (Kaynak tablo: <a href="PRIVACY_LABELS_RECONCILIATION.md">PRIVACY_LABELS_RECONCILIATION.md</a>.)</p>
+
+    <h3>Privacy Policy URL</h3>
+    <p><code>https://fatihdisci.github.io/arvia/privacy.html</code></p>
+
+    <h3>"Does this app collect data?" → <strong>Yes</strong></h3>
+    <table>
+      <tr><th>Veri Türü</th><th>Topla?</th><th>Kimliğe bağlı<br>(Linked)</th><th>Tracking</th><th>Amaç (Purpose)</th><th>Neden</th></tr>
+      <tr><td>User Content (gönderi/yorum)</td><td>Yes</td><td>Yes</td><td>No</td><td>App Functionality</td><td>Topluluk (Supabase)</td></tr>
+      <tr><td>Name</td><td>Yes</td><td>Yes</td><td>No</td><td>App Functionality</td><td>Topluluk profili</td></tr>
+      <tr><td>Email Address</td><td>Yes</td><td>Yes</td><td>No</td><td>App Functionality</td><td>Sign in with Apple</td></tr>
+      <tr><td>Photos or Videos</td><td>Yes</td><td>No</td><td>No</td><td>App Functionality</td><td>Belge/fiş görselleri (cihazda)</td></tr>
+      <tr><td>Purchase History</td><td>Yes</td><td>No</td><td>No</td><td>App Functionality</td><td>StoreKit abonelik</td></tr>
+      <tr><td>Other Data (maskelenmiş AI metni)</td><td>Yes</td><td>No</td><td>No</td><td>App Functionality</td><td>Bulut AI (opsiyonel)</td></tr>
+    </table>
+    <div class="warn"><strong>Bulut AI satırı ("Other Data"):</strong> Özellik varsayılan kapalı ve opt-in olsa da, uygulama bu veriyi gönderme <em>yeteneğine</em> sahip olduğu için beyan edilir. <strong>Linked = No</strong> (anonim clientId), <strong>Tracking = No</strong>. App Privacy formunda "Other Data Types" altından ekleyip amaç olarak "App Functionality" seç. Not: Bu metin User Content'ten türese de kaynağı ayrı olduğu için ayrı işaretlemek en şeffaf yoldur.</div>
+
+    <h3>Tracking</h3>
+    <p><strong>"Do you or your partners use data for tracking?" → No.</strong> ATT (App Tracking Transparency) yok. Tracking domain yok.</p>
+    <div class="ok"><strong>Toplanmayan</strong> (hiçbir şey işaretleme): Precise/Coarse Location, Health, Financial Info, Contacts, Browsing/Search History, Device ID, Diagnostics, Sensitive Info, Surroundings.</div>
+  </div>
+
+  <div class="card" id="e">
+    <h2>4 · Required Reason API'ler (Privacy Manifest)</h2>
+    <p><code>Resources/PrivacyInfo.xcprivacy</code> zaten mevcut. Aşağıdaki 3 API beyanı yeterli; kamera/AI yeni Required-Reason API <strong>eklemez</strong> (kamera bir purpose string'tir, Keychain de bu listede yer almaz).</p>
+    <table>
+      <tr><th>API</th><th>Reason Code</th><th>Neden</th></tr>
+      <tr><td>File Timestamp</td><td><code>C617.1</code></td><td>Sandbox içi belge dosyaları</td></tr>
+      <tr><td>UserDefaults</td><td><code>CA92.1</code></td><td>Uygulama ayarları (Pro, onboarding, AI toggle)</td></tr>
+      <tr><td>Disk Space</td><td><code>7D9E.1</code></td><td>Depolama kullanımı bilgisi</td></tr>
+    </table>
+    <p class="muted">Kontrol: <code>PrivacyInfo.xcprivacy</code> hedef membership'te ve <code>NSPrivacyTracking = false</code>, <code>NSPrivacyTrackingDomains = []</code>.</p>
+  </div>
+
+  <div class="card" id="f">
+    <h2>5 · Uygulama İçi Satın Alma (IAP)</h2>
+    <p>App Store Connect → <kbd>Features → In-App Purchases / Subscriptions</kbd>. Koddaki ürün ID'leri (<code>PaywallService.proProductIDs</code>):</p>
+    <ul>
+      <li><code>com.ruhsatim.pro.monthly</code> — Auto-Renewable Subscription (aylık)</li>
+      <li><code>com.ruhsatim.pro.yearly</code> — Auto-Renewable Subscription (yıllık)</li>
+      <li><code>com.ruhsatim.pro.lifetime</code> — Non-Consumable (ömür boyu)</li>
+    </ul>
+    <ol>
+      <li>Abonelikler için bir <strong>Subscription Group</strong> oluştur (örn. "Arvia Pro"), aylık + yıllığı içine koy.</li>
+      <li>Her ürüne <strong>display name</strong>, <strong>açıklama</strong> ve <strong>fiyat</strong> gir (kodda dev fallback: aylık ₺79,99 · yıllık ₺599,99 · ömür boyu ₺1.499,99 — gerçek fiyatları burada belirle).</li>
+      <li>Her ürün için <strong>review screenshot</strong> (paywall ekranı) ve review notu ekle — aksi halde IAP "Missing Metadata" kalır ve build reddedilir.</li>
+      <li>İlk gönderimde IAP'leri <strong>build ile birlikte</strong> "Submit for Review" işaretle.</li>
+    </ol>
+    <div class="warn"><strong>Pro ile kilitlenen özellikler (bu sürüm):</strong> 2+ araç, satış dosyası, gelişmiş raporlar, fiş/fatura tarama, Akıllı Sürüş Asistanı ve Bulut AI. Açıklamada "aboneliğin neyi açtığı" net yazılmalı (Guideline 3.1.2).</div>
+  </div>
+
+  <div class="card" id="g">
+    <h2>6 · Yaş Sınırı &amp; Kategori</h2>
+    <ul>
+      <li><strong>Primary Category:</strong> Utilities (alternatif: Productivity).</li>
+      <li><strong>Age Rating:</strong> 4+. Ancak <strong>Topluluk (kullanıcı üretimi içerik)</strong> olduğu için Apple'ın UGC gereklilikleri devreye girer:
+        <ul>
+          <li>Age rating anketinde "User Generated Content" → <strong>Yes</strong>.</li>
+          <li>Uygulamada bunlar bulunmalı (mevcut): içerik <strong>bildirme (report)</strong>, kullanıcı <strong>engelleme/moderasyon</strong>, kötüye kullanım filtresi ve <strong>EULA</strong>. Review Notes'ta bunların yerini belirt.</li>
+        </ul>
+      </li>
+      <li><strong>EULA:</strong> Standart Apple EULA kullanılıyor (uygulama içi Ayarlar → Hukuki bağlantısı mevcut).</li>
+    </ul>
+  </div>
+
+  <div class="card" id="h">
+    <h2>7 · Review Notes (App Review Information → Notes)</h2>
+    <p>Aşağıdaki metni <strong>olduğu gibi</strong> "Notes" kutusuna yapıştır. Reviewer'ın bulut özelliklerini ve UGC'yi hızlı doğrulaması için kritik.</p>
+    <pre><code>Arvia is a local-first personal vehicle file (maintenance, expenses,
+documents, reminders). It is NOT a government app and is not affiliated
+with TÜVTÜRK, the Turkish Revenue Administration, e-Devlet, insurers or
+inspection companies. Reminders are informational only.
+
+DATA / PRIVACY
+- All core features work fully on-device, offline.
+- Receipt/invoice scanning: camera is used only to scan receipts and
+  documents. OCR (text recognition) runs ON-DEVICE (Apple Vision). Images
+  are stored locally.
+- Cloud AI (optional, OFF by default): improves receipt reading and gives
+  maintenance suggestions. It is disabled until the user turns it on in
+  Settings → "Yapay Zekâ" and accepts a one-time consent screen. When on,
+  ONLY TEXT is sent (never images), and personal identifiers (Turkish ID,
+  license plate, IBAN, phone) are masked on-device before sending. Text is
+  relayed via our proxy to a third-party AI provider (DeepSeek). No account
+  tied to identity is created (anonymous device ID for quotas). The proxy
+  does not log message content.
+- No analytics, no ads, no tracking (ATT not used).
+
+HOW TO TEST CLOUD AI (optional)
+1. Settings → "Yapay Zekâ" → turn on "Bulut AI özellikleri".
+2. Accept the consent sheet.
+3. Scan a receipt (Expense/Service form → "Fiş/Fatura Tara") — low-quality
+   scans auto-use AI, or tap "Yapay zekâ ile düzelt".
+4. Vehicle detail → "Kişisel bakım planı oluştur".
+
+COMMUNITY (User Generated Content)
+- Requires Sign in with Apple. Posting/commenting is optional.
+- Moderation is built in: report content, block users, and an abuse filter.
+  A user can delete their account and all content in
+  Settings → "Hesabı ve Verileri Sil".
+
+SUBSCRIPTION
+- Arvia Pro (StoreKit 2) unlocks: multiple vehicles, sale file, advanced
+  reports, receipt scanning, and the Smart Driving Assistant / Cloud AI.
+- "Restore Purchases" is available in Settings.
+
+Contact: behavest@proton.me</code></pre>
+  </div>
+
+  <div class="card" id="i">
+    <h2>8 · Demo / Test Erişimi</h2>
+    <ul>
+      <li><strong>Sign in with Apple:</strong> Reviewer kendi Apple ID'siyle giriş yapabilir; ayrı demo hesabı zorunlu değil. Yine de "App Review Information → Sign-In required?" → işaretlersen, notlara "Sign in with Apple is used; reviewer may use their own Apple ID. Community login is optional; the app is fully usable without signing in." yaz.</li>
+      <li><strong>Bulut AI'nın canlı çalışması için</strong> Vercel proxy + Upstash + DeepSeek anahtarı ayakta olmalı; xcconfig'te <code>ARVIA_AI_PROXY_URL</code> ve <code>ARVIA_AI_CLIENT_SECRET</code> gerçek değerlerle dolu olmalı. Aksi halde reviewer AI'yı açsa bile özellik <em>sessizce yerel sonuca döner</em> (hata vermez) — bu davranış kasıtlıdır, red sebebi değildir; yine de test edebilmeleri için canlı tutman önerilir.</li>
+      <li><strong>DEBUG uçtan uca test:</strong> Yalnızca geliştirici (DEBUG) derlemede Ayarlar → Geliştirici → "AI: Uçtan Uca Test İsteği" var; Release'e girmez.</li>
+    </ul>
+  </div>
+
+  <div class="card" id="j">
+    <h2>9 · Metadata (Açıklama &amp; Anahtar Kelime)</h2>
+    <h3>Güvenli dil (Apple resmî-kurum algısını reddeder)</h3>
+    <table>
+      <tr><th>Kaçın</th><th>Kullan</th></tr>
+      <tr><td>"MTV öde", "Muayene randevusu al"</td><td>"MTV / muayene tarihini hatırlat"</td></tr>
+      <tr><td>"Resmî sorgulama", TÜVTÜRK/GİB logosu</td><td>"Kendi girdiğin bilgileri düzenle"</td></tr>
+      <tr><td>"Aracın değerini garanti eder"</td><td>"Kayıtlarından satış dosyası oluştur"</td></tr>
+      <tr><td>"Yapay zekâ arıza teşhisi koyar"</td><td>"Kullanımına göre bakım <em>önerileri</em>"</td></tr>
+    </table>
+    <h3>Açıklamaya eklenmesi gereken zorunlu satırlar</h3>
+    <ul>
+      <li>Resmî kurum olmadığına dair net uyarı (TÜVTÜRK/GİB/e-Devlet ile bağlantısız).</li>
+      <li>Bulut AI'nın <strong>opsiyonel ve varsayılan kapalı</strong> olduğu, gönderilen metnin maskelendiği.</li>
+      <li>Abonelik: neyin açıldığı + fiyat + "Ayarlar'dan iptal / Restore Purchases".</li>
+      <li>Gizlilik Politikası ve Kullanım Koşulları linkleri.</li>
+    </ul>
+    <p class="muted">Ayrıntılı konumlandırma ve daha uzun kontrol listesi için repo'daki <code>06_APPSTORE_LEGAL_PRIVACY.md</code> ve mevcut <a href="appstore-submit-rehberi.html">appstore-submit-rehberi.html</a>.</p>
+  </div>
+
+  <div class="card" id="k">
+    <h2>10 · Sık takılınan red sebepleri (önden kapat)</h2>
+    <ul>
+      <li><strong>2.1 (eksik IAP metadata):</strong> Her IAP'ye açıklama + review screenshot + fiyat gir, build ile birlikte submit et.</li>
+      <li><strong>5.1.1 (izin metni yetersiz):</strong> Kamera metni amacı açık ve Türkçe (yukarıda). Gereksiz izin isteme (foto kütüphanesi izni ekleme).</li>
+      <li><strong>5.1.2 / gizlilik uyumu:</strong> App Privacy etiketleri privacy.html ile <em>birebir</em> tutarlı olmalı — Bulut AI ve Topluluk beyan edilmeli.</li>
+      <li><strong>1.2 (UGC güvenliği):</strong> Report + block + moderasyon + EULA mevcut ve Review Notes'ta belirtilmeli.</li>
+      <li><strong>3.1.2 (abonelik şeffaflığı):</strong> Süre, fiyat, otomatik yenileme ve iptal yolu hem uygulamada hem açıklamada.</li>
+      <li><strong>Resmî kurum algısı:</strong> Ekran görüntülerinde/metinde resmî logo veya "resmî sorgulama" ifadesi olmasın.</li>
+    </ul>
+  </div>
+
+  <div class="card" id="z">
+    <h2>11 · Gönderim öncesi son checklist</h2>
+    <ul>
+      <li>☐ Xcode: Build + tüm testler yeşil (Mac'te).</li>
+      <li>☐ <code>Config.xcconfig</code>: <code>ARVIA_AI_PROXY_URL</code> + <code>ARVIA_AI_CLIENT_SECRET</code> gerçek değerlerle dolu.</li>
+      <li>☐ Vercel proxy + Upstash + DeepSeek canlı; README'deki 3 curl geçiyor.</li>
+      <li>☐ <code>ITSAppUsesNonExemptEncryption = NO</code> plist'te.</li>
+      <li>☐ <code>NSCameraUsageDescription</code> Türkçe ve amaç açık; gereksiz izin yok.</li>
+      <li>☐ App Privacy etiketleri (6 veri türü + Tracking=No) girildi ve privacy.html ile tutarlı.</li>
+      <li>☐ IAP ürünleri (3 adet) metadata + screenshot ile hazır, build'e bağlı submit.</li>
+      <li>☐ Age rating: UGC = Yes; report/block/moderasyon mevcut.</li>
+      <li>☐ Review Notes (Bölüm 7) yapıştırıldı; AI'yı açma adımları yazıldı.</li>
+      <li>☐ Privacy / Terms / Support URL'leri App Store Connect'e girildi (github.io/arvia/…).</li>
+      <li>☐ Ekran görüntülerinde resmî logo / "resmî sorgulama" ifadesi yok.</li>
+      <li>☐ Uygulama içi: Ayarlar → Yapay Zekâ toggle + onay ekranı + gizlilik açıklaması çalışıyor; kapalıyken hiçbir istek gitmiyor (Proxyman ile doğrulandı).</li>
+    </ul>
+  </div>
+
+  <div class="footer muted" style="text-align:center;margin-top:2rem;">&copy; 2026 Fatih Dişçi · Arvia yayın rehberi</div>
+</div>
+</body>
+</html>
