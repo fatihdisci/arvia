@@ -16,7 +16,17 @@ struct RecordsView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            Group {
+                switch segment {
+                case .archive:
+                    HistoryView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                case .reports:
+                    ReportsView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                }
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
                 Picker("Görünüm", selection: $segment) {
                     ForEach(Segment.allCases) { seg in
                         Text(seg.rawValue).tag(seg)
@@ -26,16 +36,7 @@ struct RecordsView: View {
                 .padding(.horizontal, AppSpacing.screenMarginH)
                 .padding(.top, AppSpacing.xs)
                 .padding(.bottom, AppSpacing.sm)
-
-                Group {
-                    switch segment {
-                    case .archive:
-                        HistoryView()
-                    case .reports:
-                        ReportsView()
-                    }
-                }
-                .frame(maxHeight: .infinity, alignment: .top)
+                .background(Color.appBackground)
             }
             .background(Color.appBackground.ignoresSafeArea())
             .navigationTitle("Kayıtlar")

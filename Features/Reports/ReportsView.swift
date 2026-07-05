@@ -125,6 +125,16 @@ struct ReportsView: View {
                 reportContent
             }
         }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { showAddExpense = true } label: {
+                    Image(systemName: "plus")
+                        .font(.body)
+                        .foregroundColor(AppColors.accentPrimary)
+                }
+                .accessibilityLabel("Masraf Ekle")
+            }
+        }
         .sheet(isPresented: $showAddExpense) { ExpenseFormView() }
         .sheet(item: $saleFileVehicle) { vehicle in
             SaleFileView(vehicle: vehicle)

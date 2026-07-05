@@ -79,6 +79,11 @@ struct HistoryView: View {
                     historyList
                 }
             }
+
+            // Boş state'te son öğenin tab bar altına girmemesi için
+            if isEmpty {
+                Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
+            }
         }
         .background(Color.appBackground.ignoresSafeArea())
         .toolbar {
