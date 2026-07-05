@@ -10,6 +10,8 @@ struct DosyaniTamamlaChecklist: View {
     let hasInsuranceReminder: Bool
     let hasAnyExpenseOrService: Bool
     let hasAnyDocument: Bool
+    var hasMaintenancePlan: Bool = false
+    var onMaintenancePlan: (() -> Void)?
 
     @State private var showReminderForm = false
     @State private var showServiceForm = false
@@ -72,6 +74,14 @@ struct DosyaniTamamlaChecklist: View {
                     subtitle: "Ruhsat, poliçe veya faturayı dosyana ekle",
                     done: hasAnyDocument,
                     action: { showDocumentForm = true }
+                )
+
+                checklistItem(
+                    icon: "brain.head.profile",
+                    title: "Kişisel bakım planı",
+                    subtitle: "Yapay zekâ ile sana özel bakım önerileri",
+                    done: hasMaintenancePlan,
+                    action: onMaintenancePlan
                 )
             }
         }
