@@ -16,7 +16,7 @@ enum AppEnvironment {
     //   2. Container ekle: "iCloud.com.ruhsatim.app" (VehicleDossierApp.swift ile birebir aynı)
     //   3. Background Modes → Remote notifications aç (arka plan senkron itmesi için)
     // Capability eklenmeden flag açılırsa ModelContainer init başarısız olur (fatalError).
-    static let isCloudKitSyncEnabled = false
+    static let isCloudKitSyncEnabled = true
     static let isPartnerVerificationEnabled = false
     static let isSupabaseEnabled = false
     static let isCommunityEnabled = true
