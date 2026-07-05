@@ -23,6 +23,7 @@ struct SettingsView: View {
     #if DEBUG
     @State private var aiTestResult: String?
     @State private var showAITestResult = false
+    @State private var aiTestInFlight = false
     #endif
     @State private var showSignOutConfirmation = false
     @State private var showDeleteAllConfirmation = false
@@ -582,9 +583,16 @@ struct SettingsView: View {
             Button {
                 runAITestRequest()
             } label: {
-                Label("AI: Uçtan Uca Test İsteği", systemImage: "sparkles")
-                    .foregroundColor(AppColors.accentPrimary)
+                HStack {
+                    Label("AI: Uçtan Uca Test İsteği", systemImage: "sparkles")
+                        .foregroundColor(AppColors.accentPrimary)
+                    if aiTestInFlight {
+                        Spacer()
+                        ProgressView()
+                    }
+                }
             }
+            .disabled(aiTestInFlight)
         } header: {
             Text("Geliştirici")
         } footer: {
@@ -597,9 +605,11 @@ struct SettingsView: View {
     // MARK: - Actions
     #if DEBUG
     /// Dev hook: maskelenmiş örnek metinle proxy'ye uçtan uca istek atar.
+    /// NOT: Alert yalnızca sonuç kesinleştiğinde açılır — iOS alert'leri açıldıktan
+    /// sonra içeriğini güncelleyemez (UIAlertController sabittir), bu yüzden
+    /// önce açıp sonra metni değiştirmek "sonsuza kadar bekliyor" görünümü verirdi.
     private func runAITestRequest() {
-        aiTestResult = "İstek gönderiliyor…"
-        showAITestResult = true
+        aiTestInFlight = true
         let sample = PIIMaskingService.mask(
             "OPET AKARYAKIT\nTC 10000000146\nTarih: 15.03.2024\nTOPLAM: 1.079,50 TL"
         )
@@ -608,11 +618,21 @@ struct SettingsView: View {
                 let receipt = try await AIProxyService.shared.parseReceipt(ocrText: sample)
                 await MainActor.run {
                     aiTestResult = "OK · satıcı=\(receipt.vendor ?? "-") · toplam=\(receipt.total.map { String($0) } ?? "-")"
+                    aiTestInFlight = false
+                    showAITestResult = true
                 }
             } catch let error as AIProxyError {
-                await MainActor.run { aiTestResult = "Hata (tipli): \(error)" }
+                await MainActor.run {
+                    aiTestResult = "Hata (tipli): \(error)"
+                    aiTestInFlight = false
+                    showAITestResult = true
+                }
             } catch {
-                await MainActor.run { aiTestResult = "Hata: \(error.localizedDescription)" }
+                await MainActor.run {
+                    aiTestResult = "Hata: \(error.localizedDescription)"
+                    aiTestInFlight = false
+                    showAITestResult = true
+                }
             }
         }
     }
