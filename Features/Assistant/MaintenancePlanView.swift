@@ -81,19 +81,25 @@ struct MaintenancePlanView: View {
                 }
                 .onAppear(perform: loadInitial)
         }
+        // Sabit detent'ler olmadan sheet, stage değiştikçe (loading → loaded)
+        // içerik yüksekliğini yeniden hesaplıyor; bu da kapanışta görülen
+        // takılmanın kaynağıydı. Sabit detent + drag indicator, ArviaGuideSection'daki
+        // gibi native bir bottom-sheet hissi veriyor (açılır liste değil, kart).
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 
     @ViewBuilder
     private var content: some View {
         switch stage {
         case .idle, .loading:
-            loadingView
+            loadingView.transition(.opacity)
         case .loaded(let fromCache):
-            loadedView(fromCache: fromCache)
+            loadedView(fromCache: fromCache).transition(.opacity)
         case .unavailable:
-            unavailableView
+            unavailableView.transition(.opacity)
         case .failed(let message):
-            failedView(message)
+            failedView(message).transition(.opacity)
         }
     }
 
@@ -114,17 +120,21 @@ struct MaintenancePlanView: View {
 
     private func loadedView(fromCache: Bool) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                planHeader
+
                 if suggestions.isEmpty {
                     Text("Şu an için özel bir öneri yok. Kayıtların arttıkça plan daha isabetli olur.")
                         .font(AppTypography.secondary)
                         .foregroundColor(AppColors.textSecondary)
                         .padding(.horizontal, AppSpacing.screenMarginH)
                 } else {
-                    ForEach(Array(suggestions.enumerated()), id: \.offset) { _, suggestion in
-                        suggestionCard(suggestion)
-                            .padding(.horizontal, AppSpacing.screenMarginH)
+                    VStack(spacing: AppSpacing.sm) {
+                        ForEach(Array(suggestions.enumerated()), id: \.offset) { index, suggestion in
+                            suggestionCard(suggestion, index: index + 1)
+                        }
                     }
+                    .padding(.horizontal, AppSpacing.screenMarginH)
                 }
 
                 if fromCache {
@@ -138,15 +148,48 @@ struct MaintenancePlanView: View {
         }
     }
 
-    private func suggestionCard(_ suggestion: MaintenancePlanSuggestion) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+    /// Plan başlığı — ham liste değil, kısaca bağlamlandırılmış bir özet.
+    private var planHeader: some View {
+        HStack(spacing: AppSpacing.sm) {
+            ZStack {
+                Circle()
+                    .fill(AppColors.accentPrimary.opacity(0.1))
+                    .frame(width: 40, height: 40)
+                Image(systemName: "sparkles")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(AppColors.accentPrimary)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(suggestions.isEmpty ? "Şimdilik önerin yok" : "\(suggestions.count) öneri hazır")
+                    .font(AppTypography.bodyMedium)
+                    .foregroundColor(AppColors.textPrimary)
+                Text("Kullanım profiline ve bakım geçmişine göre kişiselleştirildi.")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, AppSpacing.screenMarginH)
+    }
+
+    /// Sıra numarası + şiddet rengi aksan şeridi — düz bir liste yerine
+    /// önceliklendirilmiş bir plan hissi verir.
+    private func suggestionCard(_ suggestion: MaintenancePlanSuggestion, index: Int) -> some View {
+        let color = severityColor(suggestion.severity)
+        return VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(spacing: AppSpacing.sm) {
-                Image(systemName: severityIcon(suggestion.severity))
-                    .foregroundColor(severityColor(suggestion.severity))
+                Text("\(index)")
+                    .font(AppTypography.captionMedium)
+                    .foregroundColor(color)
+                    .frame(width: 22, height: 22)
+                    .background(Circle().fill(color.opacity(0.14)))
                 Text(suggestion.title)
                     .font(AppTypography.bodyMedium)
                     .foregroundColor(AppColors.textPrimary)
                 Spacer(minLength: 0)
+                Image(systemName: severityIcon(suggestion.severity))
+                    .font(.caption)
+                    .foregroundColor(color)
             }
             Text(suggestion.message)
                 .font(AppTypography.secondary)
@@ -174,9 +217,17 @@ struct MaintenancePlanView: View {
             .padding(.top, AppSpacing.xxs)
         }
         .padding(AppSpacing.md)
+        .padding(.leading, AppSpacing.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: AppRadius.small)
+                .fill(color)
+                .frame(width: 3)
+                .padding(.vertical, AppSpacing.sm)
+        }
         .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
     }
 
     private var unavailableView: some View {
@@ -234,11 +285,19 @@ struct MaintenancePlanView: View {
         generate(force: false)
     }
 
+    /// Stage değişimlerini her zaman animasyonlu uygular — idle/loading/loaded/failed
+    /// arası geçiş ani bir "pop" yerine yumuşak bir crossfade ile olur.
+    private func setStage(_ newStage: Stage) {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            stage = newStage
+        }
+    }
+
     private func generate(force: Bool) {
         // Üç koşul — asla varsayma.
         guard PaywallService.shared.isPro,
               AIConsentStore.shared.isCloudAIEnabled else {
-            stage = .unavailable
+            setStage(.unavailable)
             return
         }
 
@@ -254,23 +313,23 @@ struct MaintenancePlanView: View {
            MaintenancePlanCacheStore.isFresh(cached),
            cached.inputHash == inputHash {
             suggestions = cached.suggestions
-            stage = .loaded(fromCache: true)
+            setStage(.loaded(fromCache: true))
             return
         }
 
-        stage = .loading
+        setStage(.loading)
         Task {
             do {
                 let result = try await AIProxyService.shared.maintenancePlan(profileJSON: payload)
                 await MainActor.run {
                     suggestions = Array(result.prefix(3))
                     MaintenancePlanCacheStore.save(suggestions, vehicleId: vehicle.id, inputHash: inputHash)
-                    stage = .loaded(fromCache: false)
+                    setStage(.loaded(fromCache: false))
                 }
             } catch let error as AIProxyError {
                 await MainActor.run { handleFailure(error) }
             } catch {
-                await MainActor.run { stage = .failed("Plan oluşturulamadı. Daha sonra tekrar dene.") }
+                await MainActor.run { setStage(.failed("Plan oluşturulamadı. Daha sonra tekrar dene.")) }
             }
         }
     }
@@ -279,11 +338,11 @@ struct MaintenancePlanView: View {
         // Kural tabanlı öneriler bağımsız çalışmaya devam eder; burada nazikçe degrade.
         switch error {
         case .disabled:
-            stage = .unavailable
+            setStage(.unavailable)
         case .quotaExceeded:
-            stage = .failed("Yapay zekâ ay limitine ulaşıldı. Kural tabanlı öneriler çalışmaya devam ediyor.")
+            setStage(.failed("Yapay zekâ ay limitine ulaşıldı. Kural tabanlı öneriler çalışmaya devam ediyor."))
         default:
-            stage = .failed("Plan oluşturulamadı. Daha sonra tekrar dene.")
+            setStage(.failed("Plan oluşturulamadı. Daha sonra tekrar dene."))
         }
     }
 
