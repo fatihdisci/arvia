@@ -375,12 +375,15 @@ struct GarageView: View {
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
                     // 1. Hero Vehicle Card — tek, currentVehicle'a göre
-                    // Fotoğraf varsa → tıklayınca VehicleDetail açılır.
+                    // Fotoğraf varsa → tıklayınca VehicleDetail açılır (Button +
+                    // navigationPath; NavigationLink değil — NavigationLink ScrollView
+                    // içinde yüksek çözünürlüklü fotoğrafla layout genişliğini
+                    // patlatıyordu).
                     // Fotoğraf yoksa → tıklayınca önce sistem fotoğraf seçici açılır.
                     if let vehicle = currentVehicle {
                         if vehicle.photoFileName != nil {
-                            NavigationLink {
-                                VehicleDetailView(vehicle: vehicle)
+                            Button {
+                                navigationPath = [vehicle.id]
                             } label: {
                                 heroCardContent(vehicle: vehicle)
                             }
