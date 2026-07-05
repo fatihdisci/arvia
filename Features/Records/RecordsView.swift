@@ -35,6 +35,7 @@ struct RecordsView: View {
                         ReportsView()
                     }
                 }
+                .frame(maxHeight: .infinity, alignment: .top)
             }
             .background(Color.appBackground.ignoresSafeArea())
             .navigationTitle("Kayıtlar")
