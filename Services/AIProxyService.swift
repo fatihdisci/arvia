@@ -74,11 +74,21 @@ struct AIProxyConfig {
     let clientSecret: String
 
     static func load() -> AIProxyConfig? {
-        guard let urlString = Bundle.main.object(forInfoDictionaryKey: "ARVIA_AI_PROXY_URL") as? String,
-              !urlString.isEmpty, !urlString.contains("YOUR-"),
+        // Trim whitespace/newlines defensively — a stray trailing space or line
+        // break picked up while editing Config.xcconfig would otherwise make the
+        // client secret silently mismatch the server's value (401 unauthorized)
+        // even though both "look" identical when eyeballed.
+        guard let rawURL = Bundle.main.object(forInfoDictionaryKey: "ARVIA_AI_PROXY_URL") as? String else {
+            return nil
+        }
+        let urlString = rawURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !urlString.isEmpty, !urlString.contains("YOUR-"),
               let url = URL(string: urlString),
-              let secret = Bundle.main.object(forInfoDictionaryKey: "ARVIA_AI_CLIENT_SECRET") as? String,
-              !secret.isEmpty, !secret.contains("YOUR_") else {
+              let rawSecret = Bundle.main.object(forInfoDictionaryKey: "ARVIA_AI_CLIENT_SECRET") as? String else {
+            return nil
+        }
+        let secret = rawSecret.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !secret.isEmpty, !secret.contains("YOUR_") else {
             return nil
         }
         return AIProxyConfig(baseURL: url, clientSecret: secret)
