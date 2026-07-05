@@ -9,6 +9,8 @@ import QuickLook
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
 
+    @Binding var segment: RecordsView.Segment
+
     @Query(sort: \Expense.date, order: .reverse) private var allExpenses: [Expense]
     @Query(sort: \ServiceRecord.date, order: .reverse) private var allServiceRecords: [ServiceRecord]
     @Query(sort: \VehicleDocument.createdAt, order: .reverse) private var allDocuments: [VehicleDocument]
@@ -59,18 +61,22 @@ struct HistoryView: View {
     // Kendi NavigationStack'i yok — üst konteynerin nav bar'ını kullanır;
     // toolbar/sheet modifier'ları konteyner nav bar'ına bağlanır.
     //
-    // Önemli: Başlık metni + filtre çipleri bilinçli olarak historyList'in
-    // (List) bir safeAreaInset'i. Önceden plain VStack sibling'iydi — List
-    // kendi üst güvenli alanını nav bar'a göre otomatik hesapladığı için
-    // Geçmiş sekmesi seçiliyken bu çipler üst bara "gömülüyordu" (RecordsView'daki
-    // dış segment picker'ında görülen aynı hatanın, HistoryView içinde tekrarı).
+    // Önemli: Geçmiş/Raporlar segment picker'ı + başlık metni + filtre çipleri
+    // bilinçli olarak historyList'in (List) TEK ve doğrudan safeAreaInset'i.
+    // Segment picker önceden RecordsView'ın kendi (List'ten bir seviye uzak)
+    // safeAreaInset'indeydi — bu yüzden Geçmiş seçiliyken yine üst bara
+    // "gömülüyordu" (filtre çiplerinde daha önce görülüp burada çözülen aynı
+    // hatanın tekrarı). List'i doğrudan saran tek safeAreaInset'e taşımak
+    // bunu kalıcı çözüyor.
     var body: some View {
         Group {
             if isEmpty {
-                VStack(spacing: 0) {
-                    emptyState
-                    // Boş state'te son öğenin tab bar altına girmemesi için
-                    Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
+                ScrollView {
+                    VStack(spacing: 0) {
+                        emptyState
+                        // Boş state'te son öğenin tab bar altına girmemesi için
+                        Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
+                    }
                 }
             } else {
                 historyList
@@ -78,6 +84,8 @@ struct HistoryView: View {
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: 0) {
+                RecordsSegmentPicker(segment: $segment)
+
                 Text("Bakım, masraf, belge ve tamamlanan işleri tek arşivde gör.")
                     .font(AppTypography.secondary)
                     .foregroundColor(AppColors.textSecondary)
@@ -753,7 +761,7 @@ struct HistoryView: View {
 
 #Preview("Geçmiş — Dolu") {
     NavigationStack {
-        HistoryView()
+        HistoryView(segment: .constant(.archive))
             .navigationTitle("Kayıtlar")
     }
     .modelContainer(MockDataProvider.previewContainer)
@@ -761,7 +769,7 @@ struct HistoryView: View {
 
 #Preview("Geçmiş — Dark") {
     NavigationStack {
-        HistoryView()
+        HistoryView(segment: .constant(.archive))
             .navigationTitle("Kayıtlar")
     }
     .modelContainer(MockDataProvider.previewContainer)

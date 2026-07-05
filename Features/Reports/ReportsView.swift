@@ -10,6 +10,8 @@ struct ReportsView: View {
     @Query(sort: \Expense.date, order: .reverse) private var allExpenses: [Expense]
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
 
+    @Binding var segment: RecordsView.Segment
+
     @State private var selectedVehicleId: UUID?
     @State private var selectedYear: Int
     @State private var showSaleFile = false
@@ -19,7 +21,8 @@ struct ReportsView: View {
 
     private let currentYear = Calendar.current.component(.year, from: Date())
 
-    init() {
+    init(segment: Binding<RecordsView.Segment>) {
+        self._segment = segment
         _selectedYear = State(initialValue: Calendar.current.component(.year, from: Date()))
     }
 
@@ -110,7 +113,11 @@ struct ReportsView: View {
     }
 
     // Not: "Kayıtlar" sekmesi altında (RecordsView) segment olarak gösterilir.
-    // Kendi NavigationStack'i yok — üst konteynerin nav bar'ını kullanır.
+    // Kendi NavigationStack'i yok — üst konteynerin nav bar'ını kullanır. Segment
+    // picker'ı kendi safeAreaInset'imizde tutuyoruz (HistoryView.swift'teki aynı
+    // desen) — RecordsView'ın kendi Group'unda tutmak Geçmiş tarafında üst bara
+    // kaçma hatasına yol açıyordu; burada List yok ama tutarlılık ve gelecekte
+    // olası bir List eklenmesi için aynı yerleşim korunuyor.
     var body: some View {
         Group {
             if allExpenses.isEmpty {
@@ -124,6 +131,10 @@ struct ReportsView: View {
             } else {
                 reportContent
             }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            RecordsSegmentPicker(segment: $segment)
+                .background(Color.appBackground)
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -601,7 +612,7 @@ struct ReportsView: View {
 // MARK: - Preview
 #Preview("Raporlar — Dolu") {
     NavigationStack {
-        ReportsView()
+        ReportsView(segment: .constant(.reports))
             .navigationTitle("Kayıtlar")
     }
     .modelContainer(MockDataProvider.previewContainer)
@@ -609,7 +620,7 @@ struct ReportsView: View {
 
 #Preview("Raporlar — Dark Mode") {
     NavigationStack {
-        ReportsView()
+        ReportsView(segment: .constant(.reports))
             .navigationTitle("Kayıtlar")
     }
     .modelContainer(MockDataProvider.previewContainer)
@@ -617,7 +628,7 @@ struct ReportsView: View {
 
 #Preview("Raporlar — Dynamic Type") {
     NavigationStack {
-        ReportsView()
+        ReportsView(segment: .constant(.reports))
             .navigationTitle("Kayıtlar")
     }
     .modelContainer(MockDataProvider.previewContainer)
