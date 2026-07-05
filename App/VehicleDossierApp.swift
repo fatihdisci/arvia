@@ -136,6 +136,7 @@ struct VehicleDossierApp: App {
                 .sheet(item: $postOnboardingSheet) { _ in
                     VehicleWizardView()
                         .modelContainer(modelContainer)
+                        .environmentObject(paywallService)
                 }
                 .preferredColorScheme(.dark)
             }

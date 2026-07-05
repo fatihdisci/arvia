@@ -2,14 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>SUPABASE_URL</key>
-	<string>$(SUPABASE_URL)</string>
-	<key>SUPABASE_ANON_KEY</key>
-	<string>$(SUPABASE_ANON_KEY)</string>
-	<key>ARVIA_AI_PROXY_URL</key>
-	<string>$(ARVIA_AI_PROXY_URL)</string>
 	<key>ARVIA_AI_CLIENT_SECRET</key>
 	<string>$(ARVIA_AI_CLIENT_SECRET)</string>
+	<key>ARVIA_AI_PROXY_URL</key>
+	<string>$(ARVIA_AI_PROXY_URL)</string>
+	<key>SUPABASE_ANON_KEY</key>
+	<string>$(SUPABASE_ANON_KEY)</string>
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>JetBrainsMono-Bold.ttf</string>
@@ -17,9 +17,9 @@
 		<string>JetBrainsMono-Regular.ttf</string>
 		<string>JetBrainsMono-SemiBold.ttf</string>
 	</array>
-	<key>UIUserInterfaceStyle</key>
-	<string>Dark</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Fiş, fatura ve belgeleri tarayıp aracının dosyasına eklemek için kameraya erişim gerekir.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>
