@@ -154,47 +154,62 @@ struct PaywallView: View {
         .presentationDragIndicator(.hidden)
     }
 
-    // MARK: - Feature Pages (carousel)
-    private var featurePages: [[(icon: String, title: String)]] {
-        let features = PaywallService.proFeatures
-        var pages: [[(icon: String, title: String)]] = []
-        for i in stride(from: 0, to: features.count, by: 2) {
-            let end = min(i + 2, features.count)
-            pages.append(Array(features[i..<end]))
-        }
-        return pages
+    // MARK: - Pro Highlight Features (Free'den farkı: sadece bu 3 özellik Pro'ya özel)
+    private struct ProHighlight: Identifiable {
+        let id = UUID()
+        let icon: String
+        let title: String
+        let description: String
     }
 
-    // MARK: - Pro Features Carousel
+    private let proHighlights: [ProHighlight] = [
+        ProHighlight(
+            icon: "brain.head.profile",
+            title: "Akıllı Sürüş Asistanı",
+            description: "Sürüş alışkanlıklarını öğrenir, sana özel bakım planı oluşturur."
+        ),
+        ProHighlight(
+            icon: "doc.viewfinder",
+            title: "Fiş/Fatura Tarama",
+            description: "Kamerayla tara, masrafın otomatik tanınsın. Tek tek girişe son."
+        ),
+        ProHighlight(
+            icon: "car.2",
+            title: "Sınırsız Araç",
+            description: "Tüm araçlarını tek garajda yönet. Her birine özel dijital dosya."
+        ),
+    ]
+
+    // MARK: - Pro Features Carousel (her sayfada tek özellik)
     private var proFeaturesCarousel: some View {
-        VStack(spacing: AppSpacing.xs) {
+        VStack(spacing: AppSpacing.sm) {
             TabView(selection: $currentPage) {
-                ForEach(Array(featurePages.enumerated()), id: \.offset) { index, page in
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        ForEach(Array(page.enumerated()), id: \.offset) { _, item in
-                            HStack(spacing: AppSpacing.sm) {
-                                Image(systemName: item.icon)
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(AppColors.accentPrimary)
-                                    .frame(width: 22)
-                                Text(item.title)
-                                    .font(AppTypography.secondary)
-                                    .foregroundColor(AppColors.textPrimary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                Spacer(minLength: 0)
-                            }
-                        }
-                        Spacer(minLength: 0)
+                ForEach(Array(proHighlights.enumerated()), id: \.element.id) { index, item in
+                    VStack(spacing: AppSpacing.sm) {
+                        Image(systemName: item.icon)
+                            .font(.system(size: 32, weight: .light))
+                            .foregroundColor(AppColors.accentPrimary)
+                        Text(item.title)
+                            .font(AppTypography.bodyMedium)
+                            .foregroundColor(AppColors.textPrimary)
+                            .multilineTextAlignment(.center)
+                        Text(item.description)
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, AppSpacing.lg)
                     .tag(index)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(height: 110)
+            .frame(height: 140)
 
             // Page dots
             HStack(spacing: 6) {
-                ForEach(0..<featurePages.count, id: \.self) { index in
+                ForEach(0..<proHighlights.count, id: \.self) { index in
                     Circle()
                         .fill(currentPage == index ? AppColors.accentPrimary : AppColors.border)
                         .frame(width: 6, height: 6)

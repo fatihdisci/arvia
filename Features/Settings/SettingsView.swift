@@ -50,8 +50,10 @@ struct SettingsView: View {
                 // Akıllı Sürüş Asistanı
                 assistantSection
 
-                // Yapay Zekâ (Bulut AI)
-                aiSection
+                // Yapay Zekâ (Bulut AI) — sadece Pro kullanıcıya
+                if paywallService.isPro {
+                    aiSection
+                }
 
                 // Bildirimler
                 notificationSection
