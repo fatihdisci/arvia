@@ -82,22 +82,28 @@ struct PaywallView: View {
         let period: String
         let badge: String?
         let sortOrder: Int
+        let trialText: String? // örn. "7 gün ücretsiz"
     }
 
     private var pricingOptions: [PricingOption] {
         if paywallService.products.isEmpty {
             #if DEBUG
             return [
-                PricingOption(id: "com.arvia.pro.monthly", title: "Aylık", price: "₺49,99", period: "/ay", badge: nil, sortOrder: 0),
-                PricingOption(id: "com.arvia.pro.yearly", title: "Yıllık", price: "₺399,99", period: "/yıl", badge: "En Avantajlı", sortOrder: 1),
-                PricingOption(id: "com.arvia.pro.lifetime", title: "Ömür Boyu", price: "₺1.499,99", period: "", badge: "Tek Seferlik", sortOrder: 2),
+                PricingOption(id: "com.arvia.pro.monthly", title: "Aylık", price: "₺49,99", period: "/ay", badge: nil, sortOrder: 0, trialText: nil),
+                PricingOption(id: "com.arvia.pro.yearly", title: "Yıllık", price: "₺399,99", period: "/yıl", badge: "En Avantajlı", sortOrder: 1, trialText: "7 gün ücretsiz"),
+                PricingOption(id: "com.arvia.pro.lifetime", title: "Ömür Boyu", price: "₺1.499,99", period: "", badge: "Tek Seferlik", sortOrder: 2, trialText: nil),
             ]
             #else
             return []
             #endif
         }
         return paywallService.products.map { product in
-            PricingOption(
+            let isEligible = paywallService.introOfferEligibility[product.id] ?? false
+            var trialText: String?
+            if isEligible, let intro = product.subscription?.introductoryOffer, intro.paymentMode == .freeTrial {
+                trialText = "\(intro.period.value) gün ücretsiz"
+            }
+            return PricingOption(
                 id: product.id,
                 title: product.displayName,
                 price: product.displayPrice,
@@ -105,7 +111,8 @@ struct PaywallView: View {
                 badge: product.subscription?.subscriptionPeriod.unit == .year ? "En Avantajlı"
                      : (product.type == .nonConsumable ? "Tek Seferlik" : nil),
                 sortOrder: product.subscription?.subscriptionPeriod.unit == .month ? 0
-                         : (product.subscription?.subscriptionPeriod.unit == .year ? 1 : 2)
+                         : (product.subscription?.subscriptionPeriod.unit == .year ? 1 : 2),
+                trialText: trialText
             )
         }.sorted { $0.sortOrder < $1.sortOrder }
     }
@@ -149,9 +156,8 @@ struct PaywallView: View {
                 }
             }
         }
-        // Sheet yüksekliği: ekranın %88'i. Karosel + fiyat seçenekleri + CTA + yasal.
-        .presentationDetents([.fraction(0.88)])
-        .presentationDragIndicator(.hidden)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
 
     // MARK: - Pro Highlight Features (Free'den farkı: sadece bu 3 özellik Pro'ya özel)
@@ -289,20 +295,27 @@ struct PaywallView: View {
                 }
                 .accessibilityHidden(true)
 
-                // Title + badge
-                HStack(spacing: AppSpacing.xxs) {
-                    Text(option.title)
-                        .font(AppTypography.bodyMedium)
-                        .foregroundColor(AppColors.textPrimary)
-                    if let badge = option.badge {
-                        Text(badge)
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(AppColors.textOnAccent)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(
-                                Capsule().fill(AppColors.accentPrimary)
-                            )
+                // Title + badge (+ trial)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: AppSpacing.xxs) {
+                        Text(option.title)
+                            .font(AppTypography.bodyMedium)
+                            .foregroundColor(AppColors.textPrimary)
+                        if let badge = option.badge {
+                            Text(badge)
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundColor(AppColors.textOnAccent)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    Capsule().fill(AppColors.accentPrimary)
+                                )
+                        }
+                    }
+                    if let trialText = option.trialText {
+                        Text(trialText)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(AppColors.accentPrimary)
                     }
                 }
 
@@ -338,6 +351,10 @@ struct PaywallView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
+    private var selectedTrialText: String? {
+        pricingOptions.first(where: { $0.id == selectedProductId })?.trialText
+    }
+
     // MARK: - CTA
     private var ctaSection: some View {
         Button {
@@ -347,7 +364,7 @@ struct PaywallView: View {
                 if isPurchasing {
                     ProgressView().tint(AppColors.textOnAccent)
                 }
-                Text(isPurchasing ? "İşlem yapılıyor..." : "Pro'ya Geç")
+                Text(isPurchasing ? "İşlem yapılıyor..." : (selectedTrialText != nil ? "Ücretsiz Dene" : "Pro'ya Geç"))
                     .font(AppTypography.bodyMedium)
             }
             .frame(maxWidth: .infinity)
@@ -409,7 +426,14 @@ struct PaywallView: View {
 
     // MARK: - Auto-Renewal Disclosure (Apple zorunlu, kısa)
     private var autoRenewalDisclosure: some View {
-        Text("Otomatik yenilenen abonelik. Satın alma onayından sonra ödeme Apple Hesabına yansıtılır. Cari dönem bitmeden en az 24 saat kala iptal etmezsen abonelik otomatik yenilenir. İstediğin zaman iptal edebilirsin.")
+        let base = "Otomatik yenilenen abonelik. Satın alma onayından sonra ödeme Apple Hesabına yansıtılır. Cari dönem bitmeden en az 24 saat kala iptal etmezsen abonelik otomatik yenilenir. İstediğin zaman iptal edebilirsin."
+        let text: String
+        if let trialText = selectedTrialText {
+            text = "İlk \(trialText.lowercased()), sonrasında " + base
+        } else {
+            text = base
+        }
+        return Text(text)
             .font(.system(size: 10))
             .foregroundColor(AppColors.textTertiary)
             .multilineTextAlignment(.center)

@@ -15,6 +15,8 @@ final class PaywallService: ObservableObject {
     @Published var products: [Product] = []
     @Published var isLoading = false
     @Published var purchaseError: String?
+    /// productID -> kullanıcının bu üründe intro offer'a (trial) hâlâ uygun olup olmadığı
+    @Published var introOfferEligibility: [String: Bool] = [:]
 
     enum FreeLimits {
         static let maxVehicles = 1
@@ -113,10 +115,22 @@ final class PaywallService: ObservableObject {
         do {
             products = try await Product.products(for: productIDs)
                 .sorted { $0.price < $1.price }
+            await loadIntroOfferEligibility()
         } catch {
             purchaseError = "Ürünler yüklenemedi."
         }
         isLoading = false
+    }
+
+    /// Her abonelik ürünü için: tanımlı bir intro offer (trial) var mı VE kullanıcı hâlâ uygun mu.
+    private func loadIntroOfferEligibility() async {
+        var result: [String: Bool] = [:]
+        for product in products {
+            guard let subscription = product.subscription,
+                  subscription.introductoryOffer != nil else { continue }
+            result[product.id] = await subscription.isEligibleForIntroOffer
+        }
+        introOfferEligibility = result
     }
 
     // MARK: - Purchase
