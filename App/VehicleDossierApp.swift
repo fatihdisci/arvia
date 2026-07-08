@@ -129,8 +129,20 @@ struct VehicleDossierApp: App {
                 }
                 .onChange(of: onboardingCompleted) { _, completed in
                     if completed {
-                        // Onboarding sonrası her zaman tek tip wizard açılır.
-                        postOnboardingSheet = .wizard
+                        // App sil-yeniden yükle senaryosunda CloudKit sync açıkken
+                        // SwiftData araç verileri iCloud'tan geri gelir, ama
+                        // `onboarding_completed` AppStorage sıfırlanmış olduğu için
+                        // onboarding yeniden gösterilir. Onboarding tamamlanınca
+                        // wizard'ı koşulsuz açmak kullanıcının zaten sahip olduğu
+                        // aracı ikinci kez eklemesine (kopyaya) yol açar.
+                        // Bu yüzden: SwiftData'da herhangi bir Vehicle kaydı varsa
+                        // (aktif veya arşivli — önemli olan veri tabanında iz olması)
+                        // wizard'ı atlıyoruz. Yeni kullanıcıda kayıt sayısı 0 →
+                        // wizard normal açılır.
+                        let existingVehicles = (try? modelContainer.mainContext.fetchCount(FetchDescriptor<Vehicle>())) ?? 0
+                        if existingVehicles == 0 {
+                            postOnboardingSheet = .wizard
+                        }
                     }
                 }
                 .sheet(item: $postOnboardingSheet) { _ in

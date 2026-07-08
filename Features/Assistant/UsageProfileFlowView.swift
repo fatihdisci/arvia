@@ -7,6 +7,7 @@ import SwiftData
 struct UsageProfileFlowView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var paywallService: PaywallService
 
     private let service = UsageProfileService.shared
 
@@ -329,6 +330,14 @@ struct UsageProfileFlowView: View {
     }
 
     private func saveAndFinish() {
+        // Defense-in-depth: Kullanım profili yalnızca Pro'ya açık (Akıllı Sürüş Asistanı feature'ı).
+        // UI katmanında da gating var (AssistantView, AppRouter vb.) ama bir şekilde
+        // bu view'a free kullanıcı gelirse save'i engelle — SwiftData'da Pro-özel veri
+        // birikmesin.
+        guard paywallService.canUseAssistant else {
+            dismiss()
+            return
+        }
         let trimmedUser = primaryUser.trimmingCharacters(in: .whitespaces)
         service.saveGlobalProfile(
             dailyKmBand: dailyKmBand,
@@ -351,9 +360,11 @@ struct UsageProfileFlowView: View {
 }
 
 // MARK: - Assistant Tab (Akıllı Sürüş Asistanı ana ekranı)
-// Kullanım profili + kişisel bakım planı tek sekmede toplanır.
-// Kullanım profili doldurulduysa pasif (salt-okunur) ve tikli gösterilir,
-// yanında "Düzenle" butonuyla; boşsa kurulum kartı çıkar.
+// İki ana bölüm: Hero + Maintenance Plan + Kullanım Profili.
+// Pro kullanıcıya son oluşturulan bakım planı önerileri varsayılan olarak
+// açılmış liste halinde gösterilir (sheet açmaya gerek yok). Free kullanıcıya
+// aynı tasarımda demo öneriler + paywall CTA gösterilir — ekran "bu Pro özelliğin
+// önizlemesi" gibi çalışır. Kullanım profili kartı zaten Pro gate'li.
 struct AssistantView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var paywallService: PaywallService
@@ -364,6 +375,8 @@ struct AssistantView: View {
     @State private var showProfileFlow = false
     @State private var maintenancePlanVehicle: Vehicle?
     @State private var showPaywall = false
+    @State private var showAIConsent = false
+    @State private var pendingReminderDraft: AssistantReminderDraft?
 
     private var activeVehicles: [Vehicle] {
         vehicles.filter { $0.archivedAt == nil }
@@ -386,31 +399,26 @@ struct AssistantView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    Text("Sürüş alışkanlıklarına göre sana özel bakım önerileri ve kilometre tahmini.")
-                        .font(AppTypography.secondary)
-                        .foregroundColor(AppColors.textSecondary)
-                        .padding(.horizontal, AppSpacing.screenMarginH)
+                VStack(alignment: .leading, spacing: AppSpacing.xl) {
+                    heroSection
 
                     if let vehicle = selectedVehicle {
                         if activeVehicles.count > 1 {
                             vehiclePicker
-                                .padding(.horizontal, AppSpacing.screenMarginH)
                         }
-                        maintenancePlanCard(for: vehicle)
-                            .padding(.horizontal, AppSpacing.screenMarginH)
-                        usageProfileCard
-                            .padding(.horizontal, AppSpacing.screenMarginH)
-                    } else {
-                        usageProfileCard
-                            .padding(.horizontal, AppSpacing.screenMarginH)
+                        maintenancePlanSection(for: vehicle)
+                    }
+
+                    usageProfileCard
+
+                    if selectedVehicle == nil {
                         addVehicleHint
-                            .padding(.horizontal, AppSpacing.screenMarginH)
                     }
 
                     Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
                 }
-                .padding(.vertical, AppSpacing.md)
+                .padding(.horizontal, AppSpacing.screenMarginH)
+                .padding(.top, AppSpacing.md)
             }
             .background(Color.appBackground.ignoresSafeArea())
             .navigationTitle("Asistan")
@@ -424,17 +432,125 @@ struct AssistantView: View {
             .sheet(isPresented: $showPaywall) {
                 PaywallView(feature: .assistant)
             }
+            .sheet(isPresented: $showAIConsent) {
+                AIConsentView(
+                    onAccept: {
+                        UserDefaults.standard.set(true, forKey: AIConsentStore.consentKey)
+                        UserDefaults.standard.set(true, forKey: AIConsentStore.enabledKey)
+                        if let vehicle = selectedVehicle {
+                            maintenancePlanVehicle = vehicle
+                        }
+                    },
+                    onDecline: {}
+                )
+            }
+            .sheet(item: $pendingReminderDraft) { draft in
+                ReminderFormView(
+                    preselectedVehicleId: selectedVehicle?.id,
+                    prefilledTitle: draft.title,
+                    prefilledDueOdometer: draft.dueOdometer,
+                    prefilledDueInMonths: draft.dueInMonths
+                )
+            }
+        }
+    }
+
+    // MARK: - Hero
+    /// Üst başlık şeridi — sayfanın ne hakkında olduğunu bir cümleyle özetler.
+    /// Pro ise "yapay zekâ destekli" vurgusu, free ise daha temkinli bir tanıtım.
+    private var heroSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.accentPrimary.opacity(0.12))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(AppColors.accentPrimary)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Akıllı Sürüş Asistanı")
+                        .font(AppTypography.sectionTitle)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text(paywallService.canUseAssistant
+                         ? "Kullanımına göre kişisel bakım önerileri ve kilometre tahmini."
+                         : "Pro ile yapay zekâ destekli kişisel bakım önerileri.")
+                        .font(AppTypography.secondary)
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
     }
 
     // MARK: - Usage Profile Card
+    /// Kullanım profili kartı — Akıllı Sürüş Asistanı'nın parçası olduğu için
+    /// yalnızca Pro kullanıcıda interaktif. Free kullanıcıya kilitli bir özet
+    /// gösterilir ve tıklayınca paywall açılır — bu sayede free hesapta
+    /// kullanım profili oluşturulamaz/düzenlenemez.
     @ViewBuilder
     private var usageProfileCard: some View {
-        if let profile = globalProfile {
-            filledProfileCard(profile)
+        if paywallService.canUseAssistant {
+            if let profile = globalProfile {
+                filledProfileCard(profile)
+            } else {
+                emptyProfileCard
+            }
         } else {
-            emptyProfileCard
+            lockedProfileCard
         }
+    }
+
+    /// Free kullanıcıya gösterilen kilitli kart — mevcut profili (varsa) özetler
+    /// ve CTA olarak paywall açar. PredictiveOdometerService / MaintenanceAdvisorService
+    /// çağrıları `canUseAssistant` guard'lı olduğu için bu kart sadece bilgi amaçlı;
+    /// düzenleme/oluşturma yok.
+    private var lockedProfileCard: some View {
+        Button {
+            showPaywall = true
+        } label: {
+            HStack(spacing: AppSpacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppRadius.medium)
+                        .fill(AppColors.accentPrimary.opacity(0.1))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "person.text.rectangle")
+                        .font(.title3)
+                        .foregroundColor(AppColors.accentPrimary)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Kullanım Profilin")
+                        .font(AppTypography.bodyMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text(lockedProfileSubtitle)
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 0)
+                Text("Pro")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(AppColors.textOnAccent)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(AppColors.accentPrimary))
+            }
+            .padding(AppSpacing.md)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var lockedProfileSubtitle: String {
+        if let profile = globalProfile {
+            return "Günlük yol: \(profile.dailyKmBand.displayName) — düzenlemek için Pro gerekli."
+        }
+        return "Sürüş alışkanlıklarını kaydetmek için Pro gerekli."
     }
 
     /// Doldurulmuş profil — pasif (salt-okunur) + tikli, yanında "Düzenle".
@@ -573,74 +689,305 @@ struct AssistantView: View {
         }
     }
 
-    // MARK: - Maintenance Plan Card
-    // Not: Bilinçli olarak sayfa içinde açılıp kapanan bir akordeon DEĞİL —
-    // dokununca MaintenancePlanView'i native bir sheet olarak açar. Önceki
-    // "satır içi genişleyen bölüm" denemesi (ScrollView içinde expand/collapse)
-    // hem "açılır liste" hissi veriyordu hem kapanışta komşu kartların yeniden
-    // yerleşmesiyle birlikte gözle görülür bir takılma yaratıyordu. Sheet,
-    // MaintenancePlanView.swift'te tanımlı sabit presentationDetents + drag
-    // indicator sayesinde native ve akıcı açılıp kapanıyor.
-    private func maintenancePlanCard(for vehicle: Vehicle) -> some View {
-        let canUse = paywallService.canUseAssistant && AIConsentStore.shared.isCloudAIEnabled
-        let cached = MaintenancePlanCacheStore.load(vehicleId: vehicle.id)
-        return Button {
-            if canUse {
-                maintenancePlanVehicle = vehicle
+    // MARK: - Maintenance Plan Section
+    /// Bakım planı bölümü — Pro + AI açıkken son cache'i varsayılan olarak
+    /// açılmış liste halinde gösterir (kullanıcı sheet açmak zorunda değil);
+    /// free kullanıcıya demo öneriler + paywall CTA gösterir.
+    /// NOT: ScrollView içinde expand/collapse YOK. İçerik her zaman açık,
+    /// komşu kartların yeniden yerleşmesine bağlı takılma yok.
+    @ViewBuilder
+    private func maintenancePlanSection(for vehicle: Vehicle) -> some View {
+        let isPro = paywallService.canUseAssistant
+        let aiEnabled = AIConsentStore.shared.isCloudAIEnabled
+        let cached = isPro ? MaintenancePlanCacheStore.load(vehicleId: vehicle.id) : nil
+
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            sectionHeader(
+                icon: "steeringwheel",
+                title: "Kişisel Bakım Planı",
+                subtitle: sectionSubtitle(isPro: isPro, aiEnabled: aiEnabled, cached: cached)
+            )
+
+            // İçerik
+            if !isPro {
+                demoSuggestionsList
+                freeCTAFooter
+            } else if !aiEnabled {
+                aiDisabledCallout(vehicle: vehicle)
+            } else if let cached, !cached.suggestions.isEmpty {
+                suggestionsList(cached.suggestions, vehicle: vehicle)
+                refreshFooter(vehicle: vehicle)
             } else {
-                showPaywall = true
+                emptyPlanCallout(vehicle: vehicle)
             }
-        } label: {
-            HStack(spacing: AppSpacing.md) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.medium)
-                        .fill(AppColors.accentPrimary.opacity(0.1))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: "steeringwheel")
-                        .font(.title3)
-                        .foregroundColor(AppColors.accentPrimary)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Kişisel Bakım Planı")
-                        .font(AppTypography.bodyMedium)
-                        .foregroundColor(AppColors.textPrimary)
-                    Text(maintenancePlanSubtitle(canUse: canUse, cached: cached))
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                }
-                Spacer(minLength: 0)
-                if canUse {
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
-                } else {
-                    Text("Pro")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(AppColors.textOnAccent)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Capsule().fill(AppColors.accentPrimary))
-                }
-            }
-            .padding(AppSpacing.md)
-            .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
         }
-        .buttonStyle(.plain)
     }
 
-    private func maintenancePlanSubtitle(canUse: Bool, cached: MaintenancePlanCacheStore.Cached?) -> String {
-        guard canUse else {
-            return "Yapay zekâ ile sana özel bakım önerileri (Pro)"
+    /// Bölüm başlık satırı: icon + başlık + subtitle.
+    private func sectionHeader(icon: String, title: String, subtitle: String) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            ZStack {
+                RoundedRectangle(cornerRadius: AppRadius.small)
+                    .fill(AppColors.accentPrimary.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(AppColors.accentPrimary)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(AppTypography.cardTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                Text(subtitle)
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
         }
-        if let cached {
+    }
+
+    private func sectionSubtitle(isPro: Bool, aiEnabled: Bool, cached: MaintenancePlanCacheStore.Cached?) -> String {
+        if !isPro {
+            return "Pro ile kullanımına göre kişiselleştirilmiş öneriler."
+        }
+        if !aiEnabled {
+            return "Bulut AI kapalı — açman gerekiyor."
+        }
+        if let cached, !cached.suggestions.isEmpty {
             let date = cached.createdAt.formatted(date: .abbreviated, time: .omitted)
-            return "Son plan hazır · \(date). Araç verisi değiştikçe yenilenir."
+            return "Son plan · \(date). Araç verisi değişince yenilenir."
         }
-        return "Yapay zekâ ile sana özel bakım önerileri"
+        return "Henüz planın yok. Bir tane oluşturalım."
+    }
+
+    /// Pro + cache var: öneriler liste halinde, her biri kompakt kart.
+    @ViewBuilder
+    private func suggestionsList(_ suggestions: [MaintenancePlanSuggestion], vehicle: Vehicle) -> some View {
+        VStack(spacing: AppSpacing.sm) {
+            ForEach(Array(suggestions.prefix(3).enumerated()), id: \.offset) { index, suggestion in
+                suggestionCard(
+                    suggestion: suggestion,
+                    index: index + 1,
+                    vehicle: vehicle,
+                    isDemo: false
+                )
+            }
+        }
+    }
+
+    /// Free: gerçekçi demo öneriler (statik) — kullanıcı Pro olunca ne göreceğini
+    /// anlasın. Kilitli badge'lerle değil, normal kart görünümünde — sadece
+    /// CTA footer "Pro'ya Geç" ile kilit vurgulanır.
+    private var demoSuggestionsList: some View {
+        VStack(spacing: AppSpacing.sm) {
+            ForEach(Array(AssistantDemoData.suggestions.enumerated()), id: \.offset) { index, suggestion in
+                suggestionCard(
+                    suggestion: suggestion,
+                    index: index + 1,
+                    vehicle: nil,
+                    isDemo: true
+                )
+            }
+        }
+    }
+
+    /// Tek bir öneri kartı — Pro ve demo için ortak.
+    /// Pro: hatırlatıcı oluştur butonu aktif.
+    /// Demo: buton yerinde "Pro ile dene" placeholder veya yok.
+    @ViewBuilder
+    private func suggestionCard(suggestion: MaintenancePlanSuggestion, index: Int, vehicle: Vehicle?, isDemo: Bool) -> some View {
+        let color = severityColor(suggestion.severity)
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(alignment: .center, spacing: AppSpacing.sm) {
+                Text("\(index)")
+                    .font(AppTypography.captionMedium)
+                    .foregroundColor(color)
+                    .frame(width: 24, height: 24)
+                    .background(Circle().fill(color.opacity(0.14)))
+                Text(suggestion.title)
+                    .font(AppTypography.bodyMedium)
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: AppSpacing.xs)
+                Image(systemName: severityIcon(suggestion.severity))
+                    .font(.caption)
+                    .foregroundColor(color)
+            }
+            Text(suggestion.message)
+                .font(AppTypography.secondary)
+                .foregroundColor(AppColors.textSecondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if suggestion.suggestedIntervalKm != nil || suggestion.suggestedIntervalMonths != nil {
+                HStack(spacing: AppSpacing.xs) {
+                    if let km = suggestion.suggestedIntervalKm {
+                        intervalChip(text: "~\(km.formatted()) km", icon: "gauge.with.needle")
+                    }
+                    if let months = suggestion.suggestedIntervalMonths {
+                        intervalChip(text: "~\(months) ay", icon: "calendar")
+                    }
+                }
+            }
+
+            if !isDemo, let vehicle {
+                Button {
+                    let draft = AssistantReminderDraft(
+                        title: suggestion.title,
+                        dueOdometer: suggestion.suggestedIntervalKm.map { vehicle.currentOdometer + $0 },
+                        dueInMonths: suggestion.suggestedIntervalMonths
+                    )
+                    pendingReminderDraft = draft
+                } label: {
+                    Label("Hatırlatıcı oluştur", systemImage: "bell.badge")
+                        .font(AppTypography.secondaryMedium)
+                        .foregroundColor(AppColors.accentPrimary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: AppRadius.small)
+                .fill(color)
+                .frame(width: 3)
+                .padding(.vertical, AppSpacing.sm)
+        }
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+    }
+
+    /// Pro + cache var — altta "Yenile" link'i (sheet açarak yeni plan üretir).
+    private func refreshFooter(vehicle: Vehicle) -> some View {
+        Button {
+            maintenancePlanVehicle = vehicle
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.caption)
+                Text("Yenile")
+                    .font(AppTypography.secondaryMedium)
+            }
+            .foregroundColor(AppColors.accentPrimary)
+            .padding(.top, AppSpacing.xxs)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    /// Pro + AI enabled + cache yok — "Plan Oluştur" CTA (dolgun primary buton).
+    private func emptyPlanCallout(vehicle: Vehicle) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Kullanım profilin ve araç verilerine göre 3 öneri hazırlayalım.")
+                .font(AppTypography.secondary)
+                .foregroundColor(AppColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                maintenancePlanVehicle = vehicle
+            } label: {
+                HStack(spacing: AppSpacing.xs) {
+                    Image(systemName: "sparkles")
+                    Text("Plan Oluştur")
+                }
+                .font(AppTypography.bodyMedium)
+                .foregroundColor(AppColors.textOnAccent)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.sm + 2)
+                .background(
+                    RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+                        .fill(AppColors.accentPrimary)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+    }
+
+    /// Pro + AI disabled — "Bulut AI'yı aç" CTA (AIConsentView açılır).
+    private func aiDisabledCallout(vehicle: Vehicle) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Kişisel bakım planı için bulut AI özelliğinin açık olması gerekir.")
+                .font(AppTypography.secondary)
+                .foregroundColor(AppColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                showAIConsent = true
+            } label: {
+                Text("Bulut AI'yı aç")
+                    .font(AppTypography.bodyMedium)
+                    .foregroundColor(AppColors.textOnAccent)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.sm + 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+                            .fill(AppColors.accentPrimary)
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+    }
+
+    /// Free — bölümün altında dolgun paywall CTA.
+    private var freeCTAFooter: some View {
+        Button {
+            showPaywall = true
+        } label: {
+            HStack(spacing: AppSpacing.xs) {
+                Image(systemName: "crown.fill")
+                Text("Pro ile Kişiselleştirilmiş Plan")
+            }
+            .font(AppTypography.bodyMedium)
+            .foregroundColor(AppColors.textOnAccent)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, AppSpacing.sm + 2)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+                    .fill(AppColors.accentPrimary)
+            )
+        }
+        .buttonStyle(.plain)
+        .padding(.top, AppSpacing.xs)
+    }
+
+    private func intervalChip(text: String, icon: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 9, weight: .medium))
+            Text(text)
+                .font(AppTypography.caption)
+        }
+        .foregroundColor(AppColors.textSecondary)
+        .padding(.horizontal, AppSpacing.xs)
+        .padding(.vertical, 4)
+        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.backgroundSecondary))
+    }
+
+    private func severityIcon(_ severity: String) -> String {
+        switch severity {
+        case "important": return "exclamationmark.triangle.fill"
+        case "warning": return "exclamationmark.circle.fill"
+        default: return "info.circle.fill"
+        }
+    }
+
+    private func severityColor(_ severity: String) -> Color {
+        switch severity {
+        case "important": return AppColors.critical
+        case "warning": return AppColors.warning
+        default: return AppColors.accentPrimary
+        }
     }
 
     // MARK: - Add Vehicle Hint
@@ -665,5 +1012,46 @@ struct AssistantView: View {
     AssistantView()
         .modelContainer(MockDataProvider.previewContainer)
         .environmentObject(PaywallService.shared)
+}
+
+// MARK: - Assistant Reminder Draft
+/// Asistan kartındaki "Hatırlatıcı oluştur" butonundan ReminderFormView'e
+/// aktarılacak ön-doldurulmuş değerler. MaintenancePlanView'deki ReminderDraft
+/// private olduğu için burada ayrı bir tür tanımlıyoruz; aynı şema.
+struct AssistantReminderDraft: Identifiable {
+    let id = UUID()
+    let title: String
+    let dueOdometer: Int?
+    let dueInMonths: Int?
+}
+
+// MARK: - Assistant Demo Data
+/// Free kullanıcıya gösterilen örnek öneri listesi — gerçek AI çıktısı değil,
+/// Pro'nun ne sunduğunu anlatmak için statik örnekler. Pro olduğunda bu liste
+/// yerine MaintenancePlanCacheStore'dan gerçek öneriler gösterilir.
+enum AssistantDemoData {
+    static let suggestions: [MaintenancePlanSuggestion] = [
+        MaintenancePlanSuggestion(
+            title: "Motor yağı ve filtre değişimi",
+            message: "Sentetik yağ 10.000 km'de, mineral yağ 5.000 km'de değişmelidir. Şehir içi kısa mesafe kullanımda aralık kısalır.",
+            severity: "info",
+            suggestedIntervalKm: 10_000,
+            suggestedIntervalMonths: 12
+        ),
+        MaintenancePlanSuggestion(
+            title: "Hava filtresi kontrolü",
+            message: "Tozlu yollarda daha sık kontrol önerilir. Kirli filtre yakıt tüketimini %5-10 artırabilir.",
+            severity: "warning",
+            suggestedIntervalKm: 20_000,
+            suggestedIntervalMonths: 24
+        ),
+        MaintenancePlanSuggestion(
+            title: "Fren balata kontrolü",
+            message: "Ön balatalar 30-50 bin km arası dayanır. Şehir içi yoğun kullanımda erken aşınma olabilir.",
+            severity: "important",
+            suggestedIntervalKm: 35_000,
+            suggestedIntervalMonths: nil
+        ),
+    ]
 }
 

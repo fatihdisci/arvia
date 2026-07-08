@@ -94,6 +94,9 @@ final class PaywallService: ObservableObject {
         #endif
     }
 
+    /// DEBUG'ta UserDefaults-backed Pro simülasyonu.
+    /// `enableProForDev` / `disableProForDev` çağrıldığında dev mode anahtarını
+    /// günceller; final `isPro` değeri StoreKit'ten gelir (production davranışı).
     func enableProForDev() {
         #if DEBUG
         UserDefaults.standard.set(true, forKey: devModeKey)

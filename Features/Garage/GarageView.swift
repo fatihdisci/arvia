@@ -28,6 +28,7 @@ struct GarageView: View {
     @State private var showPaywall = false
     @State private var showSettings = false
     @State private var showArchivedVehicles = false
+    @State private var showProIntro = false
 
     // Garaj hero card — fotoğraf yokken tıklayınca sistem fotoğraf seçici açılır
     // (önce fotoğraf eklensin, sonra detaya gidilsin).
@@ -92,27 +93,23 @@ struct GarageView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        handleAddVehicle()
+                        showProIntro = true
                     } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "plus")
-                                .font(.caption)
-                            Text("Araç Ekle")
-                                .font(AppTypography.captionMedium)
-                        }
-                        .foregroundColor(AppColors.textOnAccent)
-                        .padding(.horizontal, AppSpacing.sm)
-                        .padding(.vertical, 7)
-                        .background(
-                            Capsule()
-                                .fill(AppColors.accentPrimary)
-                        )
+                        ProBadge(isPro: paywallService.isPro)
                     }
-                    .accessibilityLabel("Araç Ekle")
+                    .accessibilityLabel(paywallService.isPro ? "Arvia Pro — özellikleri gör" : "Arvia Pro'ya Geç")
                 }
 
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
+                        Button {
+                            handleAddVehicle()
+                        } label: {
+                            Label("Araç Ekle", systemImage: "plus")
+                        }
+
+                        Divider()
+
                         Button {
                             showSettings = true
                         } label: {
@@ -207,6 +204,30 @@ struct GarageView: View {
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView()
+            }
+            .sheet(isPresented: $showProIntro) {
+                ProIntroModal(
+                    isPro: paywallService.isPro,
+                    onFeatureTap: { feature in
+                        showProIntro = false
+                        // Modal kapanırken sheet swap yarışı olmasın diye dismiss sonrası tetikle
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            handleProFeatureTap(feature)
+                        }
+                    },
+                    onPrimaryAction: {
+                        showProIntro = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            if paywallService.isPro {
+                                // Pro zaten aktif: Asistan sekmesine yönlendir
+                                navigationRouter.selectedTab = .assistant
+                            } else {
+                                paywallFeature = .secondVehicle
+                                showPaywall = true
+                            }
+                        }
+                    }
+                )
             }
             .navigationDestination(for: UUID.self) { vehicleId in
                 if let vehicle = vehicles.first(where: { $0.id == vehicleId }) {
@@ -837,6 +858,31 @@ struct GarageView: View {
             showAddVehicle = true
         } else {
             paywallFeature = .secondVehicle
+            showPaywall = true
+        }
+    }
+
+    /// ProIntroModal'dan bir feature satırına tıklanınca çağrılır.
+    /// - Pro kullanıcı: paywall açmadan doğrudan ilgili feature'a yönlendir.
+    /// - Free kullanıcı: ilgili paywall'ı aç.
+    /// Her iki durumda da önce modal kapatılır (parent'ta `showProIntro = false`),
+    /// sonra sheet çakışmasını önlemek için kısa bir asyncAfter uygulanır.
+    private func handleProFeatureTap(_ feature: ProIntroModalFeature) {
+        if paywallService.isPro {
+            switch feature {
+            case .assistant:
+                navigationRouter.selectedTab = .assistant
+            case .receiptScan:
+                if currentVehicle != nil {
+                    showReceiptScan = true
+                } else {
+                    showAddVehicle = true
+                }
+            case .secondVehicle:
+                showAddVehicle = true
+            }
+        } else {
+            paywallFeature = feature.paywallFeature
             showPaywall = true
         }
     }

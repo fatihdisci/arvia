@@ -478,6 +478,12 @@ struct CommunityFeedView: View {
         error = nil
         do {
             posts = try await CommunityService.shared.fetchPosts(type: selectedType)
+        } catch is CancellationError {
+            // View kaybolduğunda SwiftUI `.task` modifier'ı otomatik iptal eder —
+            // bu bir hata değil, kullanıcının sayfadan ayrıldığının işareti.
+            // Hata olarak göstermeden sessizce çık; isLoading zaten view body
+            // tekrar hesaplanmadığı için görünür state'i kirletmiyor.
+            return
         } catch {
             self.error = error.localizedDescription
         }

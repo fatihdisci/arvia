@@ -130,4 +130,16 @@ enum MaintenancePlanCacheStore {
     static func clear(vehicleId: UUID) {
         try? FileManager.default.removeItem(at: fileURL(for: vehicleId))
     }
+
+    /// Tüm araçların maintenance plan cache dosyalarını disk'ten siler.
+    /// "Tüm Verileri Sil" / "Hesabı Sil" akışlarında çağrılır — yoksa
+    /// SwiftData'daki araçlar silindikten sonra bile cache dosyaları
+    /// orphan olarak kalır ve yeni eklenen araçlar eski planla karışabilir.
+    static func deleteAll() {
+        let fm = FileManager.default
+        guard let entries = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
+        for url in entries where url.lastPathComponent.hasPrefix("plan_") && url.pathExtension == "json" {
+            try? fm.removeItem(at: url)
+        }
+    }
 }

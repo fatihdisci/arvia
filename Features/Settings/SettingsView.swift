@@ -701,6 +701,12 @@ struct SettingsView: View {
             if let sales = try? modelContext.fetch(FetchDescriptor<SaleFile>()) {
                 for s in sales { modelContext.delete(s) }
             }
+            // Kullanım profili (Akıllı Sürüş Asistanı verisi)
+            if let profiles = try? modelContext.fetch(FetchDescriptor<VehicleUsageProfile>()) {
+                for p in profiles { modelContext.delete(p) }
+            }
+            // Maintenance plan cache dosyaları (disk'te JSON)
+            MaintenancePlanCacheStore.deleteAll()
 
             // 2. Local belge dosyalarını ve araç fotoğraflarını fiziksel olarak temizle
             DocumentStorageService.shared.deleteAllFiles()
@@ -755,6 +761,16 @@ struct SettingsView: View {
         if let sales = try? modelContext.fetch(FetchDescriptor<SaleFile>()) {
             for s in sales { modelContext.delete(s) }
         }
+        // Kullanım profili (Akıllı Sürüş Asistanı verisi) — modelden silinmezse
+        // "Tüm Verileri Sil" çağrısından sonra bile sürüş alışkanlıkları UI'da
+        // görünmeye devam eder.
+        if let profiles = try? modelContext.fetch(FetchDescriptor<VehicleUsageProfile>()) {
+            for p in profiles { modelContext.delete(p) }
+        }
+
+        // Maintenance plan cache dosyaları (caches/ altında JSON) — disk'te kalırsa
+        // yeni eklenen araç için eski öneriler görüntülenebilir.
+        MaintenancePlanCacheStore.deleteAll()
 
         // Belgeleri diskten temizle
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
