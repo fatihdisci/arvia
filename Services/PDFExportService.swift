@@ -23,9 +23,7 @@ final class PDFExportService {
     private let margin: CGFloat = 48
     private var contentWidth: CGFloat { pageWidth - margin * 2 }
 
-    /// App Store URL — submit sonrası manuel tamamlanacak
-    /// TODO: Submit onayından sonra gerçek App Store ID ile değiştir
-    static let appStoreURL = "https://apps.apple.com/app/arvia/PLACEHOLDER"
+    static let appStoreURL = "https://apps.apple.com/us/app/arvia/id6783933584"
 
     /// Footer pill metni — her içerik sayfasının altında görünür
     private static let brandFooterText = "\(AppBrand.appName) ile oluşturuldu"
