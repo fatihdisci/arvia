@@ -72,6 +72,7 @@
 		ANLYSVC0002ANLYSVC0002 /* Services/AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYSVC0001ANLYSVC0001 /* Services/AnalyticsService.swift */; };
 		IMGOPT0002IMGOPT0002 /* Services/ImageOptimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMGOPT0001IMGOPT0001 /* Services/ImageOptimizer.swift */; };
 		ANLYTEST0002ANLYTEST0002 /* Tests/AnalyticsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYTEST0001ANLYTEST0001 /* Tests/AnalyticsServiceTests.swift */; };
+		MIGRTEST0002MIGRTEST0002 /* Tests/MigrationSafetyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MIGRTEST0001MIGRTEST0001 /* Tests/MigrationSafetyTests.swift */; };
 		AIP1CLID0002AIP1CLID0002 /* Services/AIClientID.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1CLID0001AIP1CLID0001 /* Services/AIClientID.swift */; };
 		AIP1CONV0002AIP1CONV0002 /* Features/Settings/AIConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1CONV0001AIP1CONV0001 /* Features/Settings/AIConsentView.swift */; };
 		AIP1MASK0002AIP1MASK0002 /* Services/PIIMaskingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1MASK0001AIP1MASK0001 /* Services/PIIMaskingService.swift */; };
@@ -219,6 +220,7 @@
 		ANLYSVC0001ANLYSVC0001 /* Services/AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AnalyticsService.swift; sourceTree = SOURCE_ROOT; };
 		IMGOPT0001IMGOPT0001 /* Services/ImageOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ImageOptimizer.swift; sourceTree = SOURCE_ROOT; };
 		ANLYTEST0001ANLYTEST0001 /* Tests/AnalyticsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/AnalyticsServiceTests.swift; sourceTree = SOURCE_ROOT; };
+		MIGRTEST0001MIGRTEST0001 /* Tests/MigrationSafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MigrationSafetyTests.swift; sourceTree = SOURCE_ROOT; };
 		AIP1CLID0001AIP1CLID0001 /* Services/AIClientID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIClientID.swift; sourceTree = SOURCE_ROOT; };
 		AIP1CONV0001AIP1CONV0001 /* Features/Settings/AIConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Settings/AIConsentView.swift; sourceTree = SOURCE_ROOT; };
 		AIP1MASK0001AIP1MASK0001 /* Services/PIIMaskingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PIIMaskingService.swift; sourceTree = SOURCE_ROOT; };
@@ -623,6 +625,7 @@
 				SDA1TUP10001SDA1TUP10001 /* Tests/UsageProfileServiceTests.swift */,
 				AIP1TMSK0001AIP1TMSK0001 /* Tests/PIIMaskingServiceTests.swift */,
 				ANLYTEST0001ANLYTEST0001 /* Tests/AnalyticsServiceTests.swift */,
+				MIGRTEST0001MIGRTEST0001 /* Tests/MigrationSafetyTests.swift */,
 				AIP1TPRX0001AIP1TPRX0001 /* Tests/AIProxyServiceTests.swift */,
 				LLM1TMRG0001LLM1TMRG0001 /* Tests/AIReceiptMergeTests.swift */,
 				LLM1TMPB0001LLM1TMPB0001 /* Tests/MaintenancePlanPayloadBuilderTests.swift */,
@@ -877,6 +880,7 @@
 				SDA1TUP10002SDA1TUP10002 /* Tests/UsageProfileServiceTests.swift in Sources */,
 				AIP1TMSK0002AIP1TMSK0002 /* Tests/PIIMaskingServiceTests.swift in Sources */,
 				ANLYTEST0002ANLYTEST0002 /* Tests/AnalyticsServiceTests.swift in Sources */,
+				MIGRTEST0002MIGRTEST0002 /* Tests/MigrationSafetyTests.swift in Sources */,
 				AIP1TPRX0002AIP1TPRX0002 /* Tests/AIProxyServiceTests.swift in Sources */,
 				LLM1TMRG0002LLM1TMRG0002 /* Tests/AIReceiptMergeTests.swift in Sources */,
 				LLM1TMPB0002LLM1TMPB0002 /* Tests/MaintenancePlanPayloadBuilderTests.swift in Sources */,

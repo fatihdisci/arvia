@@ -143,7 +143,7 @@ struct VehicleDossierApp: App {
                     DemoDataSeeder.seed(context: modelContainer.mainContext)
                 }
                 #endif
-                migrateExistingUserOnboardingVersion()
+                reconcileOnboardingStateOnLaunch()
                 navigationRouter.configureNotificationDelegate()
                 NotificationService.shared.clearBadge()
                 await scheduleRetentionNotifications()
@@ -157,14 +157,43 @@ struct VehicleDossierApp: App {
         }
     }
 
-    /// Eski kullanıcı (onboarding'i zaten tamamlamış) 1.1.0'a güncellediğinde
-    /// yeni amaç-odaklı akışa YENİDEN sokulmaz. Sürüm sessizce güncellenir; bir
-    /// "yenilikler" ekranı gösterilmez (karar: sessiz migration). Yeni kullanıcı
-    /// akışı tamamlayınca sürümü kendisi yazar.
-    private func migrateExistingUserOnboardingVersion() {
-        guard onboardingCompleted,
-              onboardingVersion < OnboardingConstants.currentVersion else { return }
-        onboardingVersion = OnboardingConstants.currentVersion
+    /// Onboarding durumunu açılışta uzlaştırır. İki senaryoyu kapsar:
+    ///
+    /// 1) Eski kullanıcı (onboarding'i zaten tamamlamış) 1.1.0'a güncellediğinde
+    ///    yeni amaç-odaklı akışa YENİDEN sokulmaz; sürüm sessizce güncellenir
+    ///    ("yenilikler" ekranı yok — karar: sessiz migration).
+    ///
+    /// 2) Sil-yeniden-yükle senaryosu: AppStorage sıfırlandığı için
+    ///    `onboarding_completed` false döner, ancak CloudKit araç verilerini geri
+    ///    yükler. SwiftData'da zaten araç varsa bu kullanıcı YENİ değildir —
+    ///    onboarding'i sessizce tamamlanmış sayıp doğrudan uygulamaya alırız.
+    ///    (CloudKit senkronu gecikirse araç sayısı 0 görünebilir; o an kullanıcı
+    ///    gerçekten yeni bir kullanıcıdan ayırt edilemez. Bu durumda onboarding
+    ///    gösterilir; onboarding'in araç adımı da "aracın zaten hazır" korumasıyla
+    ///    kopya araç oluşmasını engeller. İki katmanlı savunma.)
+    private func reconcileOnboardingStateOnLaunch() {
+        if onboardingCompleted {
+            if onboardingVersion < OnboardingConstants.currentVersion {
+                onboardingVersion = OnboardingConstants.currentVersion
+            }
+            return
+        }
+
+        // onboarding_completed == false → yeni kullanıcı mı, geri gelen mi?
+        let existingVehicleCount: Int
+        do {
+            existingVehicleCount = try modelContainer.mainContext.fetchCount(FetchDescriptor<Vehicle>())
+        } catch {
+            // Okuma hatasında "yeni kullanıcı" varsaymak güvenli taraftır: onboarding
+            // gösterilir, hiçbir veri değiştirilmez. Sessizce completed işaretlemeyiz.
+            Self.logger.error("Onboarding reconcile vehicle count failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+
+        if existingVehicleCount > 0 {
+            onboardingVersion = OnboardingConstants.currentVersion
+            onboardingCompleted = true
+        }
     }
 
     // MARK: - Retention Notifications
