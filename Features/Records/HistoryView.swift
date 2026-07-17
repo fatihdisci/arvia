@@ -9,8 +9,6 @@ import QuickLook
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
 
-    @Binding var segment: RecordsView.Segment
-
     @Query(sort: \Expense.date, order: .reverse) private var allExpenses: [Expense]
     @Query(sort: \ServiceRecord.date, order: .reverse) private var allServiceRecords: [ServiceRecord]
     @Query(sort: \VehicleDocument.createdAt, order: .reverse) private var allDocuments: [VehicleDocument]
@@ -59,17 +57,14 @@ struct HistoryView: View {
         }
     }
 
-    // Not: "Kayıtlar" sekmesi altında (RecordsView) segment olarak gösterilir.
-    // Kendi NavigationStack'i yok — üst konteynerin nav bar'ını kullanır;
+    // Not: "Kayıtlar" sekmesinin doğrudan içeriğidir (RecordsView). Kendi
+    // NavigationStack'i yok — üst konteynerin nav bar'ını kullanır;
     // toolbar/sheet modifier'ları konteyner nav bar'ına bağlanır.
     //
-    // Önemli: Geçmiş/Raporlar segment picker'ı + başlık metni + filtre çipleri
-    // bilinçli olarak historyList'in (List) TEK ve doğrudan safeAreaInset'i.
-    // Segment picker önceden RecordsView'ın kendi (List'ten bir seviye uzak)
-    // safeAreaInset'indeydi — bu yüzden Geçmiş seçiliyken yine üst bara
-    // "gömülüyordu" (filtre çiplerinde daha önce görülüp burada çözülen aynı
-    // hatanın tekrarı). List'i doğrudan saran tek safeAreaInset'e taşımak
-    // bunu kalıcı çözüyor.
+    // Önemli: başlık metni + filtre çipleri bilinçli olarak historyList'in
+    // (List) TEK ve doğrudan safeAreaInset'i — List'i saran seviyeden bir
+    // adım uzaklaştırmak üst nav bar'ın güvenli alanı yeniden hesaplarken
+    // içeriği "yutmasına" yol açıyordu (bkz. git log 3dc9c14 / f58705a).
     var body: some View {
         Group {
             if isEmpty {
@@ -94,12 +89,11 @@ struct HistoryView: View {
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: 0) {
-                RecordsSegmentPicker(segment: $segment)
-
                 Text("Bakım, masraf, belge ve tamamlanan işleri tek arşivde gör.")
                     .font(AppTypography.secondary)
                     .foregroundColor(AppColors.textSecondary)
                     .padding(.horizontal, AppSpacing.screenMarginH)
+                    .padding(.top, AppSpacing.sm)
                     .padding(.bottom, AppSpacing.xs)
 
                 filterRail
@@ -859,7 +853,7 @@ struct HistoryView: View {
 
 #Preview("Geçmiş — Dolu") {
     NavigationStack {
-        HistoryView(segment: .constant(.archive))
+        HistoryView()
             .navigationTitle("Kayıtlar")
     }
     .modelContainer(MockDataProvider.previewContainer)
@@ -867,7 +861,7 @@ struct HistoryView: View {
 
 #Preview("Geçmiş — Dark") {
     NavigationStack {
-        HistoryView(segment: .constant(.archive))
+        HistoryView()
             .navigationTitle("Kayıtlar")
     }
     .modelContainer(MockDataProvider.previewContainer)

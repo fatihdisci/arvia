@@ -3,33 +3,36 @@ import UserNotifications
 
 // MARK: - App Router
 // Ana tab navigation yapısı.
-// 4 sekme: Garaj, Asistan, Yapılacaklar, Kayıtlar
+// 4 sekme: Garaj, Yapılacaklar, Kayıtlar, Raporlar
 // Not: Belgeler sekmesi kaldırıldı — belge erişimi Araç Detay'da.
 // Not: Topluluk sekmesi 1.1.0'da kaldırıldı.
-// Not: "Geçmiş" ve "Raporlar" tek "Kayıtlar" sekmesinde birleşti.
-//       Akıllı sürüş asistanı (kullanım profili + kişisel bakım planı) "Asistan" sekmesinde toplandı.
+// Not: Asistan ayrı bir ana sekme değil — kişisel bakım planı ve kullanım profili
+//       Araç Detay'da bağlamsal kart (maintenancePlanEntry) ve Ayarlar'da
+//       ("Kullanım Profilim") erişilebilir. Satın alma sonrası ilk profil akışı
+//       AppRouter seviyesinde otomatik sunulur (aşağıya bak).
+// Not: "Raporlar" artık kendi sekmesinde; "Kayıtlar" yalnızca geçmiş/arşivi tutar.
 
 enum AppTab: String, CaseIterable {
     case garage
-    case assistant
     case todos
     case records
+    case reports
 
     var title: LocalizedStringKey {
         switch self {
         case .garage: return "Garaj"
-        case .assistant: return "Asistan"
         case .todos: return "Yapılacaklar"
         case .records: return "Kayıtlar"
+        case .reports: return "Raporlar"
         }
     }
 
     var icon: String {
         switch self {
         case .garage: return "car"
-        case .assistant: return "steeringwheel"
         case .todos: return "checklist"
         case .records: return "tray.full"
+        case .reports: return "chart.bar"
         }
     }
 }
@@ -85,8 +88,7 @@ enum AppNotificationRoute: Equatable {
         case .vehicle:
             return .garage
         case .reports:
-            // "Raporlar" artık "Kayıtlar" sekmesinin altında.
-            return .records
+            return .reports
         }
     }
 
@@ -190,12 +192,12 @@ struct AppRouter: View {
         switch tab {
         case .garage:
             GarageView()
-        case .assistant:
-            AssistantView()
         case .todos:
             TodosView()
         case .records:
             RecordsView()
+        case .reports:
+            ReportsView()
         }
     }
 }

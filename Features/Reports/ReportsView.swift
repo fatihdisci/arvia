@@ -8,10 +8,9 @@ import Charts
 
 struct ReportsView: View {
     @EnvironmentObject private var paywallService: PaywallService
+    @EnvironmentObject private var navigationRouter: AppNavigationRouter
     @Query(sort: \Expense.date, order: .reverse) private var allExpenses: [Expense]
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
-
-    @Binding var segment: RecordsView.Segment
 
     @State private var selectedVehicleId: UUID?
     @State private var selectedYear: Int
@@ -23,8 +22,7 @@ struct ReportsView: View {
 
     private let currentYear = Calendar.current.component(.year, from: Date())
 
-    init(segment: Binding<RecordsView.Segment>) {
-        self._segment = segment
+    init() {
         _selectedYear = State(initialValue: Calendar.current.component(.year, from: Date()))
     }
 
@@ -118,57 +116,63 @@ struct ReportsView: View {
         return "Geçen yıla benzer seviyede"
     }
 
-    // Not: "Kayıtlar" sekmesi altında (RecordsView) segment olarak gösterilir.
-    // Kendi NavigationStack'i yok — üst konteynerin nav bar'ını kullanır. Segment
-    // picker'ı kendi safeAreaInset'imizde tutuyoruz (HistoryView.swift'teki aynı
-    // desen) — RecordsView'ın kendi Group'unda tutmak Geçmiş tarafında üst bara
-    // kaçma hatasına yol açıyordu; burada List yok ama tutarlılık ve gelecekte
-    // olası bir List eklenmesi için aynı yerleşim korunuyor.
+    // 1.1.0'da "Raporlar" kendi ana sekmesi — önceden "Kayıtlar" altında
+    // segment'ti (bkz. git log). Kendi NavigationStack'ini burada açar.
     var body: some View {
-        Group {
-            if allExpenses.isEmpty {
-                EmptyStateView(
-                    icon: "chart.bar.fill",
-                    title: "Henüz rapor oluşmadı",
-                    description: "Masraf ve bakım kayıtları ekledikçe aracının maliyet özeti burada oluşur.",
-                    actionTitle: "Masraf Ekle",
-                    action: { showAddExpense = true }
-                )
-            } else {
-                reportContent
-            }
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            RecordsSegmentPicker(segment: $segment)
-                .background(Color.appBackground)
-        }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button { showAddExpense = true } label: {
-                    Image(systemName: "plus")
-                        .font(.body)
-                        .foregroundColor(AppColors.accentPrimary)
-                }
-                .accessibilityLabel("Masraf Ekle")
-            }
-        }
-        .sheet(isPresented: $showAddExpense) { ExpenseFormView() }
-        .sheet(isPresented: $showReportsPaywall) { PaywallView(feature: .advancedReports) }
-        .sheet(item: $saleFileVehicle) { vehicle in
-            if PaywallService.shared.canCreateSaleFile() {
-                SaleFileView(vehicle: vehicle)
-            } else {
-                PaywallView(feature: .saleFileExport)
-            }
-        }
-        .confirmationDialog("Satış dosyası hangi araç için?", isPresented: $showVehiclePicker) {
-            ForEach(vehicles) { v in
-                Button(v.plate.isEmpty ? v.fullName : "\(v.plate) · \(v.fullName)") {
-                    openSaleFile(for: v)
+        NavigationStack {
+            Group {
+                if allExpenses.isEmpty {
+                    EmptyStateView(
+                        icon: "chart.bar.fill",
+                        title: "Henüz rapor oluşmadı",
+                        description: "Masraf ve bakım kayıtları ekledikçe aracının maliyet özeti burada oluşur.",
+                        actionTitle: "Masraf Ekle",
+                        action: { showAddExpense = true }
+                    )
+                } else {
+                    reportContent
                 }
             }
-            Button("Vazgeç", role: .cancel) {}
+            .background(Color.appBackground.ignoresSafeArea())
+            .navigationTitle("Raporlar")
+            .toolbarTitleDisplayMode(.inlineLarge)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button { showAddExpense = true } label: {
+                        Image(systemName: "plus")
+                            .font(.body)
+                            .foregroundColor(AppColors.accentPrimary)
+                    }
+                    .accessibilityLabel("Masraf Ekle")
+                }
+            }
+            .sheet(isPresented: $showAddExpense) { ExpenseFormView() }
+            .sheet(isPresented: $showReportsPaywall) { PaywallView(feature: .advancedReports) }
+            .sheet(item: $saleFileVehicle) { vehicle in
+                if PaywallService.shared.canCreateSaleFile() {
+                    SaleFileView(vehicle: vehicle)
+                } else {
+                    PaywallView(feature: .saleFileExport)
+                }
+            }
+            .confirmationDialog("Satış dosyası hangi araç için?", isPresented: $showVehiclePicker) {
+                ForEach(vehicles) { v in
+                    Button(v.plate.isEmpty ? v.fullName : "\(v.plate) · \(v.fullName)") {
+                        openSaleFile(for: v)
+                    }
+                }
+                Button("Vazgeç", role: .cancel) {}
+            }
         }
+        .onAppear { clearPendingReportsRouteIfNeeded() }
+        .onChange(of: navigationRouter.pendingNotificationRoute) { _, _ in
+            clearPendingReportsRouteIfNeeded()
+        }
+    }
+
+    private func clearPendingReportsRouteIfNeeded() {
+        guard navigationRouter.pendingNotificationRoute == .reports else { return }
+        navigationRouter.clearRouteIfHandled(.reports)
     }
 
     // MARK: - Content
@@ -718,29 +722,23 @@ enum ReportMetrics {
 
 // MARK: - Preview
 #Preview("Raporlar — Dolu") {
-    NavigationStack {
-        ReportsView(segment: .constant(.reports))
-            .navigationTitle("Kayıtlar")
-    }
-    .modelContainer(MockDataProvider.previewContainer)
-    .environmentObject(PaywallService.shared)
+    ReportsView()
+        .modelContainer(MockDataProvider.previewContainer)
+        .environmentObject(PaywallService.shared)
+        .environmentObject(AppNavigationRouter.shared)
 }
 
 #Preview("Raporlar — Dark Mode") {
-    NavigationStack {
-        ReportsView(segment: .constant(.reports))
-            .navigationTitle("Kayıtlar")
-    }
-    .modelContainer(MockDataProvider.previewContainer)
-    .environmentObject(PaywallService.shared)
+    ReportsView()
+        .modelContainer(MockDataProvider.previewContainer)
+        .environmentObject(PaywallService.shared)
+        .environmentObject(AppNavigationRouter.shared)
 }
 
 #Preview("Raporlar — Dynamic Type") {
-    NavigationStack {
-        ReportsView(segment: .constant(.reports))
-            .navigationTitle("Kayıtlar")
-    }
-    .modelContainer(MockDataProvider.previewContainer)
-    .environmentObject(PaywallService.shared)
-    .environment(\.dynamicTypeSize, .accessibility1)
+    ReportsView()
+        .modelContainer(MockDataProvider.previewContainer)
+        .environmentObject(PaywallService.shared)
+        .environmentObject(AppNavigationRouter.shared)
+        .environment(\.dynamicTypeSize, .accessibility1)
 }

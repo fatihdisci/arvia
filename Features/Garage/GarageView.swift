@@ -220,8 +220,11 @@ struct GarageView: View {
                         showProIntro = false
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                             if paywallService.isPro {
-                                // Pro zaten aktif: Asistan sekmesine yönlendir
-                                navigationRouter.selectedTab = .assistant
+                                // Pro zaten aktif: Akıllı Sürüş Asistanı artık ayrı bir sekme
+                                // değil — mevcut aracın bakım planını doğrudan aç.
+                                if currentVehicle != nil {
+                                    showMaintenancePlan = true
+                                }
                             } else {
                                 paywallFeature = .secondVehicle
                                 showPaywall = true
@@ -893,7 +896,9 @@ struct GarageView: View {
         if paywallService.isPro {
             switch feature {
             case .assistant:
-                navigationRouter.selectedTab = .assistant
+                if currentVehicle != nil {
+                    showMaintenancePlan = true
+                }
             case .receiptScan:
                 if currentVehicle != nil {
                     showReceiptScan = true
