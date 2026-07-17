@@ -13,14 +13,9 @@ struct VehicleDossierApp: App {
     let startupWarning: String?
     @StateObject private var paywallService = PaywallService.shared
     @StateObject private var navigationRouter = AppNavigationRouter.shared
-    @AppStorage("onboarding_completed") private var onboardingCompleted = false
-    /// Onboarding sonrası açılacak sheet tipi — her durumda tek tip wizard kullanılır.
-    @State private var postOnboardingSheet: PostOnboardingSheet?
+    @AppStorage(OnboardingConstants.completedKey) private var onboardingCompleted = false
+    @AppStorage(OnboardingConstants.versionKey) private var onboardingVersion = 0
     @State private var showStartupWarning = false
-    private enum PostOnboardingSheet: Identifiable {
-        case wizard
-        var id: String { "wizard" }
-    }
 
     init() {
         Self.configureAppearance()
@@ -129,60 +124,47 @@ struct VehicleDossierApp: App {
 
     var body: some Scene {
         WindowGroup {
+            // NOT: Onboarding akışı da SwiftData ve PaywallService'e ihtiyaç duyar
+            // (ilk araç adım 2'de oluşturulur, ilk değer anında masraf/belge
+            // formları sunulur). Bu yüzden container ve environment nesneleri
+            // OnboardingGate'i SARAR — hem onboarding hem uygulama aynı ortamı alır.
             OnboardingGate {
                 BrandIntroView {
                     AppRouter()
                 }
-                .modelContainer(modelContainer)
-                .environmentObject(paywallService)
-                .environmentObject(navigationRouter)
-                .environment(\.locale, Locale(identifier: "tr_TR"))
-                .task {
-                    #if DEBUG
-                    if ProcessInfo.processInfo.arguments.contains("-ArviaSeedDemoData") {
-                        DemoDataSeeder.seed(context: modelContainer.mainContext)
-                    }
-                    #endif
-                    navigationRouter.configureNotificationDelegate()
-                    NotificationService.shared.clearBadge()
-                    await scheduleRetentionNotifications()
+            }
+            .modelContainer(modelContainer)
+            .environmentObject(paywallService)
+            .environmentObject(navigationRouter)
+            .environment(\.locale, Locale(identifier: "tr_TR"))
+            .task {
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-ArviaSeedDemoData") {
+                    DemoDataSeeder.seed(context: modelContainer.mainContext)
                 }
-                .onChange(of: onboardingCompleted) { _, completed in
-                    if completed {
-                        // App sil-yeniden yükle senaryosunda CloudKit sync açıkken
-                        // SwiftData araç verileri iCloud'tan geri gelir, ama
-                        // `onboarding_completed` AppStorage sıfırlanmış olduğu için
-                        // onboarding yeniden gösterilir. Onboarding tamamlanınca
-                        // wizard'ı koşulsuz açmak kullanıcının zaten sahip olduğu
-                        // aracı ikinci kez eklemesine (kopyaya) yol açar.
-                        // Bu yüzden: SwiftData'da herhangi bir Vehicle kaydı varsa
-                        // (aktif veya arşivli — önemli olan veri tabanında iz olması)
-                        // wizard'ı atlıyoruz. Yeni kullanıcıda kayıt sayısı 0 →
-                        // wizard normal açılır.
-                        do {
-                            let existingVehicles = try modelContainer.mainContext.fetchCount(FetchDescriptor<Vehicle>())
-                            if existingVehicles == 0 {
-                                postOnboardingSheet = .wizard
-                            }
-                        } catch {
-                            // Okuma hatasında 0 varsaymak kopya araç ve limit atlatma riski yaratır.
-                            Self.logger.error("Onboarding vehicle count failed: \(error.localizedDescription, privacy: .public)")
-                        }
-                    }
-                }
-                .sheet(item: $postOnboardingSheet) { _ in
-                    VehicleWizardView()
-                        .modelContainer(modelContainer)
-                        .environmentObject(paywallService)
-                }
-                .preferredColorScheme(.dark)
-                .alert("iCloud Eşzamanlama Kullanılamıyor", isPresented: $showStartupWarning) {
-                    Button("Tamam", role: .cancel) {}
-                } message: {
-                    Text(startupWarning ?? "")
-                }
+                #endif
+                migrateExistingUserOnboardingVersion()
+                navigationRouter.configureNotificationDelegate()
+                NotificationService.shared.clearBadge()
+                await scheduleRetentionNotifications()
+            }
+            .preferredColorScheme(.dark)
+            .alert("iCloud Eşzamanlama Kullanılamıyor", isPresented: $showStartupWarning) {
+                Button("Tamam", role: .cancel) {}
+            } message: {
+                Text(startupWarning ?? "")
             }
         }
+    }
+
+    /// Eski kullanıcı (onboarding'i zaten tamamlamış) 1.1.0'a güncellediğinde
+    /// yeni amaç-odaklı akışa YENİDEN sokulmaz. Sürüm sessizce güncellenir; bir
+    /// "yenilikler" ekranı gösterilmez (karar: sessiz migration). Yeni kullanıcı
+    /// akışı tamamlayınca sürümü kendisi yazar.
+    private func migrateExistingUserOnboardingVersion() {
+        guard onboardingCompleted,
+              onboardingVersion < OnboardingConstants.currentVersion else { return }
+        onboardingVersion = OnboardingConstants.currentVersion
     }
 
     // MARK: - Retention Notifications

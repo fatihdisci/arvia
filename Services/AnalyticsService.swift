@@ -52,6 +52,8 @@ enum AnalyticsParameterKey: String {
     case subscriptionProduct = "subscription_product"
     case sourceScreen = "source_screen"
     case onboardingVersion = "onboarding_version"
+    /// İzin/sonuç eventleri için (ör. bildirim izni verildi mi). Boolean değer.
+    case granted = "granted"
 }
 
 /// Yalnızca tip-güvenli değerler. Serbest metin (kullanıcı girişi) buraya taşınmamalı —

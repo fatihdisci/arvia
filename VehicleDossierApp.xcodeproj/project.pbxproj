@@ -54,6 +54,7 @@
 		8C7FFCB7FFF845AA8EE42147 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DF8F94C1F3A4EC0962F69BD /* ShareSheet.swift */; };
 		90472D5EF3F44BE88AED1399 /* PaywallService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F046CE22CAFC48EF885F1813 /* PaywallService.swift */; };
 		938AB55FE3448B27D70E566C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B78599DD92099ED5CA8E93AF /* OnboardingView.swift */; };
+		ONBOMODL0002ONBOMODL0002 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONBOMODL0001ONBOMODL0001 /* OnboardingModels.swift */; };
 		961DC086BC9F16547AD56B37 /* DataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7277428D313FD016DC172163 /* DataExportService.swift */; };
 		A11B22C33D44E55F66A77B02 /* VehicleInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11B22C33D44E55F66A77B01 /* VehicleInsight.swift */; };
 		A11B22C33D44E55F66A77B04 /* VehicleInsightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11B22C33D44E55F66A77B03 /* VehicleInsightService.swift */; };
@@ -223,6 +224,7 @@
 		AIP1TPRX0001AIP1TPRX0001 /* Tests/AIProxyServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/AIProxyServiceTests.swift; sourceTree = SOURCE_ROOT; };
 		B19373C4936A4A80A33AE072 /* SaleFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaleFile.swift; sourceTree = "<group>"; };
 		B78599DD92099ED5CA8E93AF /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		ONBOMODL0001ONBOMODL0001 /* OnboardingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModels.swift; sourceTree = "<group>"; };
 		BB11CC22DD33EE44FF55AA6600 /* SaleFilePreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaleFilePreviewCard.swift; sourceTree = "<group>"; };
 		BCDA6923153449448599B46A /* Vehicle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Vehicle.swift; sourceTree = "<group>"; };
 		BDF8A5FF5F314A8C897C56F4 /* GarageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageView.swift; sourceTree = "<group>"; };
@@ -627,6 +629,7 @@
 			isa = PBXGroup;
 			children = (
 				B78599DD92099ED5CA8E93AF /* OnboardingView.swift */,
+				ONBOMODL0001ONBOMODL0001 /* OnboardingModels.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -770,6 +773,7 @@
 				690B9BE68E864ACA853C6948 /* RehberIntroBanner.swift in Sources */,
 				AA11BB22CC33DD44EE55FF6601 /* QuickOdometerUpdateSheet.swift in Sources */,
 				938AB55FE3448B27D70E566C /* OnboardingView.swift in Sources */,
+				ONBOMODL0002ONBOMODL0002 /* OnboardingModels.swift in Sources */,
 				62CFD3078AB54AE98354161B /* GarageView.swift in Sources */,
 				8AE6925398844627A016DFC7 /* ProIntroModal.swift in Sources */,
 				BCB1308F27DB4AB9BCEAF2D1 /* VehicleWizardView.swift in Sources */,

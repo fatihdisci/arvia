@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - Usage Profile Flow (Akıllı Sürüş Asistanı — Layer A)
 // 5 kısa adım (her ekranda tek soru) + özet. Her adım atlanabilir. İlerleme göstergesi.
-// Görsel dil: OnboardingView deseni + tasarım token'ları. Emoji yok, gradient yok.
+// Görsel dil: onboarding deseni + tasarım token'ları. Emoji yok, gradient yok.
 struct UsageProfileFlowView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
