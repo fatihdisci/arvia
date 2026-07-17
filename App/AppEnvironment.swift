@@ -18,7 +18,5 @@ enum AppEnvironment {
     // Capability eklenmeden flag açılırsa ModelContainer init başarısız olur (fatalError).
     static let isCloudKitSyncEnabled = true
     static let isPartnerVerificationEnabled = false
-    static let isSupabaseEnabled = false
-    static let isCommunityEnabled = true
 
 }

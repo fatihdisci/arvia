@@ -12,7 +12,6 @@ struct VehicleDossierApp: App {
     let modelContainer: ModelContainer
     let startupWarning: String?
     @StateObject private var paywallService = PaywallService.shared
-    @StateObject private var communityAuthService = CommunityAuthService.shared
     @StateObject private var navigationRouter = AppNavigationRouter.shared
     @AppStorage("onboarding_completed") private var onboardingCompleted = false
     /// Onboarding sonrası açılacak sheet tipi — her durumda tek tip wizard kullanılır.
@@ -136,7 +135,6 @@ struct VehicleDossierApp: App {
                 }
                 .modelContainer(modelContainer)
                 .environmentObject(paywallService)
-                .environmentObject(communityAuthService)
                 .environmentObject(navigationRouter)
                 .environment(\.locale, Locale(identifier: "tr_TR"))
                 .task {
@@ -147,7 +145,6 @@ struct VehicleDossierApp: App {
                     #endif
                     navigationRouter.configureNotificationDelegate()
                     NotificationService.shared.clearBadge()
-                    await communityAuthService.restoreSession()
                     await scheduleRetentionNotifications()
                 }
                 .onChange(of: onboardingCompleted) { _, completed in

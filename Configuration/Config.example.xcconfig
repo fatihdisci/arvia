@@ -6,11 +6,6 @@
 // Format: Önce düz build setting, sonra INFOPLIST_KEY_ ile Info.plist'e aktar.
 // https:/$()/  — $() boş string'e expand olur, // comment sorununu engeller.
 
-SUPABASE_URL = https:/$()/YOUR-PROJECT.supabase.co
-SUPABASE_ANON_KEY = YOUR_SUPABASE_ANON_PUBLIC_KEY
-INFOPLIST_KEY_SUPABASE_URL = $(SUPABASE_URL)
-INFOPLIST_KEY_SUPABASE_ANON_KEY = $(SUPABASE_ANON_KEY)
-
 // Arvia AI proxy (Vercel edge). Base URL + shared header secret.
 // Secret is obfuscation only. The proxy additionally verifies the StoreKit 2
 // transaction ID through Apple Server API and enforces entitlement/global quotas.

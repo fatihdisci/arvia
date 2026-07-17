@@ -3,8 +3,9 @@ import UserNotifications
 
 // MARK: - App Router
 // Ana tab navigation yapısı.
-// 5 sekme: Garaj, Asistan, Yapılacaklar, Kayıtlar, Topluluk
+// 4 sekme: Garaj, Asistan, Yapılacaklar, Kayıtlar
 // Not: Belgeler sekmesi kaldırıldı — belge erişimi Araç Detay'da.
+// Not: Topluluk sekmesi 1.1.0'da kaldırıldı.
 // Not: "Geçmiş" ve "Raporlar" tek "Kayıtlar" sekmesinde birleşti.
 //       Akıllı sürüş asistanı (kullanım profili + kişisel bakım planı) "Asistan" sekmesinde toplandı.
 
@@ -13,7 +14,6 @@ enum AppTab: String, CaseIterable {
     case assistant
     case todos
     case records
-    case community
 
     var title: LocalizedStringKey {
         switch self {
@@ -21,7 +21,6 @@ enum AppTab: String, CaseIterable {
         case .assistant: return "Asistan"
         case .todos: return "Yapılacaklar"
         case .records: return "Kayıtlar"
-        case .community: return "Topluluk"
         }
     }
 
@@ -31,7 +30,6 @@ enum AppTab: String, CaseIterable {
         case .assistant: return "steeringwheel"
         case .todos: return "checklist"
         case .records: return "tray.full"
-        case .community: return "person.3"
         }
     }
 }
@@ -198,8 +196,6 @@ struct AppRouter: View {
             TodosView()
         case .records:
             RecordsView()
-        case .community:
-            CommunityFeedView()
         }
     }
 }

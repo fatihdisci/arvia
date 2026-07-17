@@ -275,9 +275,6 @@ final class PaywallService: ObservableObject {
         canAccess(.assistant)
     }
 
-    // Forum yazma artık Pro gerektirmez — auth yeterli.
-    // Community gate'ler doğrudan CommunityAuthService üzerinden yapılır.
-
     // MARK: - Feature display
     static let freeFeatures: [(icon: String, title: String)] = [
         ("car", "1 araç"),

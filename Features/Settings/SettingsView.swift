@@ -10,7 +10,6 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var paywallService: PaywallService
-    @EnvironmentObject private var communityAuth: CommunityAuthService
     @EnvironmentObject private var navigationRouter: AppNavigationRouter
 
     @State private var showPaywall = false
@@ -25,11 +24,8 @@ struct SettingsView: View {
     @State private var showAITestResult = false
     @State private var aiTestInFlight = false
     #endif
-    @State private var showSignOutConfirmation = false
     @State private var showDeleteAllConfirmation = false
-    @State private var showDeleteAccountConfirmation = false
-    @State private var isDeletingAccount = false
-    @State private var deleteAccountError: String?
+    @State private var deleteDataError: String?
     @State private var isExporting = false
     @State private var exportMessage: String?
     @State private var exportURL: URL?
@@ -101,27 +97,11 @@ struct SettingsView: View {
                 Text(aiTestResult ?? "")
             }
             #endif
-            .confirmationDialog("Çıkış Yap", isPresented: $showSignOutConfirmation) {
-                Button("Çıkış Yap", role: .destructive) {
-                    Task { await signOut() }
-                }
-                Button("İptal", role: .cancel) {}
-            } message: {
-                Text("Oturumun kapatılacak. Yerel verilerin (araçlar, masraflar, belgeler) silinmez. Topluluk özelliklerini kullanmak için tekrar giriş yapabilirsin.")
-            }
             .confirmationDialog("Tüm Verileri Sil", isPresented: $showDeleteAllConfirmation) {
                 Button("Tüm Verileri Sil", role: .destructive) { deleteAllData() }
                 Button("İptal", role: .cancel) {}
             } message: {
                 Text("Bu işlem geri alınamaz. Tüm araçlar, hatırlatıcılar, masraflar, bakım kayıtları, belgeler ve raporlar kalıcı olarak silinir.")
-            }
-            .confirmationDialog("Hesabı ve verileri sil?", isPresented: $showDeleteAccountConfirmation) {
-                Button("Hesabı Kalıcı Olarak Sil", role: .destructive) {
-                    Task { await deleteAccountAndData() }
-                }
-                Button("Vazgeç", role: .cancel) {}
-            } message: {
-                Text("Tüm verilerin kalıcı olarak silinecek: araçlar, belgeler, topluluk gönderileri, yorumlar, beğeniler ve profil bilgilerin. Apple ile tekrar giriş yaptığında sıfırdan bir kullanıcı olarak başlarsın. Bu işlem GERİ ALINAMAZ.")
             }
             .sheet(isPresented: $showShareSheet) {
                 if let url = exportURL {
@@ -393,31 +373,10 @@ struct SettingsView: View {
                 Label("Tüm Verileri Sil", systemImage: "trash")
             }
 
-            if communityAuth.isAuthenticated {
-                Button(role: .destructive) {
-                    showSignOutConfirmation = true
-                } label: {
-                    Label("Çıkış Yap", systemImage: "rectangle.portrait.and.arrow.right")
-                }
-
-                Button(role: .destructive) {
-                    showDeleteAccountConfirmation = true
-                } label: {
-                    HStack {
-                        Label("Hesabı ve Verileri Sil", systemImage: "person.crop.circle.badge.xmark")
-                        if isDeletingAccount {
-                            Spacer()
-                            ProgressView()
-                        }
-                    }
-                }
-                .disabled(isDeletingAccount)
-
-                if let error = deleteAccountError {
-                    Text(error)
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.critical)
-                }
+            if let error = deleteDataError {
+                Text(error)
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.critical)
             }
         } header: {
             Text("Veri Yönetimi")
@@ -666,37 +625,11 @@ struct SettingsView: View {
         }
     }
 
-    private func deleteAccountAndData() async {
-        isDeletingAccount = true
-        deleteAccountError = nil
-
-        do {
-            // Önce sunucu hesabını sil. Yerel veriyi önce silip RPC hata alırsa
-            // kullanıcı uzaktaki hesabı tekrar silmek için oturum/bağlam kaybeder.
-            if communityAuth.isAuthenticated {
-                try await communityAuth.deleteAccount()
-            }
-
-            try deleteAllLocalData()
-
-            // Pro state'i sıfırla — sadece dev mode simülasyonunda; gerçek StoreKit
-            // entitlement'ı asla ezilmemeli.
-            if paywallService.isDevMode {
-                paywallService.disableProForDev()
-            }
-
-            dismiss()
-        } catch {
-            deleteAccountError = "Silme işlemi başarısız oldu: \(error.localizedDescription)"
-        }
-        isDeletingAccount = false
-    }
-
     private func deleteAllData() {
         do {
             try deleteAllLocalData()
         } catch {
-            deleteAccountError = "Veriler silinemedi: \(error.localizedDescription)"
+            deleteDataError = "Veriler silinemedi: \(error.localizedDescription)"
             return
         }
 
@@ -743,11 +676,6 @@ struct SettingsView: View {
         aiCloudEnabled = false
         aiConsentAccepted = false
     }
-
-    private func signOut() async {
-        await communityAuth.signOut()
-        dismiss()
-    }
 }
 
 // MARK: - Preview
@@ -755,12 +683,10 @@ struct SettingsView: View {
     SettingsView()
         .modelContainer(MockDataProvider.previewContainer)
         .environmentObject(PaywallService.shared)
-        .environmentObject(CommunityAuthService.shared)
 }
 
 #Preview("Ayarlar — Dark") {
     SettingsView()
         .modelContainer(MockDataProvider.previewContainer)
         .environmentObject(PaywallService.shared)
-        .environmentObject(CommunityAuthService.shared)
 }
