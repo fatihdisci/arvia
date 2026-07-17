@@ -48,6 +48,11 @@ struct InspectionReportFormView: View {
         allDocuments.filter { $0.vehicleId == selectedVehicleId }
     }
 
+    /// Kaydet için kesin zorunlu alanlar: firma adı ve araç.
+    private var canSave: Bool {
+        !providerName.trimmingCharacters(in: .whitespaces).isEmpty && selectedVehicleId != nil
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -71,7 +76,8 @@ struct InspectionReportFormView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isEditing ? "Kaydet" : "Ekle", action: save)
                         .font(AppTypography.bodyMedium)
-                        .foregroundColor(AppColors.accentPrimary)
+                        .foregroundColor(canSave ? AppColors.accentPrimary : AppColors.textTertiary)
+                        .disabled(!canSave)
                 }
             }
             .onAppear {

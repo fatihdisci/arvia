@@ -330,7 +330,8 @@ struct VehicleEditView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Kaydet", action: saveChanges)
                         .font(AppTypography.bodyMedium)
-                        .foregroundColor(AppColors.accentPrimary)
+                        .foregroundColor(canSave ? AppColors.accentPrimary : AppColors.textTertiary)
+                        .disabled(!canSave)
                 }
             }
             .sheet(isPresented: $showBrandPicker) {
@@ -423,6 +424,15 @@ struct VehicleEditView: View {
     }
 
     // MARK: - Save
+    /// Kaydet için kesin zorunlu alanların (plaka, marka, model) boş olmaması.
+    /// Plaka uzunluğu/yıl aralığı gibi format doğrulamaları kaydetme anındaki
+    /// hata mesajlarında ele alınır (fazla kapatma yok).
+    private var canSave: Bool {
+        !plate.trimmingCharacters(in: .whitespaces).isEmpty
+            && !brand.trimmingCharacters(in: .whitespaces).isEmpty
+            && !model.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     private func saveChanges() {
         let errors = validate()
         if errors.isEmpty {

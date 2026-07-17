@@ -71,6 +71,13 @@ struct DocumentFormView: View {
     private var isEditing: Bool { existingDocument != nil }
     private var hasExistingFile: Bool { existingDocument?.localFileName.isEmpty == false }
 
+    /// Kaydet için kesin zorunlu alanlar: başlık, araç ve (yeni kayıtta) seçili dosya.
+    private var canSave: Bool {
+        !title.trimmingCharacters(in: .whitespaces).isEmpty
+            && selectedVehicleId != nil
+            && (isEditing || importedFileData != nil)
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -93,8 +100,8 @@ struct DocumentFormView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isEditing ? "Kaydet" : "Ekle", action: saveDocument)
                         .font(AppTypography.bodyMedium)
-                        .foregroundColor(AppColors.accentPrimary)
-                        .disabled(isImporting)
+                        .foregroundColor((canSave && !isImporting) ? AppColors.accentPrimary : AppColors.textTertiary)
+                        .disabled(!canSave || isImporting)
                 }
             }
             .onAppear {

@@ -51,6 +51,13 @@ struct ExpenseFormView: View {
     private var amount: Double? { Double(amountText.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")) }
     private var odometer: Int? { Int(odometerText.sanitizedIntInput()) }
 
+    /// Kaydet butonunun etkin olması için gereken minimum (kesin zorunlu) alanlar.
+    /// Format/aralık doğrulamaları kaydetme anındaki hata mesajlarında ele alınır;
+    /// burada yalnızca "boş zorunlu alan" durumunda buton kapatılır (fazla kapatma yok).
+    private var canSave: Bool {
+        (amount ?? 0) > 0 && selectedVehicleId != nil
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -94,7 +101,8 @@ struct ExpenseFormView: View {
                     Button(isEditing ? "Kaydet" : "Ekle", action: saveExpense)
                         .buttonStyle(.borderless)
                         .font(AppTypography.bodyMedium)
-                        .foregroundColor(AppColors.accentPrimary)
+                        .foregroundColor(canSave ? AppColors.accentPrimary : AppColors.textTertiary)
+                        .disabled(!canSave)
                 }
             }
             .onAppear {

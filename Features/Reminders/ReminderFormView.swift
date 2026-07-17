@@ -98,6 +98,15 @@ struct ReminderFormView: View {
         return selectedTemplate.displayName
     }
 
+    /// Kaydet için kesin zorunlu alanlar: araç seçimi ve (özel şablonda) ad.
+    private var canSave: Bool {
+        guard selectedVehicleId != nil else { return false }
+        if selectedTemplate == .custom {
+            return !customTitle.trimmingCharacters(in: .whitespaces).isEmpty
+        }
+        return true
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -122,7 +131,8 @@ struct ReminderFormView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isEditing ? "Kaydet" : "Ekle", action: saveReminder)
                         .font(AppTypography.bodyMedium)
-                        .foregroundColor(AppColors.accentPrimary)
+                        .foregroundColor(canSave ? AppColors.accentPrimary : AppColors.textTertiary)
+                        .disabled(!canSave)
                 }
             }
             .onAppear {

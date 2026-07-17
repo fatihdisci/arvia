@@ -66,6 +66,12 @@ struct ServiceRecordFormView: View {
 
     private var isEditing: Bool { existingRecord != nil }
     private var odometer: Int? { Int(odometerText.trimmingCharacters(in: .whitespaces)) }
+
+    /// Kaydet için kesin zorunlu alan: araç seçimi. Diğer alanların format/aralık
+    /// doğrulaması kaydetme anındaki hata mesajlarında ele alınır (fazla kapatma yok).
+    private var canSave: Bool {
+        selectedVehicleId != nil
+    }
     private var laborCost: Double? { parseCost(laborCostText) }
     private var partsCost: Double? { parseCost(partsCostText) }
     private var totalCost: Double? { parseCost(totalCostText) }
@@ -103,7 +109,8 @@ struct ServiceRecordFormView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isEditing ? "Kaydet" : "Ekle", action: saveRecord)
                         .font(AppTypography.bodyMedium)
-                        .foregroundColor(AppColors.accentPrimary)
+                        .foregroundColor(canSave ? AppColors.accentPrimary : AppColors.textTertiary)
+                        .disabled(!canSave)
                 }
             }
             .onAppear {
