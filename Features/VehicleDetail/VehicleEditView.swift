@@ -519,6 +519,7 @@ struct VehicleEditView: View {
             }
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.success)
+            AnalyticsService.shared.log(.vehicleUpdated)
             Task { await VehicleContextRefreshService.refreshAfterVehicleContextChange(context: modelContext) }
         } catch {
             modelContext.rollback()

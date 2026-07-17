@@ -431,6 +431,7 @@ struct SaleFileView: View {
             modelContext.insert(saleFile)
             try modelContext.save()
             generatedPDFURL = url
+            AnalyticsService.shared.log(.salesPdfCreated)
         } catch {
             modelContext.rollback()
             if let outputURL {

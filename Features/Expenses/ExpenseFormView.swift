@@ -344,6 +344,10 @@ struct ExpenseFormView: View {
             try modelContext.save()
             let impact = UINotificationFeedbackGenerator()
             impact.notificationOccurred(.success)
+            AnalyticsService.shared.log(
+                isEditing ? .expenseUpdated : .expenseAdded,
+                parameters: [.expenseCategory: .string(String(describing: selectedCategory))]
+            )
             Task { await VehicleContextRefreshService.refreshAfterVehicleContextChange(context: modelContext) }
             dismiss()
         } catch {

@@ -187,6 +187,10 @@ struct PaywallView: View {
                 // Önceki oturumdan kalan bayat hatayı, paywall açılır açılmaz
                 // yanıltıcı bir uyarı göstermemek için temizle.
                 paywallService.purchaseError = nil
+                AnalyticsService.shared.log(
+                    .paywallViewed,
+                    parameters: [.paywallPlacement: .string(String(describing: feature))]
+                )
             }
         }
         .presentationDetents([.large])
@@ -500,12 +504,19 @@ struct PaywallView: View {
         }
 
         isPurchasing = true
+        let productParams: [AnalyticsParameterKey: AnalyticsParameterValue] = [.subscriptionProduct: .string(product.id)]
+        AnalyticsService.shared.log(.purchaseStarted, parameters: productParams)
         Task {
             let success = await paywallService.purchase(product)
             await MainActor.run {
                 isPurchasing = false
                 if success {
+                    AnalyticsService.shared.log(.purchaseCompleted, parameters: productParams)
                     dismiss()
+                } else if paywallService.purchaseError != nil {
+                    // İptal (userCancelled) purchaseError'ı nil bırakır; yalnızca
+                    // gerçek başarısızlıkta (pending dahil) failed loglanır.
+                    AnalyticsService.shared.log(.purchaseFailed, parameters: productParams)
                 }
             }
         }
@@ -518,6 +529,7 @@ struct PaywallView: View {
             await MainActor.run {
                 isRestoring = false
                 if paywallService.isPro {
+                    AnalyticsService.shared.log(.purchaseRestored)
                     dismiss()
                 }
             }

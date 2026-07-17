@@ -369,10 +369,12 @@ struct ReminderListView: View {
             }
         }
 
+        let completedType = reminder.type
         do {
             try modelContext.save()
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             NotificationService.shared.cancelReminder(reminder)
+            AnalyticsService.shared.log(.reminderCompleted, parameters: [.reminderType: .string(String(describing: completedType))])
             Task { await NotificationRefreshService.refreshAll(context: modelContext) }
         } catch {
             modelContext.rollback()
@@ -382,10 +384,12 @@ struct ReminderListView: View {
 
     private func deleteReminder(_ reminder: Reminder) {
         let reminderID = reminder.id
+        let reminderType = reminder.type
         modelContext.delete(reminder)
         do {
             try modelContext.save()
             NotificationService.shared.cancelReminder(id: reminderID)
+            AnalyticsService.shared.log(.reminderDeleted, parameters: [.reminderType: .string(String(describing: reminderType))])
             Task { await NotificationRefreshService.refreshAll(context: modelContext) }
         } catch {
             modelContext.rollback()

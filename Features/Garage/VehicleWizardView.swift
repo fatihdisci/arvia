@@ -386,6 +386,12 @@ struct VehicleWizardView: View {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
 
+        let vehicleCount = (try? modelContext.fetchCount(FetchDescriptor<Vehicle>())) ?? 0
+        AnalyticsService.shared.log(
+            .vehicleAdded,
+            parameters: [.vehicleCountBucket: AnalyticsService.vehicleCountBucket(vehicleCount)]
+        )
+
         Task {
             for reminder in reminders {
                 await NotificationService.shared.scheduleReminder(reminder)

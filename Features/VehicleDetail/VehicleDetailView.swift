@@ -729,6 +729,8 @@ struct VehicleDetailView: View {
             return
         }
 
+        AnalyticsService.shared.log(.vehicleDeleted)
+
         // Bildirimleri ancak veri silme işlemi kalıcılaştıktan sonra iptal et.
         NotificationRefreshService.cancelAllForVehicle(reminderIDs: vehicleReminderIDs)
         for fileName in documentFileNames {

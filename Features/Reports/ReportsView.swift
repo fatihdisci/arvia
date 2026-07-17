@@ -164,7 +164,10 @@ struct ReportsView: View {
                 Button("Vazgeç", role: .cancel) {}
             }
         }
-        .onAppear { clearPendingReportsRouteIfNeeded() }
+        .onAppear {
+            clearPendingReportsRouteIfNeeded()
+            AnalyticsService.shared.log(.reportViewed, parameters: [.sourceScreen: .string("reports_tab")])
+        }
         .onChange(of: navigationRouter.pendingNotificationRoute) { _, _ in
             clearPendingReportsRouteIfNeeded()
         }

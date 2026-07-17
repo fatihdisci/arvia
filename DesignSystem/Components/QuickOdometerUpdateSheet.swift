@@ -69,6 +69,7 @@ struct QuickOdometerUpdateSheet: View {
             do {
                 try await VehicleContextRefreshService.updateCurrentOdometer(vehicle: vehicle, newOdometer: value, context: modelContext)
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
+                AnalyticsService.shared.log(.mileageUpdated)
                 dismiss()
             } catch { errorMessage = "Kaydedilemedi: \(error.localizedDescription)" }
         }

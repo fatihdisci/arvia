@@ -495,6 +495,9 @@ struct ServiceRecordFormView: View {
             }
             let impact = UINotificationFeedbackGenerator()
             impact.notificationOccurred(.success)
+            if !isEditing {
+                AnalyticsService.shared.log(.maintenanceAdded)
+            }
             dismiss()
         } catch {
             modelContext.rollback()

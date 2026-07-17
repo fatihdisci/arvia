@@ -379,6 +379,10 @@ struct ReminderFormView: View {
                 try modelContext.save()
                 let impact = UINotificationFeedbackGenerator()
                 impact.notificationOccurred(.success)
+                AnalyticsService.shared.log(
+                    .reminderAdded,
+                    parameters: [.reminderType: .string(String(describing: selectedTemplate))]
+                )
                 Task { await VehicleContextRefreshService.refreshAfterVehicleContextChange(context: modelContext) }
                 dismiss()
             } catch {

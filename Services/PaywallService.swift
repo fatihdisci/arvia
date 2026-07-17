@@ -232,7 +232,14 @@ final class PaywallService: ObservableObject {
                 ))
             }
         }
-        isPro = Self.resolvesPro(from: states)
+        let resolved = Self.resolvesPro(from: states)
+        if resolved != isPro {
+            isPro = resolved
+            AnalyticsService.shared.log(
+                .subscriptionStatusChanged,
+                parameters: [.granted: .bool(resolved)]
+            )
+        }
     }
 
     // MARK: - Limit Checks (MVP policy)

@@ -758,6 +758,9 @@ struct HistoryView: View {
         guard let item = itemToDelete else { return }
         var documentFileName: String?
         var reminderIDsToCancel: [UUID] = []
+        // Analytics: yalnızca masraf silme standart event listesinde. Kategori
+        // (PII değil) silmeden önce yakalanır; save başarılıysa loglanır.
+        let deletedExpenseCategory = (item as? Expense).map { String(describing: $0.category) }
         if let expense = item as? Expense {
             modelContext.delete(expense)
         } else if let service = item as? ServiceRecord {
@@ -781,6 +784,9 @@ struct HistoryView: View {
         do {
             try modelContext.save()
             itemToDelete = nil
+            if let deletedExpenseCategory {
+                AnalyticsService.shared.log(.expenseDeleted, parameters: [.expenseCategory: .string(deletedExpenseCategory)])
+            }
             NotificationService.shared.cancelReminders(ids: reminderIDsToCancel)
             if let documentFileName {
                 do {

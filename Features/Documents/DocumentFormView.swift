@@ -483,8 +483,14 @@ struct DocumentFormView: View {
             }
         }
 
+        // Analytics: yalnızca yeni bir dosya yükleniyorsa upload event'leri anlamlı.
+        let isFileUpload = importedFileData != nil
+        let docCategoryParams: [AnalyticsParameterKey: AnalyticsParameterValue] =
+            [.documentCategory: .string(String(describing: documentType))]
+
         // Yeni dosya varsa kaydet
         if let data = importedFileData, let fileName = importedFileName {
+            AnalyticsService.shared.log(.documentUploadStarted, parameters: docCategoryParams)
             // Geçici dosya oluştur
             let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
             defer { try? FileManager.default.removeItem(at: tempURL) }
@@ -492,6 +498,7 @@ struct DocumentFormView: View {
                 try data.write(to: tempURL)
             } catch {
                 modelContext.rollback()
+                AnalyticsService.shared.log(.documentUploadFailed, parameters: docCategoryParams)
                 errors.append("Geçici dosya oluşturulamadı: \(error.localizedDescription)")
                 validationErrors = errors; return
             }
@@ -512,6 +519,7 @@ struct DocumentFormView: View {
 
             } catch {
                 modelContext.rollback()
+                AnalyticsService.shared.log(.documentUploadFailed, parameters: docCategoryParams)
                 errors.append("Dosya kaydedilemedi: \(error.localizedDescription)")
                 validationErrors = errors; return
             }
@@ -519,6 +527,9 @@ struct DocumentFormView: View {
 
         do {
             try modelContext.save()
+            if isFileUpload {
+                AnalyticsService.shared.log(.documentUploadCompleted, parameters: docCategoryParams)
+            }
             NotificationService.shared.cancelReminders(ids: reminderIDsToCancel)
             if let originalLocalFileName,
                let savedLocalFileName,
@@ -546,6 +557,9 @@ struct DocumentFormView: View {
                 } else {
                     try? DocumentStorageService.shared.deleteFile(savedLocalFileName)
                 }
+            }
+            if isFileUpload {
+                AnalyticsService.shared.log(.documentUploadFailed, parameters: docCategoryParams)
             }
             errors.append("Kayıt sırasında bir hata oluştu. Lütfen tekrar dene.")
             validationErrors = errors
