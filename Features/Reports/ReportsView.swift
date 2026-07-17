@@ -187,24 +187,30 @@ struct ReportsView: View {
 
                 filters
 
-                // Hero metric
-                PremiumMetricHero(
-                    label: selectedYear == currentYear ? "Bu yılki toplam masraf" : "\(String(selectedYear)) yılı toplam masraf",
-                    value: currencyFormat(yearlyTotal),
-                    vehicleName: selectedVehicle.map { $0.plate.isEmpty ? $0.fullName : "\($0.plate) · \($0.fullName)" },
-                    insightLine: paywallService.canAccessAdvancedReports() ? yearTrendLabel : nil
-                )
-
-                basicSummaryGrid
-
-                if paywallService.canAccessAdvancedReports() {
-                    insightCardsGrid
-                    monthlyChart
-                    categorySection
-                    topExpensesSection
-                    saleFileCTA
+                // Seçili araç/yıl filtresi hiç kayıt döndürmüyorsa, yanıltıcı
+                // sıfır grafikler yerine anlamlı bir boş durum göster (Bölüm 8).
+                if filteredExpenses.isEmpty {
+                    filteredEmptyState
                 } else {
-                    advancedReportsLock
+                    // Hero metric
+                    PremiumMetricHero(
+                        label: selectedYear == currentYear ? "Bu yılki toplam masraf" : "\(String(selectedYear)) yılı toplam masraf",
+                        value: currencyFormat(yearlyTotal),
+                        vehicleName: selectedVehicle.map { $0.plate.isEmpty ? $0.fullName : "\($0.plate) · \($0.fullName)" },
+                        insightLine: paywallService.canAccessAdvancedReports() ? yearTrendLabel : nil
+                    )
+
+                    basicSummaryGrid
+
+                    if paywallService.canAccessAdvancedReports() {
+                        insightCardsGrid
+                        monthlyChart
+                        categorySection
+                        topExpensesSection
+                        saleFileCTA
+                    } else {
+                        advancedReportsLock
+                    }
                 }
 
                 Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
@@ -212,6 +218,45 @@ struct ReportsView: View {
             .padding(.vertical, AppSpacing.md)
         }
         .background(Color.appBackground.ignoresSafeArea())
+    }
+
+    // MARK: - Filtered Empty State
+    /// Uygulamada masraf var ama seçili araç/yıl filtresinde yok. Sıfır grafik
+    /// göstermek yanıltıcı olur; bunun yerine ne yapılacağını anlatan sakin bir kart.
+    private var filteredEmptyState: some View {
+        let yearText = selectedYear == currentYear ? "bu yıl" : "\(selectedYear) yılında"
+        let scope = selectedVehicle.map { $0.plate.isEmpty ? $0.fullName : $0.plate }
+        let message = scope.map { "\($0) için \(yearText) masraf kaydı yok." }
+            ?? "\(yearText.capitalized(with: Locale(identifier: "tr_TR"))) için masraf kaydı yok."
+        return VStack(spacing: AppSpacing.md) {
+            Image(systemName: "chart.bar.doc.horizontal")
+                .font(.system(size: 36, weight: .light))
+                .foregroundColor(AppColors.textTertiary)
+            Text(message)
+                .font(AppTypography.bodyMedium)
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.center)
+            Text("Farklı bir yıl seçebilir veya bu döneme masraf ekleyebilirsin.")
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textSecondary)
+                .multilineTextAlignment(.center)
+            Button { showAddExpense = true } label: {
+                Label("Masraf Ekle", systemImage: "plus").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.secondary)
+            .padding(.top, AppSpacing.xs)
+        }
+        .padding(AppSpacing.lg)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .fill(Color.appSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .stroke(AppColors.border, lineWidth: 0.5)
+        )
+        .padding(.horizontal, AppSpacing.screenMarginH)
     }
 
     // MARK: - Free Summary
@@ -451,9 +496,14 @@ struct ReportsView: View {
             }
             .chartYAxis {
                 AxisMarks { value in
-                    AxisValueLabel()
-                        .font(.system(size: 10))
-                        .foregroundStyle(AppColors.textTertiary)
+                    // Büyük tutarlarda eksen etiketi taşmasın diye kısa biçim (B/Mn).
+                    AxisValueLabel {
+                        if let amount = value.as(Double.self) {
+                            Text(compactAxisLabel(amount))
+                                .font(.system(size: 10))
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                    }
                 }
             }
             .frame(height: 180)
@@ -544,7 +594,12 @@ struct ReportsView: View {
 
                     RoundedRectangle(cornerRadius: 2)
                         .fill(AppColors.accentPrimary.opacity(0.55))
-                        .frame(width: max(geo.size.width * CGFloat(item.percentage / 100.0), 4), height: 5)
+                        // Yüzde 0-100 aralığında olmalı; bozuk veriye karşı hem alt
+                        // (görünürlük) hem üst (taşma) sınırını uygula.
+                        .frame(
+                            width: min(max(geo.size.width * CGFloat(item.percentage / 100.0), 4), geo.size.width),
+                            height: 5
+                        )
                 }
             }
             .frame(height: 5)
@@ -698,6 +753,22 @@ struct ReportsView: View {
 
     private func currencyFormat(_ value: Double) -> String {
         Self.currencyFormatter.string(from: NSNumber(value: value)) ?? "₺0,00"
+    }
+
+    /// Grafik ekseni için kısa sayı biçimi: 125.000 → "125B", 1.250.000 → "1,3Mn".
+    /// Bozuk/negatif değerlerde de güvenli.
+    private func compactAxisLabel(_ value: Double) -> String {
+        guard value.isFinite else { return "" }
+        let rounded = Int(value.rounded())
+        if rounded == 0 { return "0" }
+        let magnitude = abs(rounded)
+        if magnitude >= 1_000_000 {
+            return String(format: "%.1fMn", value / 1_000_000)
+        }
+        if magnitude >= 1_000 {
+            return "\(rounded / 1_000)B"
+        }
+        return "\(rounded)"
     }
 
     private func openSaleFile(for vehicle: Vehicle) {
