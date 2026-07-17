@@ -349,20 +349,39 @@ struct DocumentFormView: View {
     private func handlePhotoSelection(_ item: PhotosPickerItem) {
         isImporting = true
         Task {
-            if let data = try? await item.loadTransferable(type: Data.self),
-               data.count < 20_971_520 { // 20 MB limit
+            guard let raw = try? await item.loadTransferable(type: Data.self) else {
                 await MainActor.run {
-                    importedFileData = data
-                    importedFileName = item.itemIdentifier ?? "photo.jpg"
+                    validationErrors = ["Fotoğraf okunamadı. Lütfen tekrar dene."]
                     isImporting = false
                 }
-            } else {
-                await MainActor.run {
+                return
+            }
+            // Büyük fotoğrafları ana thread dışında küçült/yeniden kodla; başarısız
+            // olursa orijinaline geri düş (yine de 20 MB sınırı uygulanır).
+            let optimized = await Task.detached(priority: .userInitiated) {
+                ImageOptimizer.optimizedJPEGData(from: raw) ?? raw
+            }.value
+
+            await MainActor.run {
+                guard optimized.count < 20_971_520 else { // 20 MB
                     validationErrors = ["Dosya 20 MB'dan büyük olamaz."]
                     isImporting = false
+                    return
                 }
+                importedFileData = optimized
+                // Yeniden kodlandığı için her zaman .jpg — saklanan dosya uzantısı
+                // bununla belirlenir (DocumentStorageService).
+                importedFileName = "Belge_\(Self.fileTimestamp()).jpg"
+                isImporting = false
             }
         }
+    }
+
+    private static func fileTimestamp() -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "yyyyMMdd_HHmmss"
+        return formatter.string(from: Date())
     }
 
     private func handleFileImport(_ result: Result<[URL], Error>) {

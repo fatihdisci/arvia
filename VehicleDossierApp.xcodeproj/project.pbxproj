@@ -70,6 +70,7 @@
 		AE7BDCB080C84F9494F675C8 /* SaleFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D115493FE30D474D95F499A8 /* SaleFileView.swift */; };
 		AFAD17BDCB8273428CF91817 /* ReticleCorners.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF76F53F65D4E2DF3BBF28FA /* ReticleCorners.swift */; };
 		ANLYSVC0002ANLYSVC0002 /* Services/AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYSVC0001ANLYSVC0001 /* Services/AnalyticsService.swift */; };
+		IMGOPT0002IMGOPT0002 /* Services/ImageOptimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMGOPT0001IMGOPT0001 /* Services/ImageOptimizer.swift */; };
 		ANLYTEST0002ANLYTEST0002 /* Tests/AnalyticsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYTEST0001ANLYTEST0001 /* Tests/AnalyticsServiceTests.swift */; };
 		AIP1CLID0002AIP1CLID0002 /* Services/AIClientID.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1CLID0001AIP1CLID0001 /* Services/AIClientID.swift */; };
 		AIP1CONV0002AIP1CONV0002 /* Features/Settings/AIConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1CONV0001AIP1CONV0001 /* Features/Settings/AIConsentView.swift */; };
@@ -216,6 +217,7 @@
 		AD5A71876E6544B1A09B0FA9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AE62D7B7FDAE440B9176077B /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		ANLYSVC0001ANLYSVC0001 /* Services/AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AnalyticsService.swift; sourceTree = SOURCE_ROOT; };
+		IMGOPT0001IMGOPT0001 /* Services/ImageOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ImageOptimizer.swift; sourceTree = SOURCE_ROOT; };
 		ANLYTEST0001ANLYTEST0001 /* Tests/AnalyticsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/AnalyticsServiceTests.swift; sourceTree = SOURCE_ROOT; };
 		AIP1CLID0001AIP1CLID0001 /* Services/AIClientID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIClientID.swift; sourceTree = SOURCE_ROOT; };
 		AIP1CONV0001AIP1CONV0001 /* Features/Settings/AIConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Settings/AIConsentView.swift; sourceTree = SOURCE_ROOT; };
@@ -552,6 +554,7 @@
 				SDA1MADV0001SDA1MADV0001 /* Services/MaintenanceAdvisorService.swift */,
 				AIP1MASK0001AIP1MASK0001 /* Services/PIIMaskingService.swift */,
 				ANLYSVC0001ANLYSVC0001 /* Services/AnalyticsService.swift */,
+				IMGOPT0001IMGOPT0001 /* Services/ImageOptimizer.swift */,
 				AIP1PROX0001AIP1PROX0001 /* Services/AIProxyService.swift */,
 				AIP1CLID0001AIP1CLID0001 /* Services/AIClientID.swift */,
 				LLM1MRGE0001LLM1MRGE0001 /* Services/AIReceiptMerge.swift */,
@@ -829,6 +832,7 @@
 				SDA1FLOW0002SDA1FLOW0002 /* Features/Assistant/UsageProfileFlowView.swift in Sources */,
 				AIP1MASK0002AIP1MASK0002 /* Services/PIIMaskingService.swift in Sources */,
 				ANLYSVC0002ANLYSVC0002 /* Services/AnalyticsService.swift in Sources */,
+				IMGOPT0002IMGOPT0002 /* Services/ImageOptimizer.swift in Sources */,
 				AIP1PROX0002AIP1PROX0002 /* Services/AIProxyService.swift in Sources */,
 				AIP1CLID0002AIP1CLID0002 /* Services/AIClientID.swift in Sources */,
 				AIP1CONV0002AIP1CONV0002 /* Features/Settings/AIConsentView.swift in Sources */,
