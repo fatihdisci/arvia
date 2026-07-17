@@ -385,13 +385,24 @@ struct AssistantView: View {
     @EnvironmentObject private var paywallService: PaywallService
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
     @Query private var allUsageProfiles: [VehicleUsageProfile]
+    @Query private var allServiceRecords: [ServiceRecord]
+    @Query private var allReminders: [Reminder]
+    @Query private var allInspectionReports: [InspectionReport]
+    @Query private var allExpenses: [Expense]
+
+    private struct InlinePlanFailure: Equatable {
+        let vehicleId: UUID
+        let message: String
+    }
 
     @State private var selectedVehicleId: UUID?
     @State private var showProfileFlow = false
-    @State private var maintenancePlanVehicle: Vehicle?
     @State private var showPaywall = false
     @State private var showAIConsent = false
     @State private var pendingReminderDraft: AssistantReminderDraft?
+    @State private var generatingPlanVehicleId: UUID?
+    @State private var planFailure: InlinePlanFailure?
+    @State private var planCacheRevision = 0
 
     private var activeVehicles: [Vehicle] {
         vehicles.filter { $0.archivedAt == nil }
@@ -441,9 +452,6 @@ struct AssistantView: View {
             .sheet(isPresented: $showProfileFlow) {
                 UsageProfileFlowView()
             }
-            .sheet(item: $maintenancePlanVehicle) { vehicle in
-                MaintenancePlanView(vehicle: vehicle)
-            }
             .sheet(isPresented: $showPaywall) {
                 PaywallView(feature: .assistant)
             }
@@ -453,7 +461,7 @@ struct AssistantView: View {
                         UserDefaults.standard.set(true, forKey: AIConsentStore.consentKey)
                         UserDefaults.standard.set(true, forKey: AIConsentStore.enabledKey)
                         if let vehicle = selectedVehicle {
-                            maintenancePlanVehicle = vehicle
+                            generatePlanInline(for: vehicle)
                         }
                     },
                     onDecline: {}
@@ -714,13 +722,19 @@ struct AssistantView: View {
     private func maintenancePlanSection(for vehicle: Vehicle) -> some View {
         let isPro = paywallService.canUseAssistant
         let aiEnabled = AIConsentStore.shared.isCloudAIEnabled
-        let cached = isPro ? MaintenancePlanCacheStore.load(vehicleId: vehicle.id) : nil
+        let cached = isPro ? cachedPlan(for: vehicle.id, revision: planCacheRevision) : nil
+        let isGenerating = generatingPlanVehicleId == vehicle.id
 
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             sectionHeader(
                 icon: "steeringwheel",
                 title: "Kişisel Bakım Planı",
-                subtitle: sectionSubtitle(isPro: isPro, aiEnabled: aiEnabled, cached: cached)
+                subtitle: sectionSubtitle(
+                    isPro: isPro,
+                    aiEnabled: aiEnabled,
+                    cached: cached,
+                    isGenerating: isGenerating
+                )
             )
 
             // İçerik
@@ -731,11 +745,20 @@ struct AssistantView: View {
                 aiDisabledCallout(vehicle: vehicle)
             } else if let cached, !cached.suggestions.isEmpty {
                 suggestionsList(cached.suggestions, vehicle: vehicle)
-                refreshFooter(vehicle: vehicle)
+                refreshFooter(vehicle: vehicle, isGenerating: isGenerating)
+                inlinePlanFailure(for: vehicle)
+            } else if isGenerating {
+                inlinePlanLoadingView
             } else {
                 emptyPlanCallout(vehicle: vehicle)
+                inlinePlanFailure(for: vehicle)
             }
         }
+    }
+
+    private func cachedPlan(for vehicleId: UUID, revision: Int) -> MaintenancePlanCacheStore.Cached? {
+        _ = revision // Dosya cache'i Observable olmadığı için state revizyonuna bağla.
+        return MaintenancePlanCacheStore.load(vehicleId: vehicleId)
     }
 
     /// Bölüm başlık satırı: icon + başlık + subtitle.
@@ -764,12 +787,20 @@ struct AssistantView: View {
         }
     }
 
-    private func sectionSubtitle(isPro: Bool, aiEnabled: Bool, cached: MaintenancePlanCacheStore.Cached?) -> String {
+    private func sectionSubtitle(
+        isPro: Bool,
+        aiEnabled: Bool,
+        cached: MaintenancePlanCacheStore.Cached?,
+        isGenerating: Bool
+    ) -> String {
         if !isPro {
             return "Pro ile kullanımına göre kişiselleştirilmiş öneriler."
         }
         if !aiEnabled {
             return "Bulut AI kapalı — açman gerekiyor."
+        }
+        if isGenerating {
+            return "Araç kayıtlarına göre plan yenileniyor…"
         }
         if let cached, !cached.suggestions.isEmpty {
             let date = cached.createdAt.formatted(date: .abbreviated, time: .omitted)
@@ -832,22 +863,38 @@ struct AssistantView: View {
                     .font(.caption)
                     .foregroundColor(color)
             }
-            if let confidence = suggestion.confidence {
-                Label(confidenceLabel(confidence), systemImage: "checkmark.shield")
-                    .font(AppTypography.captionMedium)
-                    .foregroundColor(confidenceColor(confidence))
-            }
             Text(suggestion.message)
                 .font(AppTypography.secondary)
                 .foregroundColor(AppColors.textSecondary)
                 .lineLimit(4)
                 .fixedSize(horizontal: false, vertical: true)
 
-            if let evidence = suggestion.evidence?.first, !evidence.isEmpty {
-                Label(evidence, systemImage: "scope")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
-                    .lineLimit(2)
+            if let evidence = suggestion.evidence, !evidence.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Dayanaklar")
+                        .font(AppTypography.captionMedium)
+                        .foregroundColor(AppColors.textPrimary)
+                    ForEach(Array(evidence.prefix(3).enumerated()), id: \.offset) { _, item in
+                        HStack(alignment: .top, spacing: 6) {
+                            Circle()
+                                .fill(AppColors.accentPrimary)
+                                .frame(width: 4, height: 4)
+                                .padding(.top, 6)
+                            Text(item)
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .padding(AppSpacing.sm)
+                .background(RoundedRectangle(cornerRadius: AppRadius.small).fill(AppColors.backgroundSecondary))
+            }
+
+            if let action = suggestion.recommendedAction, !action.isEmpty {
+                Label(action, systemImage: "arrow.right.circle")
+                    .font(AppTypography.captionMedium)
+                    .foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -890,21 +937,29 @@ struct AssistantView: View {
         .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
     }
 
-    /// Pro + cache var — altta "Yenile" link'i (sheet açarak yeni plan üretir).
-    private func refreshFooter(vehicle: Vehicle) -> some View {
+    /// Pro + cache var — planı aynı bölümde yeniler; ayrı sheet açılmaz.
+    private func refreshFooter(vehicle: Vehicle, isGenerating: Bool) -> some View {
         Button {
-            maintenancePlanVehicle = vehicle
+            generatePlanInline(for: vehicle)
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.caption)
-                Text("Yenile")
-                    .font(AppTypography.secondaryMedium)
+                if isGenerating {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(AppColors.accentPrimary)
+                    Text("Yenileniyor…")
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption)
+                    Text("Yenile")
+                }
             }
+            .font(AppTypography.secondaryMedium)
             .foregroundColor(AppColors.accentPrimary)
             .padding(.top, AppSpacing.xxs)
         }
         .buttonStyle(.plain)
+        .disabled(isGenerating)
         .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
@@ -916,7 +971,7 @@ struct AssistantView: View {
                 .foregroundColor(AppColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             Button {
-                maintenancePlanVehicle = vehicle
+                generatePlanInline(for: vehicle)
             } label: {
                 HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "sparkles")
@@ -937,6 +992,119 @@ struct AssistantView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
         .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+    }
+
+    private var inlinePlanLoadingView: some View {
+        HStack(spacing: AppSpacing.sm) {
+            ProgressView().tint(AppColors.accentPrimary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Plan hazırlanıyor…")
+                    .font(AppTypography.bodyMedium)
+                    .foregroundColor(AppColors.textPrimary)
+                Text("Araç ve bakım kayıtları değerlendiriliyor.")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: AppRadius.card).fill(Color.appSurface))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.card).stroke(AppColors.border, lineWidth: 0.5))
+    }
+
+    @ViewBuilder
+    private func inlinePlanFailure(for vehicle: Vehicle) -> some View {
+        if let failure = planFailure, failure.vehicleId == vehicle.id {
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                Image(systemName: "exclamationmark.circle")
+                    .foregroundColor(AppColors.warning)
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text(failure.message)
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                    Button("Tekrar dene") {
+                        generatePlanInline(for: vehicle)
+                    }
+                    .font(AppTypography.captionMedium)
+                    .foregroundColor(AppColors.accentPrimary)
+                }
+            }
+            .padding(AppSpacing.sm)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: AppRadius.small).fill(AppColors.backgroundSecondary))
+        }
+    }
+
+    private func generatePlanInline(for vehicle: Vehicle) {
+        guard generatingPlanVehicleId == nil else { return }
+        guard paywallService.canUseAssistant else {
+            showPaywall = true
+            return
+        }
+        guard AIConsentStore.shared.isCloudAIEnabled else {
+            showAIConsent = true
+            return
+        }
+
+        let payload = MaintenancePlanPayloadFactory.build(
+            vehicle: vehicle,
+            usageProfiles: allUsageProfiles,
+            serviceRecords: allServiceRecords,
+            reminders: allReminders,
+            inspectionReports: allInspectionReports,
+            expenses: allExpenses
+        )
+        let inputHash = MaintenancePlanCacheStore.fingerprint(payload)
+        let vehicleId = vehicle.id
+
+        planFailure = nil
+        generatingPlanVehicleId = vehicleId
+        Task {
+            do {
+                let suggestions = try await AIProxyService.shared.maintenancePlan(profileJSON: payload)
+                await MainActor.run {
+                    MaintenancePlanCacheStore.save(
+                        Array(suggestions.prefix(3)),
+                        vehicleId: vehicleId,
+                        inputHash: inputHash
+                    )
+                    generatingPlanVehicleId = nil
+                    planCacheRevision += 1
+                }
+            } catch let error as AIProxyError {
+                await MainActor.run {
+                    generatingPlanVehicleId = nil
+                    planFailure = .init(vehicleId: vehicleId, message: inlinePlanErrorMessage(error))
+                }
+            } catch {
+                await MainActor.run {
+                    generatingPlanVehicleId = nil
+                    planFailure = .init(
+                        vehicleId: vehicleId,
+                        message: "Plan oluşturulamadı. Daha sonra tekrar dene."
+                    )
+                }
+            }
+        }
+    }
+
+    private func inlinePlanErrorMessage(_ error: AIProxyError) -> String {
+        switch error {
+        case .disabled:
+            return "Bulut AI kapalı. Ayarlardan açıp tekrar dene."
+        case .quotaExceeded:
+            return "Yapay zekâ ay limitine ulaşıldı."
+        case .transactionUnavailable, .proEntitlementRequired:
+            return "Pro satın alımı doğrulanamadı."
+        case .unauthorized, .notConfigured:
+            return "AI servisi yapılandırması doğrulanamadı."
+        case .transport:
+            return "İnternet bağlantısı kurulamadı."
+        case .payloadTooLarge:
+            return "Plan verisi gönderim sınırını aşıyor."
+        case .malformedResponse, .upstream:
+            return "Plan oluşturulamadı. Daha sonra tekrar dene."
+        }
     }
 
     /// Pro + AI disabled — "Bulut AI'yı aç" CTA (AIConsentView açılır).
@@ -1015,22 +1183,6 @@ struct AssistantView: View {
         case "important": return AppColors.critical
         case "warning": return AppColors.warning
         default: return AppColors.accentPrimary
-        }
-    }
-
-    private func confidenceLabel(_ confidence: String) -> String {
-        switch confidence {
-        case "high": return "Yüksek güven"
-        case "medium": return "Orta güven"
-        default: return "Sınırlı güven"
-        }
-    }
-
-    private func confidenceColor(_ confidence: String) -> Color {
-        switch confidence {
-        case "high": return AppColors.success
-        case "medium": return AppColors.warning
-        default: return AppColors.textTertiary
         }
     }
 

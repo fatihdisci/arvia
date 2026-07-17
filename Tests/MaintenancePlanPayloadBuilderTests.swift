@@ -3,7 +3,7 @@ import XCTest
 @testable import Ruhsatim
 
 // MARK: - Maintenance Plan Payload Builder Tests
-// Maskeleme (defense-in-depth), 5 kayıt sınırı, önbellek tazeliği.
+// Maskeleme (defense-in-depth), kayıt sınırları, sözleşme ve önbellek tazeliği.
 final class MaintenancePlanPayloadBuilderTests: XCTestCase {
 
     private func baseInput(services: [MaintenancePlanPayloadBuilder.ServiceLine] = []) -> MaintenancePlanPayloadBuilder.Input {
@@ -76,6 +76,7 @@ final class MaintenancePlanPayloadBuilderTests: XCTestCase {
         let services = try XCTUnwrap(object["recentServices"] as? [[String: Any]])
         let reminders = try XCTUnwrap(object["activeReminders"] as? [[String: Any]])
 
+        XCTAssertEqual(object["contractVersion"] as? Int, 2)
         XCTAssertEqual(vehicle["odometerIsEstimate"] as? Bool, true)
         XCTAssertEqual(services.first?["nextDueOdometer"] as? Int, 100_000)
         XCTAssertEqual(reminders.first?["state"] as? String, "upcoming")

@@ -40,7 +40,7 @@ The iOS client reads the active verified StoreKit 2 transaction without calling
 API. Legacy `appReceipt` requests remain temporarily supported during rollout.
 
 - `receipt_parse` → `{ "result": { date, total, vendor, odometer, category, isMaintenanceInvoice, lineItems[] }, "cached": bool }`
-- `maintenance_plan` → `{ "result": [ up to 3 { title, message, severity, suggestedIntervalKm?, suggestedIntervalMonths?, evidence[], confidence, recommendedAction, limitation? } ], "cached": bool }`. `suggestedIntervalKm` is remaining distance from the current odometer, not a generic service interval.
+- `maintenance_plan` → `{ "result": [ up to 3 { title, message, severity, suggestedIntervalKm?, suggestedIntervalMonths?, evidence[], recommendedAction, limitation? } ], "cached": bool }`. `suggestedIntervalKm` is remaining distance from the current odometer, not a generic service interval.
 
 Error shape (all non-2xx): `{ "error": { "code": "<machine_readable>" , ... } }`
 Notable codes: `unauthorized` (401), `pro_entitlement_required` (403),
@@ -134,7 +134,7 @@ Expected:
 ```json
 {
   "result": [
-    { "title": "Yağ bakım vadesini takip et", "message": "Son yağ değişimi 90.000 km'de kayıtlı ve sonraki vade 100.000 km olarak girilmiş.", "severity": "warning", "suggestedIntervalKm": 5000, "suggestedIntervalMonths": null, "evidence": ["Mevcut kilometre 95.000 km", "Yağ değişimi 90.000 km'de kayıtlı", "Kayıtlı sonraki vade 100.000 km"], "confidence": "high", "recommendedAction": "5.000 km içinde yağ bakım kaydını kontrol et ve gerekirse randevu oluştur.", "limitation": "Girilen vadenin üretici servis planıyla uyumunu kullanım kılavuzundan doğrula." }
+    { "title": "Yağ bakım vadesini takip et", "message": "Son yağ değişimi 90.000 km'de kayıtlı ve sonraki vade 100.000 km olarak girilmiş.", "severity": "warning", "suggestedIntervalKm": 5000, "suggestedIntervalMonths": null, "evidence": ["Mevcut kilometre 95.000 km", "Yağ değişimi 90.000 km'de kayıtlı", "Kayıtlı sonraki vade 100.000 km"], "recommendedAction": "5.000 km içinde yağ bakım kaydını kontrol et ve gerekirse randevu oluştur.", "limitation": null }
   ],
   "cached": false
 }

@@ -195,12 +195,6 @@ struct MaintenancePlanView: View {
                     .foregroundColor(color)
             }
 
-            if let confidence = suggestion.confidence {
-                Label(confidenceLabel(confidence), systemImage: "checkmark.shield")
-                    .font(AppTypography.captionMedium)
-                    .foregroundColor(confidenceColor(confidence))
-            }
-
             Text(suggestion.message)
                 .font(AppTypography.secondary)
                 .foregroundColor(AppColors.textSecondary)
@@ -232,13 +226,6 @@ struct MaintenancePlanView: View {
                 Label(action, systemImage: "arrow.right.circle")
                     .font(AppTypography.captionMedium)
                     .foregroundColor(AppColors.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if let limitation = suggestion.limitation, !limitation.isEmpty {
-                Label(limitation, systemImage: "info.circle")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -408,145 +395,14 @@ struct MaintenancePlanView: View {
     }
 
     private func buildPayload() -> String {
-        let profile = UsageProfileService.resolve(for: vehicle.id, from: allUsageProfiles)
-        let recent = allServiceRecords
-            .filter { $0.vehicleId == vehicle.id }
-            .sorted {
-                $0.date == $1.date
-                    ? $0.id.uuidString < $1.id.uuidString
-                    : $0.date > $1.date
-            }
-            .prefix(10)
-            .map {
-                MaintenancePlanPayloadBuilder.ServiceLine(
-                    title: $0.serviceType.displayName,
-                    date: $0.date,
-                    km: $0.odometer,
-                    oilType: $0.oilType,
-                    notes: $0.notes,
-                    nextDueDate: $0.nextReminderDueDate,
-                    nextDueOdometer: $0.nextReminderDueOdometer
-                )
-            }
-
-        let reminders = allReminders
-            .filter {
-                $0.vehicleId == vehicle.id &&
-                $0.statusRaw != ReminderStatus.completed.rawValue &&
-                $0.statusRaw != ReminderStatus.archived.rawValue
-            }
-            .sorted {
-                let leftKey = reminderSortKey($0)
-                let rightKey = reminderSortKey($1)
-                if leftKey != rightKey { return leftKey < rightKey }
-                let leftDate = $0.dueDate ?? .distantFuture
-                let rightDate = $1.dueDate ?? .distantFuture
-                if leftDate != rightDate { return leftDate < rightDate }
-                let leftKm = $0.dueOdometer ?? .max
-                let rightKm = $1.dueOdometer ?? .max
-                return leftKm == rightKm
-                    ? $0.id.uuidString < $1.id.uuidString
-                    : leftKm < rightKm
-            }
-            .prefix(8)
-            .map {
-                MaintenancePlanPayloadBuilder.ReminderLine(
-                    title: $0.title,
-                    type: $0.type.rawValue,
-                    dueDate: $0.dueDate,
-                    dueOdometer: $0.dueOdometer,
-                    priority: $0.priority.rawValue,
-                    state: reminderState($0),
-                    notes: $0.notes
-                )
-            }
-
-        let inspections = allInspectionReports
-            .filter { $0.vehicleId == vehicle.id }
-            .sorted {
-                $0.reportDate == $1.reportDate
-                    ? $0.id.uuidString < $1.id.uuidString
-                    : $0.reportDate > $1.reportDate
-            }
-            .prefix(3)
-            .map {
-                MaintenancePlanPayloadBuilder.InspectionLine(
-                    date: $0.reportDate,
-                    km: $0.odometer,
-                    summary: $0.summary,
-                    verificationStatus: $0.verificationStatus.rawValue
-                )
-            }
-
-        let maintenanceCategories: Set<ExpenseCategory> = [
-            .service, .oil, .tire, .brake, .battery, .repair, .part,
-            .inspection, .emission, .chainSprocket
-        ]
-        let expenseCutoff = Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? .distantPast
-        let maintenanceExpenses = allExpenses
-            .filter {
-                $0.vehicleId == vehicle.id &&
-                $0.date >= expenseCutoff &&
-                $0.linkedServiceRecordId == nil &&
-                maintenanceCategories.contains($0.category)
-            }
-            .sorted {
-                $0.date == $1.date
-                    ? $0.id.uuidString < $1.id.uuidString
-                    : $0.date > $1.date
-            }
-            .prefix(8)
-            .map {
-                MaintenancePlanPayloadBuilder.MaintenanceExpenseLine(
-                    category: $0.category.rawValue,
-                    date: $0.date,
-                    km: $0.odometer,
-                    note: $0.note
-                )
-            }
-
-        let input = MaintenancePlanPayloadBuilder.Input(
-            brand: vehicle.brand,
-            model: vehicle.model,
-            year: vehicle.year,
-            vehicleType: vehicle.vehicleType.rawValue,
-            bodyType: vehicle.bodyType,
-            engineCC: vehicle.engineCC,
-            fuelType: vehicle.fuelType.rawValue,
-            transmissionType: vehicle.transmissionType?.rawValue,
-            usageType: vehicle.usageType.rawValue,
-            odometer: vehicle.currentOdometer,
-            odometerIsEstimate: vehicle.odometerIsEstimate,
-            odometerUpdatedAt: vehicle.lastOdometerUpdate,
-            dailyKmBand: profile?.dailyKmBand.rawValue,
-            routeType: profile?.routeType.rawValue,
-            fuelConsumptionCity: profile?.fuelConsumptionCity,
-            fuelConsumptionHighway: profile?.fuelConsumptionHighway,
-            tripTypes: profile?.tripTypes ?? [],
-            recentServices: Array(recent),
-            activeReminders: Array(reminders),
-            recentInspections: Array(inspections),
-            recentMaintenanceExpenses: Array(maintenanceExpenses)
+        MaintenancePlanPayloadFactory.build(
+            vehicle: vehicle,
+            usageProfiles: allUsageProfiles,
+            serviceRecords: allServiceRecords,
+            reminders: allReminders,
+            inspectionReports: allInspectionReports,
+            expenses: allExpenses
         )
-        return MaintenancePlanPayloadBuilder.build(input)
-    }
-
-    private func reminderState(_ reminder: Reminder) -> String {
-        if reminder.isOverdue || reminder.isKmOverdue(vehicleOdometer: vehicle.currentOdometer) {
-            return "overdue"
-        }
-        if reminder.isToday || reminder.isUpcoming || reminder.isKmUpcoming(vehicleOdometer: vehicle.currentOdometer) {
-            return "upcoming"
-        }
-        return "active"
-    }
-
-    private func reminderSortKey(_ reminder: Reminder) -> Int {
-        switch reminderState(reminder) {
-        case "overdue": return 0
-        case "upcoming": return 1
-        default: return 2
-        }
     }
 
     private func intervalChip(text: String, icon: String) -> some View {
@@ -578,19 +434,4 @@ struct MaintenancePlanView: View {
         }
     }
 
-    private func confidenceLabel(_ confidence: String) -> String {
-        switch confidence {
-        case "high": return "Güven düzeyi: yüksek"
-        case "medium": return "Güven düzeyi: orta"
-        default: return "Güven düzeyi: sınırlı"
-        }
-    }
-
-    private func confidenceColor(_ confidence: String) -> Color {
-        switch confidence {
-        case "high": return AppColors.success
-        case "medium": return AppColors.warning
-        default: return AppColors.textTertiary
-        }
-    }
 }

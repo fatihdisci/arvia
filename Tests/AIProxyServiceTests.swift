@@ -73,13 +73,12 @@ final class AIProxyServiceTests: XCTestCase {
     }
 
     func testDecodeMaintenanceArray() throws {
-        let body = data(#"[{"title":"Triger","message":"kontrol","severity":"important","suggestedIntervalKm":5000,"suggestedIntervalMonths":null,"evidence":["121.000 km"],"confidence":"medium","recommendedAction":"Servis kaydını kontrol et","limitation":"Üretici planı bilinmiyor"}]"#)
+        let body = data(#"[{"title":"Triger","message":"kontrol","severity":"important","suggestedIntervalKm":5000,"suggestedIntervalMonths":null,"evidence":["121.000 km"],"recommendedAction":"Servis kaydını kontrol et","limitation":"Kesin vade için yeterli kayıt yok"}]"#)
         let plan = try AIProxyService.decode([MaintenancePlanSuggestion].self, from: body)
         XCTAssertEqual(plan.count, 1)
         XCTAssertEqual(plan.first?.severity, "important")
         XCTAssertEqual(plan.first?.suggestedIntervalKm, 5000)
         XCTAssertNil(plan.first?.suggestedIntervalMonths)
-        XCTAssertEqual(plan.first?.confidence, "medium")
         XCTAssertEqual(plan.first?.evidence, ["121.000 km"])
     }
 

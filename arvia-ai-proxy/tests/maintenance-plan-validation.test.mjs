@@ -12,7 +12,6 @@ test("maintenance plan keeps grounded fields and clamps unsafe values", () => {
       suggestedIntervalKm: 2_000,
       suggestedIntervalMonths: 1,
       evidence: ["Fren kontrolü 96.000 km'de yaklaşan olarak kayıtlı", "x".repeat(300)],
-      confidence: "high",
       recommendedAction: "Servisten kontrol randevusu al.",
       limitation: null,
     }],
@@ -21,7 +20,6 @@ test("maintenance plan keeps grounded fields and clamps unsafe values", () => {
   assert.equal(result?.length, 1);
   assert.equal(result?.[0].title, "Fren sistemi kontrolü");
   assert.equal(result?.[0].severity, "important");
-  assert.equal(result?.[0].confidence, "high");
   assert.equal(result?.[0].suggestedIntervalKm, 2_000);
   assert.equal(result?.[0].evidence[1].length, 180);
 });
@@ -37,7 +35,6 @@ test("maintenance plan removes duplicates and invalid reminder intervals", () =>
         title: "Yağ kontrolü",
         message: "Kayıtları kontrol et.",
         severity: "unexpected",
-        confidence: "unexpected",
         suggestedIntervalKm: 900_000,
         suggestedIntervalMonths: -2,
       },
@@ -51,7 +48,16 @@ test("maintenance plan removes duplicates and invalid reminder intervals", () =>
 
   assert.equal(result?.length, 1);
   assert.equal(result?.[0].severity, "info");
-  assert.equal(result?.[0].confidence, "low");
   assert.equal(result?.[0].suggestedIntervalKm, null);
   assert.equal(result?.[0].suggestedIntervalMonths, null);
+});
+
+test("maintenance plan rejects forbidden maintenance-source wording", () => {
+  assert.equal(sanitizeMaintenancePlan({
+    suggestions: [{
+      title: "Bakım kontrolü",
+      message: "Üretici bakım planını kontrol et.",
+      severity: "info",
+    }],
+  }), null);
 });
