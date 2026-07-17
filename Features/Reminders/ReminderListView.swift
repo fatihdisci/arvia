@@ -3,7 +3,8 @@ import SwiftData
 
 // MARK: - Reminder List View
 // Gruplandırılmış hatırlatıcı listesi.
-// Gruplar: Gecikenler → Bugün → Yaklaşanlar → Bu Yıl → Uzak Vade
+// Gruplar: Geciken → Bugün → Önümüzdeki 30 Gün → Bu Yıl → Uzak Vade
+// (Tamamlananlar "Kayıtlar > Geçmiş" arşivinde görünür — burada yalnızca aktif işler.)
 
 struct ReminderListView: View {
     @Environment(\.modelContext) private var modelContext
@@ -224,7 +225,7 @@ struct ReminderListView: View {
 
             if !overdueReminders.isEmpty {
                 reminderGroup(
-                    title: "Gecikenler",
+                    title: "Geciken",
                     icon: "exclamationmark.triangle.fill",
                     color: AppColors.critical,
                     reminders: overdueReminders
@@ -242,7 +243,7 @@ struct ReminderListView: View {
 
             if !upcomingReminders.isEmpty {
                 reminderGroup(
-                    title: "Yaklaşanlar",
+                    title: "Önümüzdeki 30 Gün",
                     icon: "bell.fill",
                     color: AppColors.accentPrimary,
                     reminders: upcomingReminders

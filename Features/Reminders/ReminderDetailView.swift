@@ -17,6 +17,9 @@ struct ReminderDetailView: View {
     @State private var showSnoozeSheet = false
     @State private var snoozeDays = 7
     @State private var operationError: String?
+    // Bakım tipi bir iş tamamlandığında "bakım kaydı oluştur" önerisi.
+    @State private var showServiceConversionPrompt = false
+    @State private var showServiceForm = false
 
     var body: some View {
         ScrollView {
@@ -67,6 +70,15 @@ struct ReminderDetailView: View {
             Button("Vazgeç", role: .cancel) {}
         } message: {
             Text("Bu iş tamamlandı olarak işaretlenir ve Geçmiş ekranında görünür.")
+        }
+        .confirmationDialog("Bakımı kayıtlarına ekleyelim mi?", isPresented: $showServiceConversionPrompt) {
+            Button("Bakım Kaydı Oluştur") { showServiceForm = true }
+            Button("Şimdi Değil", role: .cancel) { dismiss() }
+        } message: {
+            Text("Yaptığın bakımı kayıtlarına ekleyerek geçmişini ve maliyetini takip edebilirsin.")
+        }
+        .sheet(isPresented: $showServiceForm, onDismiss: { dismiss() }) {
+            ServiceRecordFormView(preselectedVehicleId: reminder.vehicleId)
         }
         .sheet(isPresented: $showSnoozeSheet) {
             snoozeSheet
@@ -373,7 +385,14 @@ struct ReminderDetailView: View {
             if let nextReminder {
                 Task { await NotificationService.shared.scheduleReminder(nextReminder) }
             }
-            dismiss()
+            // Bakım tipi bir iş tamamlandıysa (yağ, fren, periyodik bakım vb.)
+            // kullanıcıya bunu bir bakım kaydına dönüştürmeyi öner. Diğer türlerde
+            // (muayene, sigorta, MTV...) doğrudan kapat.
+            if reminder.type.mapsToServiceRecord {
+                showServiceConversionPrompt = true
+            } else {
+                dismiss()
+            }
         } catch {
             modelContext.rollback()
             operationError = "Yapılacak tamamlanamadı. Verileriniz değiştirilmedi."

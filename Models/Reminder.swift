@@ -96,9 +96,9 @@ final class Reminder {
 
     // MARK: Group helper
     enum GroupKey: String {
-        case overdue = "Gecikenler"
+        case overdue = "Geciken"
         case today = "Bugün"
-        case upcoming = "Yaklaşanlar"
+        case upcoming = "Önümüzdeki 30 Gün"
         case later = "Daha Sonra"
     }
 

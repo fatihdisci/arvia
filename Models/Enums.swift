@@ -151,6 +151,21 @@ enum ReminderType: String, Codable, CaseIterable {
         .chainMaintenance, .chainSprocketSet, .sparkPlug, .airFilter,
         .clutchCable, .suspensionCheck, .seasonStartCheck, .winterPrep
     ]
+
+    /// Bu hatırlatıcı fiziksel bir bakım/servis işine karşılık geliyor mu?
+    /// Tamamlandığında kullanıcıya "bakım kaydı oluştur" önerilir (Karar 7).
+    /// Muayene, sigorta, MTV, HGS, garanti gibi tarih/yasal hatırlatıcılar hariç.
+    var mapsToServiceRecord: Bool {
+        switch self {
+        case .periodicService, .oilChange, .tire, .battery, .brakes, .timingBelt,
+             .chainMaintenance, .chainSprocketSet, .sparkPlug, .airFilter,
+             .clutchCable, .suspensionCheck, .seasonStartCheck, .winterPrep:
+            return true
+        case .inspection, .trafficInsurance, .casco, .mtvFirst, .mtvSecond,
+             .warranty, .hgs, .custom:
+            return false
+        }
+    }
 }
 
 // MARK: - Reminder Priority
