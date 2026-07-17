@@ -88,6 +88,8 @@
 		AE7BDCB080C84F9494F675C8 /* SaleFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D115493FE30D474D95F499A8 /* SaleFileView.swift */; };
 		AE9D2905D838444DDB3772B4 /* CommunityProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAC4760FF478512AA639E5A8 /* CommunityProfileService.swift */; };
 		AFAD17BDCB8273428CF91817 /* ReticleCorners.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF76F53F65D4E2DF3BBF28FA /* ReticleCorners.swift */; };
+		ANLYSVC0002ANLYSVC0002 /* Services/AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYSVC0001ANLYSVC0001 /* Services/AnalyticsService.swift */; };
+		ANLYTEST0002ANLYTEST0002 /* Tests/AnalyticsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYTEST0001ANLYTEST0001 /* Tests/AnalyticsServiceTests.swift */; };
 		AIP1CLID0002AIP1CLID0002 /* Services/AIClientID.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1CLID0001AIP1CLID0001 /* Services/AIClientID.swift */; };
 		AIP1CONV0002AIP1CONV0002 /* Features/Settings/AIConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1CONV0001AIP1CONV0001 /* Features/Settings/AIConsentView.swift */; };
 		AIP1MASK0002AIP1MASK0002 /* Services/PIIMaskingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AIP1MASK0001AIP1MASK0001 /* Services/PIIMaskingService.swift */; };
@@ -255,6 +257,8 @@
 		AB7348B6E78A0AF27914E839 /* ReminderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderDetailView.swift; sourceTree = "<group>"; };
 		AD5A71876E6544B1A09B0FA9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AE62D7B7FDAE440B9176077B /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		ANLYSVC0001ANLYSVC0001 /* Services/AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AnalyticsService.swift; sourceTree = SOURCE_ROOT; };
+		ANLYTEST0001ANLYTEST0001 /* Tests/AnalyticsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/AnalyticsServiceTests.swift; sourceTree = SOURCE_ROOT; };
 		AIP1CLID0001AIP1CLID0001 /* Services/AIClientID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIClientID.swift; sourceTree = SOURCE_ROOT; };
 		AIP1CONV0001AIP1CONV0001 /* Features/Settings/AIConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Settings/AIConsentView.swift; sourceTree = SOURCE_ROOT; };
 		AIP1MASK0001AIP1MASK0001 /* Services/PIIMaskingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PIIMaskingService.swift; sourceTree = SOURCE_ROOT; };
@@ -651,6 +655,7 @@
 				SDA1PODO0001SDA1PODO0001 /* Services/PredictiveOdometerService.swift */,
 				SDA1MADV0001SDA1MADV0001 /* Services/MaintenanceAdvisorService.swift */,
 				AIP1MASK0001AIP1MASK0001 /* Services/PIIMaskingService.swift */,
+				ANLYSVC0001ANLYSVC0001 /* Services/AnalyticsService.swift */,
 				AIP1PROX0001AIP1PROX0001 /* Services/AIProxyService.swift */,
 				AIP1CLID0001AIP1CLID0001 /* Services/AIClientID.swift */,
 				LLM1MRGE0001LLM1MRGE0001 /* Services/AIReceiptMerge.swift */,
@@ -721,6 +726,7 @@
 				SDA1TMA10001SDA1TMA10001 /* Tests/MaintenanceAdvisorServiceTests.swift */,
 				SDA1TUP10001SDA1TUP10001 /* Tests/UsageProfileServiceTests.swift */,
 				AIP1TMSK0001AIP1TMSK0001 /* Tests/PIIMaskingServiceTests.swift */,
+				ANLYTEST0001ANLYTEST0001 /* Tests/AnalyticsServiceTests.swift */,
 				AIP1TPRX0001AIP1TPRX0001 /* Tests/AIProxyServiceTests.swift */,
 				LLM1TMRG0001LLM1TMRG0001 /* Tests/AIReceiptMergeTests.swift */,
 				LLM1TMPB0001LLM1TMPB0001 /* Tests/MaintenancePlanPayloadBuilderTests.swift */,
@@ -929,6 +935,7 @@
 				SDA1MADV0002SDA1MADV0002 /* Services/MaintenanceAdvisorService.swift in Sources */,
 				SDA1FLOW0002SDA1FLOW0002 /* Features/Assistant/UsageProfileFlowView.swift in Sources */,
 				AIP1MASK0002AIP1MASK0002 /* Services/PIIMaskingService.swift in Sources */,
+				ANLYSVC0002ANLYSVC0002 /* Services/AnalyticsService.swift in Sources */,
 				AIP1PROX0002AIP1PROX0002 /* Services/AIProxyService.swift in Sources */,
 				AIP1CLID0002AIP1CLID0002 /* Services/AIClientID.swift in Sources */,
 				AIP1CONV0002AIP1CONV0002 /* Features/Settings/AIConsentView.swift in Sources */,
@@ -996,6 +1003,7 @@
 				SDA1TMA10002SDA1TMA10002 /* Tests/MaintenanceAdvisorServiceTests.swift in Sources */,
 				SDA1TUP10002SDA1TUP10002 /* Tests/UsageProfileServiceTests.swift in Sources */,
 				AIP1TMSK0002AIP1TMSK0002 /* Tests/PIIMaskingServiceTests.swift in Sources */,
+				ANLYTEST0002ANLYTEST0002 /* Tests/AnalyticsServiceTests.swift in Sources */,
 				AIP1TPRX0002AIP1TPRX0002 /* Tests/AIProxyServiceTests.swift in Sources */,
 				LLM1TMRG0002LLM1TMRG0002 /* Tests/AIReceiptMergeTests.swift in Sources */,
 				LLM1TMPB0002LLM1TMPB0002 /* Tests/MaintenancePlanPayloadBuilderTests.swift in Sources */,
