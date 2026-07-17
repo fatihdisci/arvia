@@ -346,7 +346,17 @@ struct MaintenancePlanView: View {
             setStage(.unavailable)
         case .quotaExceeded:
             setStage(.failed("Yapay zekâ ay limitine ulaşıldı. Kural tabanlı öneriler çalışmaya devam ediyor."))
-        default:
+        case .transactionUnavailable:
+            setStage(.failed("Etkin Pro satın alımı bulunamadı. Pro durumunu kontrol edip tekrar dene."))
+        case .proEntitlementRequired:
+            setStage(.failed("Pro satın alımı doğrulanamadı. Satın Almaları Geri Yükle'yi dene."))
+        case .unauthorized, .notConfigured:
+            setStage(.failed("AI servisi yapılandırması doğrulanamadı."))
+        case .transport:
+            setStage(.failed("İnternet bağlantısı kurulamadı. Bağlantını kontrol edip tekrar dene."))
+        case .payloadTooLarge:
+            setStage(.failed("Plan verisi gönderim sınırını aşıyor."))
+        case .malformedResponse, .upstream:
             setStage(.failed("Plan oluşturulamadı. Daha sonra tekrar dene."))
         }
     }

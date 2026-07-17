@@ -45,18 +45,18 @@ final class PaywallService: ObservableObject {
 
     // MARK: - Product IDs
     // Auto-Renewable Subscriptions (App Store Connect → Subscriptions grubu)
-    static let subscriptionProductIDs = [
+    nonisolated static let subscriptionProductIDs = [
         "com.arvia.pro.monthly",
         "com.arvia.pro.yearly",
     ]
 
     // Non-Consumable IAP (App Store Connect → In-App Purchases, "Tek Seferlik")
-    static let nonConsumableProductIDs = [
+    nonisolated static let nonConsumableProductIDs = [
         "com.arvia.pro.lifetime",
     ]
 
     // StoreKit'ten yüklenecek ve entitlement kontrolünde kullanılacak birleşik set
-    static var allProProductIDs: [String] {
+    nonisolated static var allProProductIDs: [String] {
         subscriptionProductIDs + nonConsumableProductIDs
     }
 

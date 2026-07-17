@@ -32,8 +32,12 @@ Headers: `X-Arvia-Client: <shared secret>`, `Content-Type: application/json`
 Body:
 
 ```json
-{ "task": "receipt_parse" | "maintenance_plan", "payload": "<string>", "appReceipt": "<base64 App Store receipt>" }
+{ "task": "receipt_parse" | "maintenance_plan", "payload": "<string>", "transactionId": "<StoreKit 2 transaction ID>" }
 ```
+
+The iOS client reads the active verified StoreKit 2 transaction without calling
+`AppStore.sync()`. The proxy looks that ID up through Apple's App Store Server
+API. Legacy `appReceipt` requests remain temporarily supported during rollout.
 
 - `receipt_parse` → `{ "result": { date, total, vendor, odometer, category, isMaintenanceInvoice, lineItems[] }, "cached": bool }`
 - `maintenance_plan` → `{ "result": [ up to 3 { title, message, severity, suggestedIntervalKm?, suggestedIntervalMonths? } ], "cached": bool }`
@@ -48,8 +52,11 @@ Notable codes: `unauthorized` (401), `pro_entitlement_required` (403),
 | --- | --- |
 | `DEEPSEEK_API_KEY` | DeepSeek API key (server-side only). |
 | `ARVIA_CLIENT_SECRET` | Shared header secret checked against `X-Arvia-Client`. Obfuscation, not security. |
-| `ARVIA_APP_SHARED_SECRET` | App Store Connect app-specific shared secret used only server-side for receipt verification. |
-| `ARVIA_BUNDLE_ID` | Expected receipt bundle ID; defaults to `com.ruhsatim.app`. |
+| `ARVIA_IAP_ISSUER_ID` | Issuer ID from App Store Connect → Users and Access → Integrations → In-App Purchase. |
+| `ARVIA_IAP_KEY_ID` | Key ID belonging to the downloaded In-App Purchase `.p8` key. |
+| `ARVIA_IAP_PRIVATE_KEY` | Full contents of the downloaded `.p8` private key; server-side only. |
+| `ARVIA_APP_SHARED_SECRET` | Optional legacy fallback for old `appReceipt` clients during rollout. |
+| `ARVIA_BUNDLE_ID` | Expected transaction bundle ID; defaults to `com.ruhsatim.app`. |
 | `GLOBAL_DAILY_RECEIPT_LIMIT` | Optional hard daily receipt model-call ceiling (default 2000). |
 | `GLOBAL_DAILY_MAINTENANCE_LIMIT` | Optional hard daily maintenance model-call ceiling (default 1000). |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL (quota sayaçları). |
@@ -65,7 +72,9 @@ npx vercel login
 # add env vars to all environments (paste the value when prompted)
 npx vercel env add DEEPSEEK_API_KEY production
 npx vercel env add ARVIA_CLIENT_SECRET production
-npx vercel env add ARVIA_APP_SHARED_SECRET production
+npx vercel env add ARVIA_IAP_ISSUER_ID production
+npx vercel env add ARVIA_IAP_KEY_ID production
+npx vercel env add ARVIA_IAP_PRIVATE_KEY production
 npx vercel env add ARVIA_BUNDLE_ID production
 npx vercel env add UPSTASH_REDIS_REST_URL production
 npx vercel env add UPSTASH_REDIS_REST_TOKEN production
@@ -80,9 +89,8 @@ Redis); it injects `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` automat
 
 ## Example calls
 
-Replace `$URL`, `$SECRET`, and `$APP_RECEIPT` with your deployment values.
-Receipt enforcement must be deployed together with the 1.1 client; older clients
-do not send `appReceipt` and will receive 403 after enforcement is live.
+Replace `$URL`, `$SECRET`, and `$TRANSACTION_ID` with your deployment values.
+Transaction enforcement must be deployed together with the 1.1 client.
 
 ### 1) receipt_parse — success
 
@@ -90,7 +98,7 @@ do not send `appReceipt` and will receive 403 after enforcement is live.
 curl -s -X POST "$URL/api/complete" \
   -H "X-Arvia-Client: $SECRET" \
   -H "Content-Type: application/json" \
-  -d '{"task":"receipt_parse","appReceipt":"'$APP_RECEIPT'",
+  -d '{"task":"receipt_parse","transactionId":"'$TRANSACTION_ID'",
        "payload":"OPET AKARYAKIT\nTarih: 15.03.2024\nMOTORIN\nTOPLAM: 1.079,50 TL"}'
 ```
 
@@ -117,7 +125,7 @@ Expected:
 curl -s -X POST "$URL/api/complete" \
   -H "X-Arvia-Client: $SECRET" \
   -H "Content-Type: application/json" \
-  -d '{"task":"maintenance_plan","appReceipt":"'$APP_RECEIPT'",
+  -d '{"task":"maintenance_plan","transactionId":"'$TRANSACTION_ID'",
        "payload":"{\"fuelType\":\"lpg\",\"dailyKm\":80,\"routeType\":\"city\",\"ageYears\":7,\"odometer\":95000}"}'
 ```
 
@@ -142,7 +150,7 @@ for an Apple-verified Pro entitlement:
 curl -s -o /dev/null -w "%{http_code}\n" -X POST "$URL/api/complete" \
   -H "X-Arvia-Client: $SECRET" \
   -H "Content-Type: application/json" \
-  -d '{"task":"maintenance_plan","appReceipt":"'$APP_RECEIPT'","payload":"{}"}'
+  -d '{"task":"maintenance_plan","transactionId":"'$TRANSACTION_ID'","payload":"{}"}'
 # 429
 ```
 

@@ -16,6 +16,7 @@ const DEEPSEEK_THINKING = { type: "disabled" } as const;
 
 const MAX_PAYLOAD_CHARS = 20_000;
 const MAX_RECEIPT_CHARS = 2_000_000;
+const MAX_TRANSACTION_ID_CHARS = 64;
 
 const MONTHLY_LIMITS: Record<Task, number> = {
   receipt_parse: 100,
@@ -46,6 +47,8 @@ const PRO_PRODUCT_IDS = new Set([
 const EXPECTED_BUNDLE_ID = process.env.ARVIA_BUNDLE_ID ?? "com.ruhsatim.app";
 const APPLE_PRODUCTION_VERIFY_URL = "https://buy.itunes.apple.com/verifyReceipt";
 const APPLE_SANDBOX_VERIFY_URL = "https://sandbox.itunes.apple.com/verifyReceipt";
+const APPLE_SERVER_PRODUCTION_URL = "https://api.storekit.apple.com";
+const APPLE_SERVER_SANDBOX_URL = "https://api.storekit-sandbox.apple.com";
 
 type Task = "receipt_parse" | "maintenance_plan";
 
@@ -84,8 +87,11 @@ function getRedis(): Redis {
 }
 
 class MissingEnvError extends Error {
-  constructor(public readonly vars: string[]) {
+  readonly vars: string[];
+
+  constructor(vars: string[]) {
     super(`Missing env vars: ${vars.join(", ")}`);
+    this.vars = vars;
   }
 }
 
@@ -102,6 +108,24 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+function bytesToBase64URL(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function stringToBase64URL(value: string): string {
+  return bytesToBase64URL(new TextEncoder().encode(value));
+}
+
+export function decodeBase64URLJSON<T>(value: string): T {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes)) as T;
 }
 
 function monthKey(): string {
@@ -126,6 +150,124 @@ type AppleReceiptResponse = {
   latest_receipt_info?: AppleReceiptItem[];
 };
 
+type AppleTransactionPayload = {
+  bundleId?: string;
+  productId?: string;
+  transactionId?: string;
+  originalTransactionId?: string;
+  expiresDate?: number;
+  revocationDate?: number;
+};
+
+type AppleTransactionInfoResponse = {
+  signedTransactionInfo?: string;
+};
+
+let applePrivateKeyPromise: Promise<CryptoKey> | undefined;
+
+function appleServerEnv(): {
+  issuerId: string;
+  keyId: string;
+  privateKey: string;
+} {
+  const values = {
+    issuerId: process.env.ARVIA_IAP_ISSUER_ID,
+    keyId: process.env.ARVIA_IAP_KEY_ID,
+    privateKey: process.env.ARVIA_IAP_PRIVATE_KEY,
+  };
+  const missing: string[] = [];
+  if (!values.issuerId) missing.push("ARVIA_IAP_ISSUER_ID");
+  if (!values.keyId) missing.push("ARVIA_IAP_KEY_ID");
+  if (!values.privateKey) missing.push("ARVIA_IAP_PRIVATE_KEY");
+  if (missing.length > 0) throw new MissingEnvError(missing);
+  return {
+    issuerId: values.issuerId as string,
+    keyId: values.keyId as string,
+    privateKey: values.privateKey as string,
+  };
+}
+
+async function importApplePrivateKey(privateKeyPEM: string): Promise<CryptoKey> {
+  if (!applePrivateKeyPromise) {
+    applePrivateKeyPromise = (async () => {
+      const normalized = privateKeyPEM.replace(/\\n/g, "\n").trim();
+      const base64 = normalized
+        .replace("-----BEGIN PRIVATE KEY-----", "")
+        .replace("-----END PRIVATE KEY-----", "")
+        .replace(/\s/g, "");
+      const binary = atob(base64);
+      const keyData = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+      return crypto.subtle.importKey(
+        "pkcs8",
+        keyData,
+        { name: "ECDSA", namedCurve: "P-256" },
+        false,
+        ["sign"],
+      );
+    })();
+  }
+  return applePrivateKeyPromise;
+}
+
+export async function createAppleServerJWT(): Promise<string> {
+  const env = appleServerEnv();
+  const now = Math.floor(Date.now() / 1_000);
+  const header = stringToBase64URL(JSON.stringify({ alg: "ES256", kid: env.keyId, typ: "JWT" }));
+  const payload = stringToBase64URL(JSON.stringify({
+    iss: env.issuerId,
+    iat: now,
+    exp: now + 5 * 60,
+    aud: "appstoreconnect-v1",
+    bid: EXPECTED_BUNDLE_ID,
+  }));
+  const signingInput = `${header}.${payload}`;
+  const key = await importApplePrivateKey(env.privateKey);
+  const signature = await crypto.subtle.sign(
+    { name: "ECDSA", hash: "SHA-256" },
+    key,
+    new TextEncoder().encode(signingInput),
+  );
+  return `${signingInput}.${bytesToBase64URL(new Uint8Array(signature))}`;
+}
+
+async function callAppleTransactionInfo(
+  baseURL: string,
+  transactionId: string,
+): Promise<AppleTransactionPayload | null> {
+  const token = await createAppleServerJWT();
+  const response = await fetch(
+    `${baseURL}/inApps/v1/transactions/${encodeURIComponent(transactionId)}`,
+    { headers: { authorization: `Bearer ${token}` } },
+  );
+  // Sandbox işlemi production uç noktasında bulunmaz; sandbox'a geçebilmek için
+  // yalnızca "bulunamadı/geçersiz ID" sonuçlarını null kabul et.
+  if (response.status === 400 || response.status === 404) return null;
+  if (!response.ok) throw new Error(`apple_server_api_${response.status}`);
+  const body = (await response.json()) as AppleTransactionInfoResponse;
+  const parts = body.signedTransactionInfo?.split(".");
+  if (!parts || parts.length !== 3) throw new Error("apple_transaction_jws_missing");
+  // Yanıt, yalnızca sunucu tarafındaki özel .p8 anahtarıyla yetkilendirilmiş Apple
+  // HTTPS çağrısından gelir. İmzalı payload içeriğini yetki/bundle/ürün kontrolleri
+  // için çözümleriz; istemcinin gönderdiği alanlara güvenmeyiz.
+  return decodeBase64URLJSON<AppleTransactionPayload>(parts[1]);
+}
+
+async function verifyTransactionProEntitlement(transactionId: string): Promise<string | null> {
+  let transaction = await callAppleTransactionInfo(APPLE_SERVER_PRODUCTION_URL, transactionId);
+  if (!transaction) {
+    transaction = await callAppleTransactionInfo(APPLE_SERVER_SANDBOX_URL, transactionId);
+  }
+  if (!transaction || transaction.bundleId !== EXPECTED_BUNDLE_ID
+      || !transaction.productId || !PRO_PRODUCT_IDS.has(transaction.productId)
+      || transaction.revocationDate) {
+    return null;
+  }
+  const isLifetime = transaction.productId === "com.arvia.pro.lifetime";
+  if (!isLifetime && Number(transaction.expiresDate ?? 0) <= Date.now()) return null;
+  const stableId = transaction.originalTransactionId ?? transaction.transactionId;
+  return stableId ? sha256Hex(stableId) : null;
+}
+
 async function callAppleVerifyReceipt(url: string, appReceipt: string): Promise<AppleReceiptResponse> {
   const password = process.env.ARVIA_APP_SHARED_SECRET;
   if (!password) {
@@ -146,7 +288,7 @@ async function callAppleVerifyReceipt(url: string, appReceipt: string): Promise<
 
 // Returns a server-derived stable quota key. Client-provided identifiers are
 // deliberately not trusted: entitlement and identity both come from Apple.
-async function verifyProEntitlement(appReceipt: string): Promise<string | null> {
+async function verifyReceiptProEntitlement(appReceipt: string): Promise<string | null> {
   let response = await callAppleVerifyReceipt(APPLE_PRODUCTION_VERIFY_URL, appReceipt);
   if (response.status === 21007) {
     response = await callAppleVerifyReceipt(APPLE_SANDBOX_VERIFY_URL, appReceipt);
@@ -188,7 +330,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json(401, { error: { code: "unauthorized" } });
   }
 
-  let body: { task?: string; payload?: string; appReceipt?: string };
+  let body: { task?: string; payload?: string; transactionId?: string; appReceipt?: string };
   try {
     body = await req.json();
   } catch {
@@ -197,24 +339,33 @@ export default async function handler(req: Request): Promise<Response> {
 
   const task = body.task as Task;
   const payload = body.payload;
+  const transactionId = body.transactionId;
   const appReceipt = body.appReceipt;
 
   if (task !== "receipt_parse" && task !== "maintenance_plan") {
     return json(400, { error: { code: "invalid_task" } });
   }
-  if (typeof payload !== "string" || typeof appReceipt !== "string" || appReceipt.length === 0) {
+  const hasTransactionId = typeof transactionId === "string" && transactionId.length > 0;
+  const hasLegacyReceipt = typeof appReceipt === "string" && appReceipt.length > 0;
+  if (typeof payload !== "string" || (!hasTransactionId && !hasLegacyReceipt)) {
     return json(400, { error: { code: "invalid_request" } });
   }
   if (payload.length > MAX_PAYLOAD_CHARS) {
     return json(413, { error: { code: "payload_too_large", limit: MAX_PAYLOAD_CHARS } });
   }
-  if (appReceipt.length > MAX_RECEIPT_CHARS) {
+  if (hasTransactionId
+      && (transactionId.length > MAX_TRANSACTION_ID_CHARS || !/^\d+$/.test(transactionId))) {
+    return json(400, { error: { code: "invalid_transaction_id" } });
+  }
+  if (hasLegacyReceipt && appReceipt.length > MAX_RECEIPT_CHARS) {
     return json(413, { error: { code: "receipt_too_large", limit: MAX_RECEIPT_CHARS } });
   }
 
   let entitlementKey: string | null;
   try {
-    entitlementKey = await verifyProEntitlement(appReceipt);
+    entitlementKey = hasTransactionId
+      ? await verifyTransactionProEntitlement(transactionId)
+      : await verifyReceiptProEntitlement(appReceipt as string);
   } catch (err) {
     if (err instanceof MissingEnvError) {
       return json(500, { error: { code: "server_misconfigured", missing: err.vars } });

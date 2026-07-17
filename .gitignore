@@ -39,3 +39,4 @@ Configuration/Config.xcconfig
 # Claude Code — yalnızca yerel ayarlar ve worktree'ler ignore; skill'ler + CLAUDE.md git ile taşınır
 .claude/settings*.json
 .claude/worktrees/
+.vercel

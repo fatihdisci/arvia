@@ -5,6 +5,8 @@
   "description": "Stateless Vercel Edge proxy for Arvia AI chat completions (DeepSeek V4).",
   "type": "module",
   "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit",
     "dev": "vercel dev",
     "deploy": "vercel --prod"
   },

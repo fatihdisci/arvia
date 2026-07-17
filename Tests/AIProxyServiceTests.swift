@@ -112,17 +112,17 @@ final class AIProxyServiceTests: XCTestCase {
         }
     }
 
-    func testCompleteRequiresAppReceiptBeforeNetwork() async {
+    func testCompleteRequiresVerifiedTransactionBeforeNetwork() async {
         let service = AIProxyService(
             consent: StubConsent(enabled: true),
             configProvider: { AIProxyConfig(baseURL: URL(string: "https://example.com")!, clientSecret: "x") },
-            appReceiptProvider: { nil }
+            proTransactionIDProvider: { nil }
         )
         do {
             _ = try await service.complete(task: .maintenancePlan, payload: "{}")
-            XCTFail("beklenen .receiptUnavailable")
+            XCTFail("beklenen .transactionUnavailable")
         } catch let error as AIProxyError {
-            XCTAssertEqual(error, .receiptUnavailable)
+            XCTAssertEqual(error, .transactionUnavailable)
         } catch {
             XCTFail("beklenmeyen hata: \(error)")
         }

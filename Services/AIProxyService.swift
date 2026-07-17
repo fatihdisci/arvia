@@ -1,4 +1,5 @@
 import Foundation
+import StoreKit
 
 // MARK: - AI Proxy Service
 // Vercel edge proxy'ye ince async istemci. Model anahtarı cihazda TUTULMAZ;
@@ -43,7 +44,7 @@ enum AIProxyError: Error, Equatable {
     case quotaExceeded(task: String?)
     case unauthorized
     case proEntitlementRequired
-    case receiptUnavailable
+    case transactionUnavailable
     case malformedResponse
     case upstream(status: Int)
     case transport
@@ -104,18 +105,20 @@ final class AIProxyService {
     private let session: URLSession
     private let consent: AIConsentProviding
     private let configProvider: () -> AIProxyConfig?
-    private let appReceiptProvider: () -> String?
+    private let proTransactionIDProvider: () async -> String?
 
     init(
         session: URLSession = .shared,
         consent: AIConsentProviding = AIConsentStore.shared,
         configProvider: @escaping () -> AIProxyConfig? = { AIProxyConfig.load() },
-        appReceiptProvider: @escaping () -> String? = { AIProxyService.currentAppReceipt() }
+        proTransactionIDProvider: @escaping () async -> String? = {
+            await AIProxyService.currentProTransactionID()
+        }
     ) {
         self.session = session
         self.consent = consent
         self.configProvider = configProvider
-        self.appReceiptProvider = appReceiptProvider
+        self.proTransactionIDProvider = proTransactionIDProvider
     }
 
     private static let maxPayloadChars = 20_000
@@ -139,7 +142,9 @@ final class AIProxyService {
         guard consent.isCloudAIEnabled else { throw AIProxyError.disabled }
         guard payload.count <= Self.maxPayloadChars else { throw AIProxyError.payloadTooLarge }
         guard let config = configProvider() else { throw AIProxyError.notConfigured }
-        guard let appReceipt = appReceiptProvider() else { throw AIProxyError.receiptUnavailable }
+        guard let transactionID = await proTransactionIDProvider(), !transactionID.isEmpty else {
+            throw AIProxyError.transactionUnavailable
+        }
 
         var request = URLRequest(url: config.baseURL.appendingPathComponent("api/complete"))
         request.httpMethod = "POST"
@@ -149,7 +154,7 @@ final class AIProxyService {
             RequestBody(
                 task: task.rawValue,
                 payload: payload,
-                appReceipt: appReceipt
+                transactionId: transactionID
             )
         )
 
@@ -202,7 +207,7 @@ final class AIProxyService {
     private struct RequestBody: Encodable {
         let task: String
         let payload: String
-        let appReceipt: String
+        let transactionId: String
     }
 
     private struct ErrorBody: Decodable {
@@ -210,12 +215,22 @@ final class AIProxyService {
         let error: Inner
     }
 
-    private static func currentAppReceipt() -> String? {
-        guard let url = Bundle.main.appStoreReceiptURL,
-              let data = try? Data(contentsOf: url),
-              !data.isEmpty else {
-            return nil
+    /// StoreKit 2'nin cihazda zaten doğruladığı etkin Pro işlemini bulur.
+    /// Klasik receipt dosyasını okumaz ve AppStore.sync çağırmadığı için kullanıcıya
+    /// parola/geri yükleme ekranı göstermez. Sunucu bu ID'yi Apple Server API'den
+    /// yeniden doğrular; istemci beyanına güvenmez.
+    private static func currentProTransactionID() async -> String? {
+        for await entitlement in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = entitlement,
+                  PaywallService.allProProductIDs.contains(transaction.productID),
+                  transaction.revocationDate == nil else {
+                continue
+            }
+            if let expirationDate = transaction.expirationDate, expirationDate <= Date() {
+                continue
+            }
+            return String(transaction.id)
         }
-        return data.base64EncodedString()
+        return nil
     }
 }
