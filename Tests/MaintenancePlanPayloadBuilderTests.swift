@@ -82,16 +82,14 @@ final class MaintenancePlanPayloadBuilderTests: XCTestCase {
         XCTAssertEqual(reminders.first?["state"] as? String, "upcoming")
     }
 
-    // MARK: - Cache freshness
-    func testCacheFreshness() {
-        let now = Date()
-        let fresh = MaintenancePlanCacheStore.Cached(suggestions: [], createdAt: now)
-        XCTAssertTrue(MaintenancePlanCacheStore.isFresh(fresh, now: now))
-
-        let stale = MaintenancePlanCacheStore.Cached(
+    // MARK: - Cache identity
+    func testCacheReuseDependsOnlyOnInputHash() {
+        let oldPlan = MaintenancePlanCacheStore.Cached(
             suggestions: [],
-            createdAt: Calendar.current.date(byAdding: .day, value: -31, to: now)!
+            createdAt: Calendar.current.date(byAdding: .year, value: -2, to: Date())!,
+            inputHash: "same-input"
         )
-        XCTAssertFalse(MaintenancePlanCacheStore.isFresh(stale, now: now))
+        XCTAssertTrue(MaintenancePlanCacheStore.canReuse(oldPlan, inputHash: "same-input"))
+        XCTAssertFalse(MaintenancePlanCacheStore.canReuse(oldPlan, inputHash: "changed-input"))
     }
 }

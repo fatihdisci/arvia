@@ -4,7 +4,8 @@ import SwiftData
 // MARK: - Maintenance Plan View (LLM-deepened, on-demand)
 // Kullanıcı tetikler (otomatik değil). Pro + AI onayı + ana toggle gerekir.
 // ≤3 öneri kart olarak gösterilir; her kart mevcut hatırlatıcı akışını
-// suggestedIntervalKm/Months ile önden doldurur. Sonuç 30 gün yerelde önbelleklenir.
+// suggestedIntervalKm/Months ile önden doldurur. Sonuç, araç girdisi değişene
+// kadar kalıcı yerel cache'ten aynen kullanılır.
 struct MaintenancePlanView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -55,7 +56,7 @@ struct MaintenancePlanView: View {
                     if case .loaded = stage {
                         ToolbarItem(placement: .confirmationAction) {
                             Button {
-                                generate(force: true)
+                                generate()
                             } label: {
                                 Image(systemName: "arrow.clockwise")
                                     .foregroundColor(AppColors.accentPrimary)
@@ -77,7 +78,7 @@ struct MaintenancePlanView: View {
                         onAccept: {
                             UserDefaults.standard.set(true, forKey: AIConsentStore.consentKey)
                             UserDefaults.standard.set(true, forKey: AIConsentStore.enabledKey)
-                            generate(force: true)
+                            generate()
                         },
                         onDecline: {}
                     )
@@ -305,7 +306,7 @@ struct MaintenancePlanView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, AppSpacing.lg)
             Button {
-                generate(force: true)
+                generate()
             } label: {
                 Text("Tekrar dene").frame(maxWidth: .infinity)
             }
@@ -319,8 +320,7 @@ struct MaintenancePlanView: View {
     private func loadInitial() {
         guard case .idle = stage else { return }
         // Araç verisi değişmediyse son cache'i kullan; değiştiyse yeniden üret.
-        // (force: false → parmak izi karşılaştırması generate içinde yapılır.)
-        generate(force: false)
+        generate()
     }
 
     /// Stage değişimlerini her zaman animasyonlu uygular — idle/loading/loaded/failed
@@ -331,7 +331,7 @@ struct MaintenancePlanView: View {
         }
     }
 
-    private func generate(force: Bool) {
+    private func generate() {
         // Üç koşul — asla varsayma.
         guard PaywallService.shared.isPro,
               AIConsentStore.shared.isCloudAIEnabled else {
@@ -343,13 +343,10 @@ struct MaintenancePlanView: View {
         let payload = buildPayload()
         let inputHash = MaintenancePlanCacheStore.fingerprint(payload)
 
-        // Zorlanmadıysa ve cache taze + aynı girdilerle üretilmişse: son cache'i göster.
-        // Böylece araç detayında bir değişiklik olmadıkça AI yeniden çağrılmaz
-        // (aynı veriyle farklı sonuç riski ortadan kalkar).
-        if !force,
-           let cached = MaintenancePlanCacheStore.load(vehicleId: vehicle.id),
-           MaintenancePlanCacheStore.isFresh(cached),
-           cached.inputHash == inputHash {
+        // Yenile butonu dahil hiçbir giriş noktası aynı payload için AI'ı tekrar
+        // çağıramaz. Planın yaşı değil yalnızca araç girdisinin hash'i belirleyicidir.
+        if let cached = MaintenancePlanCacheStore.load(vehicleId: vehicle.id),
+           MaintenancePlanCacheStore.canReuse(cached, inputHash: inputHash) {
             suggestions = cached.suggestions
             setStage(.loaded(fromCache: true))
             return

@@ -135,7 +135,12 @@ enum MaintenancePlanPayloadBuilder {
                 routeType: input.routeType,
                 fuelConsumptionCity: input.fuelConsumptionCity,
                 fuelConsumptionHighway: input.fuelConsumptionHighway,
-                tripTypes: input.tripTypes.prefix(8).map { clipped($0, limit: 80) }
+                tripTypes: input.tripTypes
+                    .map { clipped($0, limit: 80) }
+                    .filter { !$0.isEmpty }
+                    .sorted()
+                    .prefix(8)
+                    .map { $0 }
             ),
             vehicle: .init(
                 brand: clipped(input.brand, limit: 80),
@@ -433,10 +438,8 @@ enum MaintenancePlanPayloadFactory {
     }
 }
 
-// MARK: - Maintenance Plan Cache (file-based, 30-day freshness)
+// MARK: - Maintenance Plan Cache (file-based, input-hash identity)
 enum MaintenancePlanCacheStore {
-    static let freshnessDays = 30
-
     struct Cached: Codable, Equatable {
         let suggestions: [MaintenancePlanSuggestion]
         let createdAt: Date
@@ -452,38 +455,63 @@ enum MaintenancePlanCacheStore {
         return digest.map { String(format: "%02x", $0) }.joined()
     }
 
+    /// Sonuçlar geçici Caches altında tutulmaz; sistem bu klasörü silebilir ve aynı
+    /// girdinin yeniden AI'a gidip farklı sonuç üretmesine neden olabilir. Application
+    /// Support, kullanıcı verisi değişene kadar plan kimliğini kalıcı tutar.
     private static var directory: URL {
-        let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Arvia", isDirectory: true)
             .appendingPathComponent("MaintenancePlans", isDirectory: true)
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         return base
     }
 
-    private static func fileURL(for vehicleId: UUID) -> URL {
+    private static var legacyDirectory: URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("MaintenancePlans", isDirectory: true)
+    }
+
+    private static func fileURL(for vehicleId: UUID, in directory: URL = directory) -> URL {
         directory.appendingPathComponent("plan_\(vehicleId.uuidString).json")
     }
 
     static func load(vehicleId: UUID) -> Cached? {
         let url = fileURL(for: vehicleId)
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        return try? JSONDecoder().decode(Cached.self, from: data)
+        if let data = try? Data(contentsOf: url),
+           let cached = try? JSONDecoder().decode(Cached.self, from: data) {
+            return cached
+        }
+
+        // 1.1 geliştirme öncesindeki geçici cache'i tek seferde kalıcı alana taşı.
+        let legacyURL = fileURL(for: vehicleId, in: legacyDirectory)
+        guard let data = try? Data(contentsOf: legacyURL),
+              let cached = try? JSONDecoder().decode(Cached.self, from: data) else {
+            return nil
+        }
+        do {
+            try data.write(to: url, options: .atomic)
+            try? FileManager.default.removeItem(at: legacyURL)
+        } catch {
+            // Taşıma başarısız olsa bile okunabilen mevcut planı bu oturumda kullan.
+        }
+        return cached
     }
 
     static func save(_ suggestions: [MaintenancePlanSuggestion], vehicleId: UUID, inputHash: String? = nil, now: Date = Date()) {
         let cached = Cached(suggestions: suggestions, createdAt: now, inputHash: inputHash)
         guard let data = try? JSONEncoder().encode(cached) else { return }
-        try? data.write(to: fileURL(for: vehicleId))
+        try? data.write(to: fileURL(for: vehicleId), options: .atomic)
     }
 
-    static func isFresh(_ cached: Cached, now: Date = Date()) -> Bool {
-        guard let expiry = Calendar.current.date(byAdding: .day, value: freshnessDays, to: cached.createdAt) else {
-            return false
-        }
-        return now < expiry
+    /// Tarihten bağımsız tek yeniden-üretim kuralı: yalnızca payload parmak izi
+    /// değiştiyse AI çağrılabilir. Aynı hash her zaman aynı kayıtlı planı döndürür.
+    static func canReuse(_ cached: Cached, inputHash: String) -> Bool {
+        cached.inputHash == inputHash
     }
 
     static func clear(vehicleId: UUID) {
         try? FileManager.default.removeItem(at: fileURL(for: vehicleId))
+        try? FileManager.default.removeItem(at: fileURL(for: vehicleId, in: legacyDirectory))
     }
 
     /// Tüm araçların maintenance plan cache dosyalarını disk'ten siler.
@@ -492,9 +520,14 @@ enum MaintenancePlanCacheStore {
     /// orphan olarak kalır ve yeni eklenen araçlar eski planla karışabilir.
     static func deleteAll() {
         let fm = FileManager.default
-        guard let entries = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
-        for url in entries where url.lastPathComponent.hasPrefix("plan_") && url.pathExtension == "json" {
-            try? fm.removeItem(at: url)
+        for targetDirectory in [directory, legacyDirectory] {
+            guard let entries = try? fm.contentsOfDirectory(
+                at: targetDirectory,
+                includingPropertiesForKeys: nil
+            ) else { continue }
+            for url in entries where url.lastPathComponent.hasPrefix("plan_") && url.pathExtension == "json" {
+                try? fm.removeItem(at: url)
+            }
         }
     }
 }

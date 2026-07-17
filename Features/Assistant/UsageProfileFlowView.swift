@@ -1058,6 +1058,16 @@ struct AssistantView: View {
         let vehicleId = vehicle.id
 
         planFailure = nil
+
+        // Aynı araç girdisi daha önce üretildiyse "Yenile" yeni AI çağrısı yapmaz.
+        // Cache'in tarihi önemli değildir; yalnızca payload hash'i değişirse yeni
+        // sonuç üretilebilir. Böylece aynı veri her zaman aynı kartları gösterir.
+        if let cached = MaintenancePlanCacheStore.load(vehicleId: vehicleId),
+           MaintenancePlanCacheStore.canReuse(cached, inputHash: inputHash) {
+            planCacheRevision += 1
+            return
+        }
+
         generatingPlanVehicleId = vehicleId
         Task {
             do {
