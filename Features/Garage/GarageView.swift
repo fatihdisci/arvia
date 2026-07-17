@@ -38,6 +38,11 @@ struct GarageView: View {
     // 0 = hiç dismiss edilmedi, aksi halde dismiss zamanı (epoch seconds).
     @AppStorage("guideIntroDismissedAt") private var guideIntroDismissedAt: Double = 0
 
+    // Onboarding'de seçilen öncelik — ana ekran başlangıç kartını kişiselleştirir.
+    @AppStorage(OnboardingConstants.goalKey) private var primaryGoalRaw = ""
+    // Goal başlangıç kartı elle kapatıldıysa bir daha gösterme.
+    @AppStorage("goal_starter_dismissed") private var goalStarterDismissed = false
+
     // QuickAction sheets
     @State private var showAddExpense = false
     @State private var showAddService = false
@@ -443,8 +448,12 @@ struct GarageView: View {
                         .padding(.horizontal, AppSpacing.screenMarginH)
                     }
 
-                    // 1.6. Kişisel bakım planı ve kullanım profili artık "Asistan"
-                    // sekmesinde toplanıyor — Garaj'daki teaser kaldırıldı.
+                    // 1.6. Amaç başlangıç kartı — onboarding'de seçilen önceliğe göre
+                    // ilk eylemi öne çıkarır. Yalnızca ilgili boşluk varken görünür,
+                    // kullanıcı ilk kaydını ekleyince kaybolur.
+                    if let vehicle = currentVehicle {
+                        goalStarterCard(vehicle: vehicle)
+                    }
 
                     // 2. Bugün Garajında
                     if let vehicle = currentVehicle {
@@ -681,6 +690,73 @@ struct GarageView: View {
         formatter.locale = Locale(identifier: "tr_TR")
         formatter.maximumFractionDigits = 0
         return formatter.string(from: NSNumber(value: value)) ?? "₺0"
+    }
+
+    // MARK: - Amaç Başlangıç Kartı
+    /// Onboarding'de seçilen `primary_goal`'e göre, kullanıcının o öncelikte henüz
+    /// ilk kaydını yapmadığı durumda gösterilen tek eylemli kart. Veri boşluğu
+    /// dolunca kendiliğinden kaybolur; elle kapatılabilir.
+    @ViewBuilder
+    private func goalStarterCard(vehicle: Vehicle) -> some View {
+        if !goalStarterDismissed,
+           let goal = OnboardingGoal(rawValue: primaryGoalRaw),
+           let spec = goalStarterSpec(for: goal, vehicle: vehicle) {
+            GoalStarterCard(
+                icon: goal.icon,
+                title: spec.title,
+                message: spec.message,
+                ctaTitle: spec.ctaTitle,
+                onCTA: spec.action,
+                onDismiss: { goalStarterDismissed = true }
+            )
+            .padding(.horizontal, AppSpacing.screenMarginH)
+        }
+    }
+
+    private struct GoalStarterSpec {
+        let title: String
+        let message: String
+        let ctaTitle: String
+        let action: () -> Void
+    }
+
+    /// İlgili amaç için boşluk varsa kart içeriğini döndürür; kayıt zaten varsa nil.
+    private func goalStarterSpec(for goal: OnboardingGoal, vehicle: Vehicle) -> GoalStarterSpec? {
+        switch goal {
+        case .expenses:
+            guard expenses(for: vehicle).isEmpty else { return nil }
+            return GoalStarterSpec(
+                title: "İlk masrafını kaydet",
+                message: "Bir masraf ekle; aylık ve kategori bazlı özetin oluşmaya başlasın.",
+                ctaTitle: "Masraf Ekle",
+                action: { showAddExpense = true }
+            )
+        case .maintenance:
+            guard services(for: vehicle).isEmpty else { return nil }
+            return GoalStarterSpec(
+                title: "İlk bakımını kaydet",
+                message: "Yapılan bakımı ekle; bir sonraki bakımı takip etmen kolaylaşsın.",
+                ctaTitle: "Bakım Ekle",
+                action: { showAddService = true }
+            )
+        case .importantDates:
+            let hasDatedReminder = activeReminders.contains { $0.vehicleId == vehicle.id && $0.dueDate != nil }
+            guard !hasDatedReminder else { return nil }
+            return GoalStarterSpec(
+                title: "İlk önemli tarihini ekle",
+                message: "Muayene, sigorta veya kasko tarihini ekle; yaklaşınca haber verelim.",
+                ctaTitle: "Hatırlatma Ekle",
+                action: { showAddReminder = true }
+            )
+        case .documents:
+            guard documents(for: vehicle).isEmpty else { return nil }
+            return GoalStarterSpec(
+                title: "İlk belgeni ekle",
+                message: "Ruhsat, sigorta veya bir faturayı ekle; hepsi tek yerde dursun.",
+                ctaTitle: "Belge Ekle",
+                action: { showAddDocument = true }
+            )
+        }
     }
 
     private func todayGarageSection(vehicle: Vehicle) -> some View {

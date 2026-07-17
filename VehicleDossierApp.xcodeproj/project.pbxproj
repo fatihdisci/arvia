@@ -40,6 +40,7 @@
 		6482D10BC5FE4D459BA00E4E /* RecordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A62F298D91FC44A895A9B49D /* RecordsView.swift */; };
 		65C701D4860045309AB77D05 /* VehiclePhotoStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BEEB3AAF7FD4CCBB63573A7 /* VehiclePhotoStorageService.swift */; };
 		690B9BE68E864ACA853C6948 /* RehberIntroBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C0CA2E86C24103A6F89443 /* RehberIntroBanner.swift */; };
+		GOALSTRT0002GOALSTRT0002 /* GoalStarterCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = GOALSTRT0001GOALSTRT0001 /* GoalStarterCard.swift */; };
 		69FF034D0EAD433D956BFDCE /* ReminderRepeatEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65B13317EA9D40DE9A31EA7C /* ReminderRepeatEngine.swift */; };
 		704553A5D8D7470392BF72B8 /* DocumentListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2E23CA3F1604CC3A42758D6 /* DocumentListView.swift */; };
 		727B82C281964647B9E8E609 /* VehicleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D5DA3EDB4F445B8B998459 /* VehicleDetailView.swift */; };
@@ -234,6 +235,7 @@
 		C4349C93A9B5494B85D140E6 /* DocumentStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentStorageService.swift; sourceTree = "<group>"; };
 		C4A5CB0F3A1E4948922C78CC /* RemindersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersView.swift; sourceTree = "<group>"; };
 		C8C0CA2E86C24103A6F89443 /* RehberIntroBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RehberIntroBanner.swift; sourceTree = "<group>"; };
+		GOALSTRT0001GOALSTRT0001 /* GoalStarterCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalStarterCard.swift; sourceTree = "<group>"; };
 		C8FFDAA0779F49F26FB74BF1 /* AppBrand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBrand.swift; sourceTree = "<group>"; };
 		CC11DD22EE33FF44AA55BB6600 /* RecentRecordsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentRecordsSection.swift; sourceTree = "<group>"; };
 		CCAT0001CCAT0001CCAT0001 /* CarCatalogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarCatalogService.swift; sourceTree = "<group>"; };
@@ -532,6 +534,7 @@
 				9F4536EA611C03F6DBBB7F5A /* TachometerGauge.swift */,
 				AE62D7B7FDAE440B9176077B /* EmptyStateView.swift */,
 				C8C0CA2E86C24103A6F89443 /* RehberIntroBanner.swift */,
+				GOALSTRT0001GOALSTRT0001 /* GoalStarterCard.swift */,
 				AA11BB22CC33DD44EE55FF6600 /* QuickOdometerUpdateSheet.swift */,
 			);
 			path = Components;
@@ -771,6 +774,7 @@
 				559086DD7D8C5D4B99927AA6 /* DosyaniTamamlaChecklist.swift in Sources */,
 				A11B22C33D44E55F66A77B06 /* ArviaGuideCard.swift in Sources */,
 				690B9BE68E864ACA853C6948 /* RehberIntroBanner.swift in Sources */,
+				GOALSTRT0002GOALSTRT0002 /* GoalStarterCard.swift in Sources */,
 				AA11BB22CC33DD44EE55FF6601 /* QuickOdometerUpdateSheet.swift in Sources */,
 				938AB55FE3448B27D70E566C /* OnboardingView.swift in Sources */,
 				ONBOMODL0002ONBOMODL0002 /* OnboardingModels.swift in Sources */,
