@@ -32,6 +32,8 @@ struct HistoryView: View {
     @State private var editingInspection: InspectionReport?
     @State private var showDeleteConfirmation = false
     @State private var itemToDelete: Any? = nil
+    @State private var operationError: String?
+    @State private var searchText = ""
 
     enum HistoryFilter: String, CaseIterable {
         case all = "Tümü"
@@ -71,11 +73,19 @@ struct HistoryView: View {
     var body: some View {
         Group {
             if isEmpty {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        emptyState
-                        // Boş state'te son öğenin tab bar altına girmemesi için
-                        Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
+                if hasActiveSearch {
+                    EmptyStateView(
+                        icon: "magnifyingglass",
+                        title: "Sonuç bulunamadı",
+                        description: "Arama metnini veya seçili filtreleri değiştirerek tekrar deneyebilirsin."
+                    )
+                } else {
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            emptyState
+                            // Boş state'te son öğenin tab bar altına girmemesi için
+                            Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
+                        }
                     }
                 }
             } else {
@@ -98,6 +108,7 @@ struct HistoryView: View {
             .background(Color.appBackground)
         }
         .background(Color.appBackground.ignoresSafeArea())
+        .searchable(text: $searchText, prompt: "Geçmişte ara")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
@@ -132,6 +143,14 @@ struct HistoryView: View {
             Button("Sil", role: .destructive) { performDelete() }
             Button("Vazgeç", role: .cancel) {}
         }, message: { Text("Bu işlem geri alınamaz.") })
+        .alert("İşlem Tamamlanamadı", isPresented: Binding(
+            get: { operationError != nil },
+            set: { if !$0 { operationError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text(operationError ?? "Bilinmeyen bir hata oluştu.")
+        }
         .quickLookPreview($previewURL)
     }
 
@@ -188,20 +207,73 @@ struct HistoryView: View {
         return date >= cutoff
     }
 
+    private var hasActiveSearch: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func matchesSearch(_ values: [String?]) -> Bool {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return true }
+        return values.compactMap { $0 }.contains {
+            $0.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    private func vehicleSearchValues(for vehicleId: UUID) -> [String?] {
+        guard let vehicle = vehicleFor(id: vehicleId) else { return [] }
+        return [vehicle.plate, vehicle.fullName, vehicle.nickname]
+    }
+
+    private func matchesExpense(_ expense: Expense) -> Bool {
+        matchesSearch([
+            expense.category.displayName, expense.vendorName, expense.note,
+            expense.amountCompactDisplay
+        ] + vehicleSearchValues(for: expense.vehicleId))
+    }
+
+    private func matchesService(_ record: ServiceRecord) -> Bool {
+        matchesSearch([
+            record.serviceType.displayName, record.vendorName, record.notes,
+            record.oilType, record.totalCostDisplay
+        ] + vehicleSearchValues(for: record.vehicleId))
+    }
+
+    private func matchesDocument(_ document: VehicleDocument) -> Bool {
+        matchesSearch([
+            document.title, document.type.displayName, document.vendorName,
+            document.originalFileName
+        ] + vehicleSearchValues(for: document.vehicleId))
+    }
+
+    private func matchesInspection(_ report: InspectionReport) -> Bool {
+        matchesSearch([
+            report.providerName, report.branchName, report.summary,
+            report.odometerDisplay
+        ] + vehicleSearchValues(for: report.vehicleId))
+    }
+
+    private func matchesReminder(_ reminder: Reminder) -> Bool {
+        matchesSearch([
+            reminder.title, reminder.type.displayName, reminder.notes, "Tamamlandı"
+        ] + vehicleSearchValues(for: reminder.vehicleId))
+    }
+
     // MARK: - Empty State
     private var isEmpty: Bool {
         switch selectedFilter {
         case .all:
-            let hasItems = allExpenses.contains { isWithinDateRange($0.date) }
-                || allServiceRecords.contains { isWithinDateRange($0.date) }
-                || allDocuments.contains { isWithinDateRange($0.createdAt) }
-                || allInspections.contains { isWithinDateRange($0.reportDate) }
-                || completedReminders.contains { isWithinDateRange($0.addedToHistoryAt ?? .distantPast) }
+            let hasItems = allExpenses.contains { isWithinDateRange($0.date) && matchesExpense($0) }
+                || allServiceRecords.contains { isWithinDateRange($0.date) && matchesService($0) }
+                || allDocuments.contains { isWithinDateRange($0.createdAt) && matchesDocument($0) }
+                || allInspections.contains { isWithinDateRange($0.reportDate) && matchesInspection($0) }
+                || completedReminders.contains {
+                    isWithinDateRange($0.addedToHistoryAt ?? .distantPast) && matchesReminder($0)
+                }
             return !hasItems
-        case .expenses: return allExpenses.filter { isWithinDateRange($0.date) }.isEmpty
-        case .services: return allServiceRecords.filter { isWithinDateRange($0.date) }.isEmpty
-        case .documents: return allDocuments.filter { isWithinDateRange($0.createdAt) }.isEmpty
-        case .inspections: return allInspections.filter { isWithinDateRange($0.reportDate) }.isEmpty
+        case .expenses: return allExpenses.filter { isWithinDateRange($0.date) && matchesExpense($0) }.isEmpty
+        case .services: return allServiceRecords.filter { isWithinDateRange($0.date) && matchesService($0) }.isEmpty
+        case .documents: return allDocuments.filter { isWithinDateRange($0.createdAt) && matchesDocument($0) }.isEmpty
+        case .inspections: return allInspections.filter { isWithinDateRange($0.reportDate) && matchesInspection($0) }.isEmpty
         }
     }
 
@@ -343,7 +415,7 @@ struct HistoryView: View {
 
     // MARK: - Expense Section — flat
     private var expenseSection: some View {
-        let filtered = allExpenses.filter { isWithinDateRange($0.date) }
+        let filtered = allExpenses.filter { isWithinDateRange($0.date) && matchesExpense($0) }
         return Section {
             ForEach(filtered) { expense in
                 Button {
@@ -404,7 +476,7 @@ struct HistoryView: View {
 
     // MARK: - Service Section — flat
     private var serviceSection: some View {
-        let filtered = allServiceRecords.filter { isWithinDateRange($0.date) }
+        let filtered = allServiceRecords.filter { isWithinDateRange($0.date) && matchesService($0) }
         return Section {
             ForEach(filtered) { record in
                 Button {
@@ -468,7 +540,7 @@ struct HistoryView: View {
 
     // MARK: - Document Section — flat
     private var documentSection: some View {
-        let filtered = allDocuments.filter { isWithinDateRange($0.createdAt) }
+        let filtered = allDocuments.filter { isWithinDateRange($0.createdAt) && matchesDocument($0) }
         return Section {
             ForEach(filtered) { doc in
                 Button {
@@ -543,7 +615,7 @@ struct HistoryView: View {
 
     // MARK: - Inspection Section — flat
     private var inspectionSection: some View {
-        let filtered = allInspections.filter { isWithinDateRange($0.reportDate) }
+        let filtered = allInspections.filter { isWithinDateRange($0.reportDate) && matchesInspection($0) }
         return Section {
             ForEach(filtered) { report in
                 Button {
@@ -611,7 +683,7 @@ struct HistoryView: View {
 
     private func buildTimeline() -> [HistoryTimelineItem] {
         var items: [HistoryTimelineItem] = []
-        for e in allExpenses where isWithinDateRange(e.date) {
+        for e in allExpenses where isWithinDateRange(e.date) && matchesExpense(e) {
             let plate = vehicleFor(id: e.vehicleId).map { $0.plate.isEmpty ? $0.fullName : $0.plate } ?? ""
             items.append(HistoryTimelineItem(
                 icon: e.category.defaultIcon,
@@ -623,7 +695,7 @@ struct HistoryView: View {
                 color: AppColors.accentPrimary
             ))
         }
-        for s in allServiceRecords where isWithinDateRange(s.date) {
+        for s in allServiceRecords where isWithinDateRange(s.date) && matchesService(s) {
             let plate = vehicleFor(id: s.vehicleId).map { $0.plate.isEmpty ? $0.fullName : $0.plate } ?? ""
             items.append(HistoryTimelineItem(
                 icon: "wrench.and.screwdriver",
@@ -635,7 +707,7 @@ struct HistoryView: View {
                 color: AppColors.warning
             ))
         }
-        for d in allDocuments where isWithinDateRange(d.createdAt) {
+        for d in allDocuments where isWithinDateRange(d.createdAt) && matchesDocument(d) {
             let plate = vehicleFor(id: d.vehicleId).map { $0.plate.isEmpty ? $0.fullName : $0.plate } ?? ""
             items.append(HistoryTimelineItem(
                 icon: d.type.defaultIcon,
@@ -647,7 +719,7 @@ struct HistoryView: View {
                 color: AppColors.document
             ))
         }
-        for i in allInspections where isWithinDateRange(i.reportDate) {
+        for i in allInspections where isWithinDateRange(i.reportDate) && matchesInspection(i) {
             let plate = vehicleFor(id: i.vehicleId).map { $0.plate.isEmpty ? $0.fullName : $0.plate } ?? ""
             items.append(HistoryTimelineItem(
                 icon: "magnifyingglass",
@@ -659,7 +731,8 @@ struct HistoryView: View {
                 color: AppColors.accentPrimary
             ))
         }
-        for r in completedReminders where isWithinDateRange(r.addedToHistoryAt ?? .distantPast) {
+        for r in completedReminders
+        where isWithinDateRange(r.addedToHistoryAt ?? .distantPast) && matchesReminder(r) {
             let vehicle = vehicles.first { $0.id == r.vehicleId }
             let vehicleText = vehicle.map { $0.plate.isEmpty ? $0.fullName : $0.plate } ?? ""
             let historyDate = r.addedToHistoryAt ?? r.completedAt ?? .distantPast
@@ -673,7 +746,7 @@ struct HistoryView: View {
                 color: AppColors.success
             ))
         }
-        return items.sorted { $0.date > $1.date }.prefix(50).map { $0 }
+        return items.sorted { $0.date > $1.date }
     }
 
     // MARK: - Vehicle helper
@@ -689,18 +762,43 @@ struct HistoryView: View {
 
     private func performDelete() {
         guard let item = itemToDelete else { return }
+        var documentFileName: String?
+        var reminderIDsToCancel: [UUID] = []
         if let expense = item as? Expense {
             modelContext.delete(expense)
         } else if let service = item as? ServiceRecord {
             modelContext.delete(service)
         } else if let doc = item as? VehicleDocument {
-            try? DocumentStorageService.shared.deleteFile(doc.localFileName)
+            let linkedReminders: [Reminder]
+            do {
+                linkedReminders = try modelContext.fetch(FetchDescriptor<Reminder>())
+                    .filter { $0.sourceDocumentId == doc.id }
+            } catch {
+                operationError = "Belgeye bağlı hatırlatıcılar okunamadı. Kayıt silinmedi."
+                return
+            }
+            reminderIDsToCancel = linkedReminders.map(\.id)
+            linkedReminders.forEach(modelContext.delete)
+            documentFileName = doc.localFileName
             modelContext.delete(doc)
         } else if let inspection = item as? InspectionReport {
             modelContext.delete(inspection)
         }
-        try? modelContext.save()
-        itemToDelete = nil
+        do {
+            try modelContext.save()
+            itemToDelete = nil
+            NotificationService.shared.cancelReminders(ids: reminderIDsToCancel)
+            if let documentFileName {
+                do {
+                    try DocumentStorageService.shared.deleteFile(documentFileName)
+                } catch {
+                    operationError = "Belge kaydı silindi ancak dosya temizlenemedi."
+                }
+            }
+        } catch {
+            modelContext.rollback()
+            operationError = "Kayıt silinemedi. Verileriniz değiştirilmedi."
+        }
     }
 
     // MARK: - Add helpers

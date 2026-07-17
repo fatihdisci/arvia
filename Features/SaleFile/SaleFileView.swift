@@ -8,6 +8,7 @@ import QuickLook
 struct SaleFileView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var paywallService = PaywallService.shared
 
     let vehicle: Vehicle
 
@@ -24,6 +25,8 @@ struct SaleFileView: View {
     @State private var generatedPDFURL: URL?
     @State private var isGenerating = false
     @State private var showPreview = false
+    @State private var showPaywall = false
+    @State private var generationError: String?
 
     private var vehicleDocuments: [VehicleDocument] {
         allDocuments.filter { $0.vehicleId == vehicle.id }
@@ -40,7 +43,13 @@ struct SaleFileView: View {
 
     var body: some View {
         NavigationStack {
-            content
+            Group {
+                if paywallService.canCreateSaleFile() {
+                    content
+                } else {
+                    proLockedContent
+                }
+            }
             .background(Color.appBackground)
             .navigationTitle("Satış Dosyası")
             .navigationBarTitleDisplayMode(.inline)
@@ -59,6 +68,29 @@ struct SaleFileView: View {
                         .foregroundColor(AppColors.textSecondary)
                 }
             }
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView(feature: .saleFileExport)
+                .environmentObject(paywallService)
+        }
+        .alert("Satış Dosyası Oluşturulamadı", isPresented: Binding(
+            get: { generationError != nil },
+            set: { if !$0 { generationError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text(generationError ?? "Bilinmeyen hata")
+        }
+    }
+
+    private var proLockedContent: some View {
+        ContentUnavailableView {
+            Label("Satış Dosyası Pro'da", systemImage: "lock.fill")
+        } description: {
+            Text("PDF oluşturma ve paylaşma işlemi için geçerli bir Pro hakkı gerekir.")
+        } actions: {
+            Button("Pro'yu İncele") { showPaywall = true }
+                .buttonStyle(.borderedProminent)
         }
     }
 
@@ -362,6 +394,10 @@ struct SaleFileView: View {
 
     // MARK: - Generate
     private func generatePDF() {
+        guard paywallService.canCreateSaleFile() else {
+            showPaywall = true
+            return
+        }
         isGenerating = true
 
         let selectedDocs = vehicleDocuments.filter { selectedDocumentIds.contains($0.id) }
@@ -378,26 +414,32 @@ struct SaleFileView: View {
             includeExpenseSummary: includeExpenseSummary
         )
 
-        // UI dışı işlemi arka planda yap
-        DispatchQueue.global(qos: .userInitiated).async {
-            let url = PDFExportService().generatePDF(data: data)
-            DispatchQueue.main.async {
-                generatedPDFURL = url
-                isGenerating = false
-
-                // SaleFile modelini kaydet
-                let saleFile = SaleFile(
-                    vehicleId: vehicle.id,
-                    title: "\(vehicle.fullName) — Satış Dosyası",
-                    includedSections: Array(selectedSections),
-                    selectedDocumentIds: Array(selectedDocumentIds),
-                    selectedInspectionReportIds: vehicleInspections.prefix(1).map { $0.id },
-                    generatedPDFFileName: url.lastPathComponent
-                )
-                modelContext.insert(saleFile)
-                try? modelContext.save()
+        // PDFData canlı SwiftData nesneleri taşıdığı için ana context'in actor'ında
+        // kalır. Hata artık başarı URL'si gibi yutulmaz.
+        var outputURL: URL?
+        do {
+            let url = try PDFExportService().generatePDF(data: data)
+            outputURL = url
+            let saleFile = SaleFile(
+                vehicleId: vehicle.id,
+                title: "\(vehicle.fullName) — Satış Dosyası",
+                includedSections: Array(selectedSections),
+                selectedDocumentIds: Array(selectedDocumentIds),
+                selectedInspectionReportIds: includedInspections.map { $0.id },
+                generatedPDFFileName: url.lastPathComponent
+            )
+            modelContext.insert(saleFile)
+            try modelContext.save()
+            generatedPDFURL = url
+        } catch {
+            modelContext.rollback()
+            if let outputURL {
+                try? FileManager.default.removeItem(at: outputURL)
             }
+            generatedPDFURL = nil
+            generationError = error.localizedDescription
         }
+        isGenerating = false
     }
 }
 

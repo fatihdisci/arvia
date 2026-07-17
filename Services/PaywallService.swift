@@ -4,7 +4,8 @@ import SwiftUI
 
 // MARK: - Paywall Service
 // StoreKit 2 tabanlı abonelik yönetimi.
-// MVP politikası: Arvia tek araç için ücretsiz ve reklamsızdır; Pro yalnızca ikinci ve sonraki araçlar içindir.
+// Ürün politikası için tek kaynak. Ekranlar kendi Pro/Free kuralını tanımlamaz;
+// tüm kararlar bu servis üzerinden verilir.
 // App Store Connect yapılandırması olmadan dev mode'da UserDefaults ile çalışır.
 
 @MainActor
@@ -18,14 +19,28 @@ final class PaywallService: ObservableObject {
     /// productID -> kullanıcının bu üründe intro offer'a (trial) hâlâ uygun olup olmadığı
     @Published var introOfferEligibility: [String: Bool] = [:]
 
+    enum Feature: CaseIterable {
+        case additionalVehicle
+        case documentVault
+        case saleFile
+        case advancedReports
+        case inspectionReport
+        case receiptScan
+        case assistant
+
+        var requiresPro: Bool {
+            switch self {
+            case .additionalVehicle, .saleFile, .advancedReports, .receiptScan, .assistant:
+                return true
+            case .documentVault, .inspectionReport:
+                return false
+            }
+        }
+    }
+
     enum FreeLimits {
         static let maxVehicles = 1
         static let documentLimit: Int? = nil
-        static let saleFileRequiresPro = true
-        static let advancedReportsRequiresPro = true
-        static let inspectionReportsRequirePro = false
-        static let receiptScanRequiresPro = true
-        static let assistantRequiresPro = true
     }
 
     // MARK: - Product IDs
@@ -57,8 +72,11 @@ final class PaywallService: ObservableObject {
         updatesTask = Task {
             for await update in Transaction.updates {
                 if let transaction = try? update.payloadValue {
-                    await handleTransaction(transaction)
+                    await transaction.finish()
                 }
+                // Tek bir iptal/iade işlemi başka geçerli bir Pro hakkını
+                // geçersiz kılmamalı. Her güncellemede tüm hakları yeniden hesapla.
+                await checkEntitlements()
             }
         }
 
@@ -115,6 +133,7 @@ final class PaywallService: ObservableObject {
     func loadProducts() async {
         guard !isDevMode else { return }
         isLoading = true
+        defer { isLoading = false }
         do {
             products = try await Product.products(for: productIDs)
                 .sorted { $0.price < $1.price }
@@ -122,7 +141,6 @@ final class PaywallService: ObservableObject {
         } catch {
             purchaseError = "Ürünler yüklenemedi."
         }
-        isLoading = false
     }
 
     /// Her abonelik ürünü için: tanımlı bir intro offer (trial) var mı VE kullanıcı hâlâ uygun mu.
@@ -145,13 +163,15 @@ final class PaywallService: ObservableObject {
 
         isLoading = true
         purchaseError = nil
+        defer { isLoading = false }
 
         do {
             let result = try await product.purchase()
             switch result {
             case .success(let verification):
                 if let transaction = try? verification.payloadValue {
-                    await handleTransaction(transaction)
+                    await transaction.finish()
+                    await checkEntitlements()
                     return true
                 }
                 purchaseError = "Satın alma doğrulanamadı."
@@ -166,7 +186,6 @@ final class PaywallService: ObservableObject {
             purchaseError = error.localizedDescription
         }
 
-        isLoading = false
         return false
     }
 
@@ -180,6 +199,7 @@ final class PaywallService: ObservableObject {
 
         isLoading = true
         purchaseError = nil
+        defer { isLoading = false }
 
         do {
             try await AppStore.sync()
@@ -188,36 +208,38 @@ final class PaywallService: ObservableObject {
             purchaseError = "Satın almalar geri yüklenemedi."
         }
 
-        isLoading = false
     }
 
     // MARK: - Entitlements
+    struct EntitlementState: Equatable {
+        let productID: String
+        let isRevoked: Bool
+    }
+
+    static func resolvesPro(from states: [EntitlementState]) -> Bool {
+        states.contains { allProProductIDs.contains($0.productID) && !$0.isRevoked }
+    }
+
     func checkEntitlements() async {
         guard !isDevMode else { return }
 
-        var hasPro = false
+        var states: [EntitlementState] = []
         for await entitlement in Transaction.currentEntitlements {
-            if let transaction = try? entitlement.payloadValue,
-               productIDs.contains(transaction.productID),
-               transaction.revocationDate == nil {
-                hasPro = true
-                break
+            if let transaction = try? entitlement.payloadValue {
+                states.append(EntitlementState(
+                    productID: transaction.productID,
+                    isRevoked: transaction.revocationDate != nil
+                ))
             }
         }
-        isPro = hasPro
-    }
-
-    private func handleTransaction(_ transaction: StoreKit.Transaction) async {
-        if productIDs.contains(transaction.productID),
-           transaction.revocationDate == nil {
-            isPro = true
-        } else {
-            isPro = false
-        }
-        await transaction.finish()
+        isPro = Self.resolvesPro(from: states)
     }
 
     // MARK: - Limit Checks (MVP policy)
+    func canAccess(_ feature: Feature) -> Bool {
+        !feature.requiresPro || isPro
+    }
+
     func canAddVehicle(currentCount: Int) -> Bool {
         if isPro { return true }
         return currentCount < FreeLimits.maxVehicles
@@ -234,23 +256,23 @@ final class PaywallService: ObservableObject {
     }
 
     func canCreateSaleFile() -> Bool {
-        !FreeLimits.saleFileRequiresPro || isPro
+        canAccess(.saleFile)
     }
 
     func canAccessAdvancedReports() -> Bool {
-        !FreeLimits.advancedReportsRequiresPro || isPro
+        canAccess(.advancedReports)
     }
 
     func canCreateInspectionReport() -> Bool {
-        !FreeLimits.inspectionReportsRequirePro || isPro
+        canAccess(.inspectionReport)
     }
 
     var canUseReceiptScan: Bool {
-        !FreeLimits.receiptScanRequiresPro || isPro
+        canAccess(.receiptScan)
     }
 
     var canUseAssistant: Bool {
-        !FreeLimits.assistantRequiresPro || isPro
+        canAccess(.assistant)
     }
 
     // Forum yazma artık Pro gerektirmez — auth yeterli.
@@ -262,15 +284,14 @@ final class PaywallService: ObservableObject {
         ("doc.text", "Sınırsız belge"),
         ("bell", "Sınırsız hatırlatıcı"),
         ("wrench.and.screwdriver", "Masraf ve bakım kayıtları"),
-        ("chart.bar", "Raporlar ve satış dosyası"),
+        ("chart.bar", "Temel araç özeti"),
     ]
 
     static let proFeatures: [(icon: String, title: String)] = [
         ("steeringwheel", "Akıllı Sürüş Asistanı — seni tanıyan öneriler"),
         ("doc.viewfinder", "Fiş/Fatura Tarama"),
         ("car.2", "Sınırsız araç"),
-        ("folder", "Araç bazlı belge kasası"),
         ("doc.richtext", "Satış dosyası ve gelişmiş raporlar"),
-        ("bell.badge", "Tüm araçlar için hatırlatıcılar"),
+        ("bell.badge", "Tüm araçlar için kayıt ve hatırlatıcılar"),
     ]
 }

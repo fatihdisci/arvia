@@ -7,6 +7,7 @@ import Charts
 // Sakin, okunaklı, güvenilir — araç sahiplik dashboard'u.
 
 struct ReportsView: View {
+    @EnvironmentObject private var paywallService: PaywallService
     @Query(sort: \Expense.date, order: .reverse) private var allExpenses: [Expense]
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
 
@@ -60,9 +61,10 @@ struct ReportsView: View {
     }
 
     private var costPerKm: Double? {
-        let totalKm = filteredExpenses.compactMap { $0.odometer }.max() ?? 0
-        guard totalKm > 0, yearlyTotal > 0 else { return nil }
-        return yearlyTotal / Double(totalKm)
+        ReportMetrics.costPerKm(
+            totalCost: yearlyTotal,
+            odometerReadings: filteredExpenses.compactMap(\.odometer)
+        )
     }
 
     private var topExpenses: [Expense] {
@@ -101,7 +103,10 @@ struct ReportsView: View {
 
     private var lastYearTotal: Double {
         allExpenses
-            .filter { Calendar.current.component(.year, from: $0.date) == selectedYear - 1 }
+            .filter {
+                Calendar.current.component(.year, from: $0.date) == selectedYear - 1
+                    && (selectedVehicleId == nil || $0.vehicleId == selectedVehicleId)
+            }
             .reduce(0) { $0 + $1.amount }
     }
 
@@ -121,15 +126,7 @@ struct ReportsView: View {
     // olası bir List eklenmesi için aynı yerleşim korunuyor.
     var body: some View {
         Group {
-            if !PaywallService.shared.canAccessAdvancedReports() {
-                EmptyStateView(
-                    icon: "lock.fill",
-                    title: "Gelişmiş raporlar Pro'da",
-                    description: "Aylık/yıllık maliyet özeti ve kırılımlar için Pro'ya geç.",
-                    actionTitle: "Pro'ya Geç",
-                    action: { showReportsPaywall = true }
-                )
-            } else if allExpenses.isEmpty {
+            if allExpenses.isEmpty {
                 EmptyStateView(
                     icon: "chart.bar.fill",
                     title: "Henüz rapor oluşmadı",
@@ -191,23 +188,104 @@ struct ReportsView: View {
                     label: selectedYear == currentYear ? "Bu yılki toplam masraf" : "\(String(selectedYear)) yılı toplam masraf",
                     value: currencyFormat(yearlyTotal),
                     vehicleName: selectedVehicle.map { $0.plate.isEmpty ? $0.fullName : "\($0.plate) · \($0.fullName)" },
-                    insightLine: yearTrendLabel
+                    insightLine: paywallService.canAccessAdvancedReports() ? yearTrendLabel : nil
                 )
 
-                // Insight cards
-                insightCardsGrid
-                monthlyChart
-                categorySection
-                topExpensesSection
+                basicSummaryGrid
 
-                // Sale file CTA
-                saleFileCTA
+                if paywallService.canAccessAdvancedReports() {
+                    insightCardsGrid
+                    monthlyChart
+                    categorySection
+                    topExpensesSection
+                    saleFileCTA
+                } else {
+                    advancedReportsLock
+                }
 
                 Spacer().frame(height: AppSpacing.floatingTabBarContentInset)
             }
             .padding(.vertical, AppSpacing.md)
         }
         .background(Color.appBackground.ignoresSafeArea())
+    }
+
+    // MARK: - Free Summary
+    private var basicSummaryGrid: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm) {
+            if selectedYear == currentYear {
+                OwnershipInsightCard(
+                    icon: "calendar",
+                    title: "Bu Ay",
+                    value: currencyFormat(currentMonthTotal),
+                    subtitle: nil,
+                    color: AppColors.accentPrimary
+                )
+            }
+
+            OwnershipInsightCard(
+                icon: "list.bullet.rectangle",
+                title: "Masraf Kaydı",
+                value: String(filteredExpenses.count),
+                subtitle: selectedYear == currentYear ? "bu yıl" : "\(selectedYear) yılında",
+                color: AppColors.vehicle
+            )
+        }
+        .padding(.horizontal, AppSpacing.screenMarginH)
+    }
+
+    private var advancedReportsLock: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "chart.xyaxis.line")
+                    .font(.title3)
+                    .foregroundColor(AppColors.warning)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Gelişmiş Analizler")
+                        .font(AppTypography.cardTitle)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("Masraf kayıtlarını karşılaştırmalı içgörülere dönüştür.")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                Spacer()
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundColor(AppColors.warning)
+            }
+
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                lockedBenefit("Aylık grafik ve kategori dağılımı")
+                lockedBenefit("Km başı maliyet ve yıllık karşılaştırma")
+                lockedBenefit("En yüksek giderler ve satış dosyası")
+            }
+
+            Button("Pro ile Analiz Et") {
+                showReportsPaywall = true
+            }
+            .buttonStyle(.primary)
+        }
+        .padding(AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .fill(Color.appSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .stroke(AppColors.warning.opacity(0.35), lineWidth: 1)
+        )
+        .padding(.horizontal, AppSpacing.screenMarginH)
+    }
+
+    private func lockedBenefit(_ text: String) -> some View {
+        HStack(spacing: AppSpacing.xs) {
+            Image(systemName: "checkmark.circle")
+                .font(.caption)
+                .foregroundColor(AppColors.accentPrimary)
+            Text(text)
+                .font(AppTypography.secondary)
+                .foregroundColor(AppColors.textSecondary)
+        }
     }
 
     // MARK: - Filters
@@ -623,6 +701,21 @@ struct ReportsView: View {
     }
 }
 
+enum ReportMetrics {
+    /// Km başı maliyet, yıl içindeki gerçek okuma farkına göre hesaplanır.
+    /// Tek bir odometre değerini toplam mesafe saymak yanıltıcı olacağı için
+    /// en az iki farklı okuma gerekir.
+    static func costPerKm(totalCost: Double, odometerReadings: [Int]) -> Double? {
+        let readings = Array(Set(odometerReadings.filter { $0 >= 0 })).sorted()
+        guard totalCost > 0,
+              let first = readings.first,
+              let last = readings.last,
+              readings.count >= 2,
+              last > first else { return nil }
+        return totalCost / Double(last - first)
+    }
+}
+
 // MARK: - Preview
 #Preview("Raporlar — Dolu") {
     NavigationStack {
@@ -630,6 +723,7 @@ struct ReportsView: View {
             .navigationTitle("Kayıtlar")
     }
     .modelContainer(MockDataProvider.previewContainer)
+    .environmentObject(PaywallService.shared)
 }
 
 #Preview("Raporlar — Dark Mode") {
@@ -638,6 +732,7 @@ struct ReportsView: View {
             .navigationTitle("Kayıtlar")
     }
     .modelContainer(MockDataProvider.previewContainer)
+    .environmentObject(PaywallService.shared)
 }
 
 #Preview("Raporlar — Dynamic Type") {
@@ -646,5 +741,6 @@ struct ReportsView: View {
             .navigationTitle("Kayıtlar")
     }
     .modelContainer(MockDataProvider.previewContainer)
+    .environmentObject(PaywallService.shared)
     .environment(\.dynamicTypeSize, .accessibility1)
 }

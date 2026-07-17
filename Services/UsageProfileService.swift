@@ -55,9 +55,13 @@ final class UsageProfileService {
         primaryUser: String?,
         tripTypes: [String],
         context: ModelContext
-    ) -> VehicleUsageProfile {
+    ) throws -> VehicleUsageProfile {
         let profile: VehicleUsageProfile
-        if let existing = globalProfile(context: context) {
+        let profiles = try context.fetch(FetchDescriptor<VehicleUsageProfile>())
+        if let existing = profiles
+            .filter({ $0.appliesToAllVehicles })
+            .sorted(by: { $0.updatedAt > $1.updatedAt })
+            .first {
             profile = existing
         } else {
             profile = VehicleUsageProfile(vehicleId: UUID(), appliesToAllVehicles: true)
@@ -71,14 +75,24 @@ final class UsageProfileService {
         profile.tripTypes = tripTypes
         profile.appliesToAllVehicles = true
         profile.updatedAt = Date()
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
+        }
         return profile
     }
 
-    func deleteAll(context: ModelContext) {
-        for profile in allProfiles(context: context) {
+    func deleteAll(context: ModelContext) throws {
+        for profile in try context.fetch(FetchDescriptor<VehicleUsageProfile>()) {
             context.delete(profile)
         }
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
+        }
     }
 }

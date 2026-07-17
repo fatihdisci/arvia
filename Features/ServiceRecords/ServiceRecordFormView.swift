@@ -347,7 +347,8 @@ struct ServiceRecordFormView: View {
 
     private func loadExistingParts(for record: ServiceRecord) {
         let recordId = record.id
-        if let allParts = try? modelContext.fetch(FetchDescriptor<PartChange>()) {
+        do {
+            let allParts = try modelContext.fetch(FetchDescriptor<PartChange>())
             changedParts = allParts.filter { $0.serviceRecordId == recordId }.map { part in
                 PartDraft(
                     partType: part.partType,
@@ -357,6 +358,8 @@ struct ServiceRecordFormView: View {
                     hasWarranty: part.warrantyUntil != nil
                 )
             }
+        } catch {
+            validationErrors = ["Parça bilgileri yüklenemedi. Kaydı düzenlemeden önce tekrar dene."]
         }
     }
 
@@ -393,6 +396,7 @@ struct ServiceRecordFormView: View {
             errors.append("Toplam tutar geçerli bir sayı olmalı.")
         }
 
+        var createdReminder: Reminder?
         if createNextReminder {
             let trimmedNextKm = nextReminderOdometerText.trimmingCharacters(in: .whitespaces)
             if !trimmedNextKm.isEmpty {
@@ -413,6 +417,20 @@ struct ServiceRecordFormView: View {
 
         guard let vehicleId = selectedVehicleId else { return }
 
+        let oldParts: [PartChange]
+        if isEditing {
+            do {
+                let recordId = existingRecord?.id
+                oldParts = try modelContext.fetch(FetchDescriptor<PartChange>())
+                    .filter { $0.serviceRecordId == recordId }
+            } catch {
+                validationErrors = ["Mevcut parça kayıtları doğrulanamadı. Değişiklik yapılmadı."]
+                return
+            }
+        } else {
+            oldParts = []
+        }
+
         let record: ServiceRecord
         if let existing = existingRecord {
             record = existing
@@ -432,13 +450,8 @@ struct ServiceRecordFormView: View {
         record.notes = notes.trimmingCharacters(in: .whitespaces)
 
         // Düzenleme modunda eski parçaları sil (tekrar eklemeden önce)
-        if isEditing {
-            let recordId = record.id
-            if let allParts = try? modelContext.fetch(FetchDescriptor<PartChange>()) {
-                for oldPart in allParts where oldPart.serviceRecordId == recordId {
-                    modelContext.delete(oldPart)
-                }
-            }
+        for oldPart in oldParts {
+            modelContext.delete(oldPart)
         }
 
         // Parçaları kaydet
@@ -465,15 +478,19 @@ struct ServiceRecordFormView: View {
                 priority: .info
             )
             modelContext.insert(reminder)
-            Task { await NotificationService.shared.scheduleReminder(reminder) }
+            createdReminder = reminder
         }
 
         do {
             try modelContext.save()
+            if let createdReminder {
+                Task { await NotificationService.shared.scheduleReminder(createdReminder) }
+            }
             let impact = UINotificationFeedbackGenerator()
             impact.notificationOccurred(.success)
             dismiss()
         } catch {
+            modelContext.rollback()
             validationErrors = ["Kaydedilemedi: \(error.localizedDescription)"]
         }
     }

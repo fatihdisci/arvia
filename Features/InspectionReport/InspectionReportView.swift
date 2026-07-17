@@ -238,8 +238,13 @@ struct InspectionReportFormView: View {
         report.verificationStatusRaw = verificationStatus.rawValue
         report.includeInSaleFile = includeInSaleFile
 
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            modelContext.rollback()
+            validationErrors = ["Ekspertiz raporu kaydedilemedi: \(error.localizedDescription)"]
+        }
     }
 }
 

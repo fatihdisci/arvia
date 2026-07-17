@@ -19,6 +19,9 @@ final class Reminder {
     /// addedToHistoryAt == nil → sadece tamamlandı, Geçmiş'te gösterilmez.
     var addedToHistoryAt: Date?
     var notes: String = ""
+    /// Belge formundan otomatik oluşturulan hatırlatıcının kaynak belgesi.
+    /// Optional alan, mevcut 1.0.1 kayıtları ve CloudKit migration'ı ile uyumludur.
+    var sourceDocumentId: UUID?
     var createdAt: Date = Date()
 
     // MARK: Computed — Enum dönüşümleri
@@ -147,6 +150,7 @@ final class Reminder {
         completedAt: Date? = nil,
         addedToHistoryAt: Date? = nil,
         notes: String = "",
+        sourceDocumentId: UUID? = nil,
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -161,6 +165,7 @@ final class Reminder {
         self.completedAt = completedAt
         self.addedToHistoryAt = addedToHistoryAt
         self.notes = notes
+        self.sourceDocumentId = sourceDocumentId
         self.createdAt = createdAt
     }
 }

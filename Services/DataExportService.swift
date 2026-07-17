@@ -25,14 +25,32 @@ struct DataExportService {
     }
 
     static func export(context: ModelContext) throws -> ExportResult {
-        let vehicles = (try? context.fetch(FetchDescriptor<Vehicle>())) ?? []
-        let reminders = (try? context.fetch(FetchDescriptor<Reminder>())) ?? []
-        let expenses = (try? context.fetch(FetchDescriptor<Expense>())) ?? []
-        let services = (try? context.fetch(FetchDescriptor<ServiceRecord>())) ?? []
-        let documents = (try? context.fetch(FetchDescriptor<VehicleDocument>())) ?? []
-        let inspections = (try? context.fetch(FetchDescriptor<InspectionReport>())) ?? []
-        let saleFiles = (try? context.fetch(FetchDescriptor<SaleFile>())) ?? []
-        let partChanges = (try? context.fetch(FetchDescriptor<PartChange>())) ?? []
+        let vehicles: [Vehicle]
+        let reminders: [Reminder]
+        let expenses: [Expense]
+        let services: [ServiceRecord]
+        let documents: [VehicleDocument]
+        let inspections: [InspectionReport]
+        let saleFiles: [SaleFile]
+        let partChanges: [PartChange]
+        let receipts: [Receipt]
+        let usageProfiles: [VehicleUsageProfile]
+        do {
+            vehicles = try context.fetch(FetchDescriptor<Vehicle>())
+            reminders = try context.fetch(FetchDescriptor<Reminder>())
+            expenses = try context.fetch(FetchDescriptor<Expense>())
+            services = try context.fetch(FetchDescriptor<ServiceRecord>())
+            documents = try context.fetch(FetchDescriptor<VehicleDocument>())
+            inspections = try context.fetch(FetchDescriptor<InspectionReport>())
+            saleFiles = try context.fetch(FetchDescriptor<SaleFile>())
+            partChanges = try context.fetch(FetchDescriptor<PartChange>())
+            receipts = try context.fetch(FetchDescriptor<Receipt>())
+            usageProfiles = try context.fetch(FetchDescriptor<VehicleUsageProfile>())
+        } catch {
+            // Eksik/boş dizi döndürmek kısmi bir dışa aktarımı başarılı gibi
+            // gösterir. Tek bir fetch bile başarısızsa tüm işlem başarısızdır.
+            throw ExportError.fetchFailed
+        }
 
         var export: [String: Any] = [:]
 
@@ -74,6 +92,8 @@ struct DataExportService {
                 "priority": r.priority.rawValue,
                 "status": r.status.rawValue,
                 "completedAt": r.completedAt?.ISO8601Format() as Any,
+                "addedToHistoryAt": r.addedToHistoryAt?.ISO8601Format() as Any,
+                "sourceDocumentId": r.sourceDocumentId?.uuidString as Any,
                 "createdAt": r.createdAt.ISO8601Format(),
             ] as [String: Any]
         }
@@ -162,6 +182,41 @@ struct DataExportService {
             ] as [String: Any]
         }
 
+        // Receipt OCR verisi ve bağlantıları. Ham sayfa görselleri JSON'a
+        // gömülmez; pageCount ile bu sınırlama açıkça belirtilir.
+        export["receipts"] = receipts.map { receipt in
+            [
+                "id": receipt.id.uuidString,
+                "vehicleId": receipt.vehicleId.uuidString,
+                "createdAt": receipt.createdAt.ISO8601Format(),
+                "pageCount": receipt.pageCount,
+                "rawOCRText": receipt.rawOCRText,
+                "parsedDate": receipt.parsedDate?.ISO8601Format() as Any,
+                "parsedTotal": receipt.parsedTotal.map { NSDecimalNumber(decimal: $0).stringValue } as Any,
+                "parsedVendor": receipt.parsedVendor as Any,
+                "parsedOdometer": receipt.parsedOdometer as Any,
+                "suggestedCategory": receipt.suggestedCategory as Any,
+                "linkedExpenseId": receipt.linkedExpenseId?.uuidString as Any,
+                "linkedServiceRecordId": receipt.linkedServiceRecordId?.uuidString as Any,
+                "confidence": receipt.confidence,
+            ] as [String: Any]
+        }
+
+        export["usageProfiles"] = usageProfiles.map { profile in
+            [
+                "id": profile.id.uuidString,
+                "vehicleId": profile.vehicleId.uuidString,
+                "dailyKmBand": profile.dailyKmBandRaw,
+                "routeType": profile.routeTypeRaw,
+                "fuelConsumptionCity": profile.fuelConsumptionCity as Any,
+                "fuelConsumptionHighway": profile.fuelConsumptionHighway as Any,
+                "primaryUser": profile.primaryUser as Any,
+                "tripTypes": profile.tripTypes,
+                "appliesToAllVehicles": profile.appliesToAllVehicles,
+                "updatedAt": profile.updatedAt.ISO8601Format(),
+            ] as [String: Any]
+        }
+
         // Metadata
         let counts: [String: Int] = [
             "vehicles": vehicles.count,
@@ -172,12 +227,15 @@ struct DataExportService {
             "documents": documents.count,
             "inspectionReports": inspections.count,
             "saleFiles": saleFiles.count,
+            "receipts": receipts.count,
+            "usageProfiles": usageProfiles.count,
         ]
 
+        export["exportFormatVersion"] = 3
         export["exportDate"] = Date().ISO8601Format()
         export["appVersion"] = AppEnvironment.appVersion
         export["recordCounts"] = counts
-        export["note"] = "Belge dosyaları (PDF/fotoğraf) JSON içine dahil edilmez."
+        export["note"] = "Belge dosyaları, araç fotoğrafları ve taranmış fiş görselleri JSON içine dahil edilmez."
 
         guard let jsonData = try? JSONSerialization.data(withJSONObject: export, options: .prettyPrinted) else {
             throw ExportError.serializationFailed

@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import OSLog
 
 // MARK: - App Entry Point
 // @main uygulama girişi.
@@ -7,13 +8,16 @@ import SwiftData
 
 @main
 struct VehicleDossierApp: App {
+    private static let logger = Logger(subsystem: "com.ruhsatim.app", category: "DataMigration")
     let modelContainer: ModelContainer
+    let startupWarning: String?
     @StateObject private var paywallService = PaywallService.shared
     @StateObject private var communityAuthService = CommunityAuthService.shared
     @StateObject private var navigationRouter = AppNavigationRouter.shared
     @AppStorage("onboarding_completed") private var onboardingCompleted = false
     /// Onboarding sonrası açılacak sheet tipi — her durumda tek tip wizard kullanılır.
     @State private var postOnboardingSheet: PostOnboardingSheet?
+    @State private var showStartupWarning = false
     private enum PostOnboardingSheet: Identifiable {
         case wizard
         var id: String { "wizard" }
@@ -21,8 +25,8 @@ struct VehicleDossierApp: App {
 
     init() {
         Self.configureAppearance()
-        do {
-            let schema = Schema([
+        AIClientID.removeLegacyIdentifier()
+        let schema = Schema([
                 Vehicle.self,
                 Reminder.self,
                 Expense.self,
@@ -34,29 +38,48 @@ struct VehicleDossierApp: App {
                 Receipt.self,
                 VehicleUsageProfile.self,
             ])
+        let cloudConfiguration = ModelConfiguration(
+            isStoredInMemoryOnly: false,
+            allowsSave: true,
+            cloudKitDatabase: .private("iCloud.com.ruhsatim.app")
+        )
+        do {
             // CloudKit private database sync — yalnızca feature flag açıkken devreye girer.
             // Flag kapalıyken `.none` ile bugünkü davranış birebir korunur (sadece yerel).
             // Flag'i açmadan ÖNCE Xcode'da iCloud/CloudKit capability'si ve aşağıdaki
             // container kimliği eklenmelidir; aksi halde container init eder ve fatalError olur.
-            let cloudKitDatabase: ModelConfiguration.CloudKitDatabase = AppEnvironment.isCloudKitSyncEnabled
-                ? .private("iCloud.com.ruhsatim.app")
-                : .none
-            let modelConfiguration = ModelConfiguration(
-                isStoredInMemoryOnly: false,
-                allowsSave: true,
-                cloudKitDatabase: cloudKitDatabase
-            )
             modelContainer = try ModelContainer(
                 for: schema,
-                configurations: modelConfiguration
+                configurations: AppEnvironment.isCloudKitSyncEnabled
+                    ? cloudConfiguration
+                    : ModelConfiguration(isStoredInMemoryOnly: false, allowsSave: true, cloudKitDatabase: .none)
             )
-            // Backfill addedToHistoryAt for existing completed reminders
-            migrateCompletedReminderHistoryFlags(context: modelContainer.mainContext)
-            // Backfill vehicle photo data for CloudKit sync readiness
-            backfillVehiclePhotoData(context: modelContainer.mainContext)
+            startupWarning = nil
         } catch {
-            fatalError("SwiftData ModelContainer başlatılamadı: \(error.localizedDescription)")
+            // CloudKit yetkisi/geçici hesabı bozukken uygulamayı doğrudan
+            // çökertmek yerine aynı kalıcı mağazayı yerel modda açmayı dene.
+            // Bu bir veri sıfırlama değildir; sonraki açılışta CloudKit yeniden denenir.
+            do {
+                modelContainer = try ModelContainer(
+                    for: schema,
+                    configurations: ModelConfiguration(
+                        isStoredInMemoryOnly: false,
+                        allowsSave: true,
+                        cloudKitDatabase: .none
+                    )
+                )
+                startupWarning = "iCloud eşzamanlama başlatılamadı. Veriler bu oturumda yalnızca cihazda kullanılacak."
+                _showStartupWarning = State(initialValue: true)
+            } catch {
+                // Yerel kalıcı mağaza da açılamıyorsa devam etmek veri kaybı
+                // izlenimi yaratır; bu kurtarılamaz şema/store hatasıdır.
+                fatalError("SwiftData ModelContainer başlatılamadı: \(error.localizedDescription)")
+            }
         }
+        // Backfill addedToHistoryAt for existing completed reminders
+        migrateCompletedReminderHistoryFlags(context: modelContainer.mainContext)
+        // Backfill vehicle photo data for CloudKit sync readiness
+        backfillVehiclePhotoData(context: modelContainer.mainContext)
     }
 
     // MARK: - UIKit Appearance Configuration
@@ -139,9 +162,14 @@ struct VehicleDossierApp: App {
                         // (aktif veya arşivli — önemli olan veri tabanında iz olması)
                         // wizard'ı atlıyoruz. Yeni kullanıcıda kayıt sayısı 0 →
                         // wizard normal açılır.
-                        let existingVehicles = (try? modelContainer.mainContext.fetchCount(FetchDescriptor<Vehicle>())) ?? 0
-                        if existingVehicles == 0 {
-                            postOnboardingSheet = .wizard
+                        do {
+                            let existingVehicles = try modelContainer.mainContext.fetchCount(FetchDescriptor<Vehicle>())
+                            if existingVehicles == 0 {
+                                postOnboardingSheet = .wizard
+                            }
+                        } catch {
+                            // Okuma hatasında 0 varsaymak kopya araç ve limit atlatma riski yaratır.
+                            Self.logger.error("Onboarding vehicle count failed: \(error.localizedDescription, privacy: .public)")
                         }
                     }
                 }
@@ -151,6 +179,11 @@ struct VehicleDossierApp: App {
                         .environmentObject(paywallService)
                 }
                 .preferredColorScheme(.dark)
+                .alert("iCloud Eşzamanlama Kullanılamıyor", isPresented: $showStartupWarning) {
+                    Button("Tamam", role: .cancel) {}
+                } message: {
+                    Text(startupWarning ?? "")
+                }
             }
         }
     }
@@ -159,10 +192,17 @@ struct VehicleDossierApp: App {
     private func scheduleRetentionNotifications() async {
         // Ana context'te fetch yap
         let context = modelContainer.mainContext
-        let vehicles = (try? context.fetch(FetchDescriptor<Vehicle>())) ?? []
+        let vehicles: [Vehicle]
+        let reminders: [Reminder]
+        do {
+            vehicles = try context.fetch(FetchDescriptor<Vehicle>())
+            reminders = try context.fetch(FetchDescriptor<Reminder>())
+        } catch {
+            Self.logger.error("Startup notification fetch failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
 
         // Dosya tamlık skoru hesapla
-        let reminders = (try? context.fetch(FetchDescriptor<Reminder>())) ?? []
         var fileScores: [UUID: Int] = [:]
         for vehicle in vehicles {
             var score = 0
@@ -193,16 +233,34 @@ struct VehicleDossierApp: App {
     private func migrateCompletedReminderHistoryFlags(context: ModelContext) {
         let predicate = #Predicate<Reminder> { $0.completedAt != nil && $0.addedToHistoryAt == nil }
         let descriptor = FetchDescriptor<Reminder>(predicate: predicate)
-        guard let pending = try? context.fetch(descriptor), !pending.isEmpty else { return }
+        let pending: [Reminder]
+        do {
+            pending = try context.fetch(descriptor)
+        } catch {
+            Self.logger.error("Completed reminder migration fetch failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+        guard !pending.isEmpty else { return }
         for reminder in pending {
             reminder.addedToHistoryAt = reminder.completedAt
         }
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            context.rollback()
+            Self.logger.error("Completed reminder migration save failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     /// Mevcut araçların disk fotoğrafını photoData'ya taşır (CloudKit senkron hazırlığı).
     private func backfillVehiclePhotoData(context: ModelContext) {
-        guard let vehicles = try? context.fetch(FetchDescriptor<Vehicle>()) else { return }
+        let vehicles: [Vehicle]
+        do {
+            vehicles = try context.fetch(FetchDescriptor<Vehicle>())
+        } catch {
+            Self.logger.error("Vehicle photo backfill fetch failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
         var changed = false
         for vehicle in vehicles where vehicle.photoData == nil {
             guard let fileName = vehicle.photoFileName,
@@ -210,6 +268,12 @@ struct VehicleDossierApp: App {
             vehicle.photoData = data
             changed = true
         }
-        if changed { try? context.save() }
+        guard changed else { return }
+        do {
+            try context.save()
+        } catch {
+            context.rollback()
+            Self.logger.error("Vehicle photo backfill save failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 }

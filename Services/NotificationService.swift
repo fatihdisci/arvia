@@ -97,12 +97,22 @@ final class NotificationService {
 
     /// Hatırlatıcıya ait tüm bildirimleri iptal eder.
     func cancelReminder(_ reminder: Reminder) {
-        center.removePendingNotificationRequests(withIdentifiers: Self.reminderNotificationIdentifiers(for: reminder.id))
-        center.removeDeliveredNotifications(withIdentifiers: Self.reminderNotificationIdentifiers(for: reminder.id))
+        cancelReminder(id: reminder.id)
+    }
+
+    /// Silinmiş SwiftData nesnesine tekrar erişmeden bildirimleri iptal eder.
+    func cancelReminder(id: UUID) {
+        let identifiers = Self.reminderNotificationIdentifiers(for: id)
+        center.removePendingNotificationRequests(withIdentifiers: identifiers)
+        center.removeDeliveredNotifications(withIdentifiers: identifiers)
     }
 
     func cancelReminders(_ reminders: [Reminder]) {
-        let identifiers = reminders.flatMap { Self.reminderNotificationIdentifiers(for: $0.id) }
+        cancelReminders(ids: reminders.map(\.id))
+    }
+
+    func cancelReminders(ids: [UUID]) {
+        let identifiers = ids.flatMap(Self.reminderNotificationIdentifiers(for:))
         center.removePendingNotificationRequests(withIdentifiers: identifiers)
         center.removeDeliveredNotifications(withIdentifiers: identifiers)
     }

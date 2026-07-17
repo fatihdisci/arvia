@@ -13,26 +13,26 @@ Muayene, sigorta, kasko, MTV, bakım, masraf ve belgeler tek yerde. Aracının d
 
 **Your vehicle's digital file.**
 
-Arvia is a vehicle ownership management app that helps you track maintenance, expenses, documents, inspection reports, and reminders — all on your device.
+Arvia is a vehicle ownership management app that helps you track maintenance, expenses, documents, inspection reports, and reminders with private iCloud synchronization across your devices.
 
 **Features**
 
 - Track all your vehicle information, maintenance records, and expenses
 - Set reminders for inspection, insurance, MTV, and service dates
-- Store documents securely (registration, insurance, invoices, inspection reports)
-- View annual costs and cost per kilometer
+- Store documents securely and create expiry reminders for them
+- Search your complete vehicle history and view basic annual/monthly expense summaries
 - Generate a comprehensive Sale File PDF when selling your vehicle
 
 **Arvia Pro**
 
-- Unlimited vehicles and documents
+- Unlimited vehicles
 - Sale File PDF generation
-- Advanced reports and analytics
-- Inspection report archive
+- Advanced reports, trends, category analysis, and cost per kilometer
+- Receipt/invoice scanning and personalized driving assistant
 
 **Privacy & Security**
 
-Your data stays on your device. Documents are only shared when you initiate sharing. No third-party analytics, no tracking, no data collection.
+Your vehicle file is local-first and can sync through your private Apple CloudKit database. Community and cloud AI are optional and disclosed in the privacy policy. No advertising SDKs or cross-app tracking.
 
 Arvia is not an official government app. Reminders are informational only based on dates you enter.
 
@@ -73,9 +73,20 @@ araç,bakım,muayene,mtv,sigorta,kasko,masraf,yakıt,oto,araba,ruhsat,ekspertiz,
 - **Alt metin:** Alıcıya eksiksiz araç geçmişi sun
 
 ### Screenshot 6 — Pro Özellikler (Opsiyonel)
-- **Üst metin:** Sınırsız araç ve belge
+- **Üst metin:** Çoklu araç ve gelişmiş analiz
 - **Ekran:** Paywall veya Pro özellik karşılaştırması
-- **Alt metin:** Pro ile aracının tüm dosyasını eksiksiz tut
+- **Alt metin:** Pro ile verilerini daha ayrıntılı anlamlandır
+
+## What's New — Version 1.1.0
+
+Arvia 1.1 ile araç dosyanı yönetmek daha hızlı ve daha güvenli:
+
+- Temel yıllık ve aylık masraf özetleri artık Free kullanıcılar için açık.
+- Geçmiş ekranına tüm kayıt türlerini kapsayan arama eklendi.
+- Bitiş tarihi olan belgeler için isteğe bağlı otomatik hatırlatıcı oluşturuluyor.
+- Pro raporlarında kilometre başı maliyet hesabı ve gelişmiş analiz ayrımı iyileştirildi.
+- Satın alma, veri silme, dosya işlemleri ve Free/Pro erişim kontrollerindeki hatalar giderildi.
+- Topluluk ve Akıllı Sürüş Asistanı güvenliği güçlendirildi.
 
 ## App Store Review Notes
 
@@ -86,8 +97,8 @@ Bu uygulama:
 - Ekspertiz raporları kullanıcı tarafından manuel olarak eklenir. Uygulama rapor doğruluğunu garanti etmez.
 - Satış dosyası kullanıcı kayıtlarından oluşturulur; mekanik veya hukuki garanti anlamına gelmez.
 - Abonelik Apple In-App Purchase üzerinden yönetilir. Restore purchases butonu mevcuttur.
-- IAP Product ID'leri App Store Connect'teki kayıtlarla birebir eşleşmelidir: `com.ruhsatim.pro.monthly`, `com.ruhsatim.pro.yearly`, `com.ruhsatim.pro.lifetime`.
-- Kullanıcı verileri cihaz üzerinde saklanır. Üçüncü taraflarla paylaşılmaz.
+- IAP Product ID'leri App Store Connect'teki kayıtlarla birebir eşleşmelidir: `com.arvia.pro.monthly`, `com.arvia.pro.yearly`, `com.arvia.pro.lifetime`.
+- Araç dosyası local-first çalışır ve kullanıcının özel Apple CloudKit veritabanında cihazlar arasında eşzamanlanabilir. Topluluk ve Bulut AI veri akışları gizlilik politikasında açıklanır.
 
 ## Privacy Policy URL
 https://fatihdisci.github.io/arvia/privacy.html

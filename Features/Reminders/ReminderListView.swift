@@ -13,6 +13,7 @@ struct ReminderListView: View {
 
     @State private var showAddReminder = false
     @State private var notificationPermissionRequested = false
+    @State private var operationError: String?
 
     var showHeader: Bool = true
 
@@ -75,6 +76,14 @@ struct ReminderListView: View {
             }
         }
         .sheet(isPresented: $showAddReminder) { ReminderFormView() }
+        .alert("İşlem Tamamlanamadı", isPresented: Binding(
+            get: { operationError != nil },
+            set: { if !$0 { operationError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text(operationError ?? "Bilinmeyen bir hata oluştu.")
+        }
     }
 
     // MARK: - 30 Gün Özeti
@@ -332,10 +341,6 @@ struct ReminderListView: View {
 
     // MARK: - Actions
     private func completeReminder(_ reminder: Reminder) {
-        // Başarı haptik
-        let impact = UINotificationFeedbackGenerator()
-        impact.notificationOccurred(.success)
-
         // Tekrar kuralını tamamlamadan önce al (completedAt set edildikten sonra da erişilebilir).
         let rule = reminder.repeatRule
         let oldDueDate = reminder.dueDate
@@ -344,11 +349,6 @@ struct ReminderListView: View {
         reminder.statusRaw = ReminderStatus.completed.rawValue
         reminder.completedAt = Date()
         reminder.addedToHistoryAt = Date()
-        try? modelContext.save()
-
-        // Bildirimleri iptal et
-        NotificationService.shared.cancelReminder(reminder)
-        Task { await NotificationRefreshService.refreshAll(context: modelContext) }
 
         // Tekrarlayan hatırlatıcı ise bir sonraki oluşumu yarat
         if rule != .none, let baseDate = oldDueDate ?? reminder.completedAt {
@@ -365,21 +365,31 @@ struct ReminderListView: View {
                     notes: reminder.notes
                 )
                 modelContext.insert(next)
-                try? modelContext.save()
-
-                // Yeni oluşum ve retention bildirimleri için yenile
-                Task {
-                    await NotificationRefreshService.refreshAll(context: modelContext)
-                }
             }
+        }
+
+        do {
+            try modelContext.save()
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            NotificationService.shared.cancelReminder(reminder)
+            Task { await NotificationRefreshService.refreshAll(context: modelContext) }
+        } catch {
+            modelContext.rollback()
+            operationError = "Yapılacak tamamlanamadı. Verileriniz değiştirilmedi."
         }
     }
 
     private func deleteReminder(_ reminder: Reminder) {
-        NotificationService.shared.cancelReminder(reminder)
+        let reminderID = reminder.id
         modelContext.delete(reminder)
-        try? modelContext.save()
-        Task { await NotificationRefreshService.refreshAll(context: modelContext) }
+        do {
+            try modelContext.save()
+            NotificationService.shared.cancelReminder(id: reminderID)
+            Task { await NotificationRefreshService.refreshAll(context: modelContext) }
+        } catch {
+            modelContext.rollback()
+            operationError = "Yapılacak silinemedi. Verileriniz değiştirilmedi."
+        }
     }
 
     // MARK: - Helpers

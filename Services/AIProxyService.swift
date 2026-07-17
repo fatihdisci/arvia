@@ -42,6 +42,8 @@ enum AIProxyError: Error, Equatable {
     case payloadTooLarge
     case quotaExceeded(task: String?)
     case unauthorized
+    case proEntitlementRequired
+    case receiptUnavailable
     case malformedResponse
     case upstream(status: Int)
     case transport
@@ -102,18 +104,18 @@ final class AIProxyService {
     private let session: URLSession
     private let consent: AIConsentProviding
     private let configProvider: () -> AIProxyConfig?
-    private let clientIdProvider: () -> String
+    private let appReceiptProvider: () -> String?
 
     init(
         session: URLSession = .shared,
         consent: AIConsentProviding = AIConsentStore.shared,
         configProvider: @escaping () -> AIProxyConfig? = { AIProxyConfig.load() },
-        clientIdProvider: @escaping () -> String = { AIClientID.current() }
+        appReceiptProvider: @escaping () -> String? = { AIProxyService.currentAppReceipt() }
     ) {
         self.session = session
         self.consent = consent
         self.configProvider = configProvider
-        self.clientIdProvider = clientIdProvider
+        self.appReceiptProvider = appReceiptProvider
     }
 
     private static let maxPayloadChars = 20_000
@@ -137,13 +139,18 @@ final class AIProxyService {
         guard consent.isCloudAIEnabled else { throw AIProxyError.disabled }
         guard payload.count <= Self.maxPayloadChars else { throw AIProxyError.payloadTooLarge }
         guard let config = configProvider() else { throw AIProxyError.notConfigured }
+        guard let appReceipt = appReceiptProvider() else { throw AIProxyError.receiptUnavailable }
 
         var request = URLRequest(url: config.baseURL.appendingPathComponent("api/complete"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(config.clientSecret, forHTTPHeaderField: "X-Arvia-Client")
         request.httpBody = try JSONEncoder().encode(
-            RequestBody(task: task.rawValue, payload: payload, clientId: clientIdProvider())
+            RequestBody(
+                task: task.rawValue,
+                payload: payload,
+                appReceipt: appReceipt
+            )
         )
 
         let data: Data
@@ -173,6 +180,8 @@ final class AIProxyService {
             return resultData
         case 401:
             throw AIProxyError.unauthorized
+        case 403:
+            throw AIProxyError.proEntitlementRequired
         case 429:
             let task = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.error.task
             throw AIProxyError.quotaExceeded(task: task)
@@ -193,11 +202,20 @@ final class AIProxyService {
     private struct RequestBody: Encodable {
         let task: String
         let payload: String
-        let clientId: String
+        let appReceipt: String
     }
 
     private struct ErrorBody: Decodable {
         struct Inner: Decodable { let code: String; let task: String? }
         let error: Inner
+    }
+
+    private static func currentAppReceipt() -> String? {
+        guard let url = Bundle.main.appStoreReceiptURL,
+              let data = try? Data(contentsOf: url),
+              !data.isEmpty else {
+            return nil
+        }
+        return data.base64EncodedString()
     }
 }

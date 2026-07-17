@@ -91,9 +91,26 @@ final class InsightSnoozeStore {
 
     func removeAll() {
         store.removeObject(forKey: key)
-        // Type-tabanlı key'leri de temizle (debug/test için)
-        for type in VehicleInsightType.allCases {
-            store.removeObject(forKey: "\(typeKeyPrefix)all.\(type.rawValue)")
+        for storedKey in store.dictionaryRepresentation().keys
+        where storedKey.hasPrefix(typeKeyPrefix) || storedKey.hasPrefix("com.arvia.dismiss.") {
+            store.removeObject(forKey: storedKey)
+        }
+    }
+
+    func clearAll(forVehicle vehicleId: UUID) {
+        let normalizedId = vehicleId.uuidString.lowercased()
+        let entries = allEntries().filter { $0.vehicleId != normalizedId }
+        if entries.isEmpty {
+            store.removeObject(forKey: key)
+        } else if let data = try? JSONEncoder().encode(entries) {
+            store.set(data, forKey: key)
+        }
+
+        let typePrefix = "\(typeKeyPrefix)\(vehicleId.uuidString)."
+        let dismissPrefix = "com.arvia.dismiss.\(vehicleId.uuidString)."
+        for storedKey in store.dictionaryRepresentation().keys
+        where storedKey.hasPrefix(typePrefix) || storedKey.hasPrefix(dismissPrefix) {
+            store.removeObject(forKey: storedKey)
         }
     }
 

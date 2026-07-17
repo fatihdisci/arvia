@@ -652,22 +652,17 @@ struct SettingsView: View {
         exportURL = nil
         showShareSheet = false
 
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let result = try DataExportService.export(context: modelContext)
-
-                DispatchQueue.main.async {
-                    isExporting = false
-                    exportURL = result.url
-                    exportMessage = "Veriler dışa aktarıldı. Paylaşım sayfası açılıyor..."
-                    showShareSheet = true
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    isExporting = false
-                    exportMessage = "Dışa aktarma başarısız oldu. Lütfen tekrar dene."
-                }
-            }
+        // ModelContext actor-bound'dur; ana context'i global kuyruğa taşımak
+        // SwiftData yarışlarına ve nadir export çökmelerine yol açar.
+        do {
+            let result = try DataExportService.export(context: modelContext)
+            isExporting = false
+            exportURL = result.url
+            exportMessage = "Veriler dışa aktarıldı. Paylaşım sayfası açılıyor..."
+            showShareSheet = true
+        } catch {
+            isExporting = false
+            exportMessage = "Dışa aktarma başarısız oldu: \(error.localizedDescription)"
         }
     }
 
@@ -676,53 +671,15 @@ struct SettingsView: View {
         deleteAccountError = nil
 
         do {
-            // 1. Local SwiftData temizliği
-            if let vehicles = try? modelContext.fetch(FetchDescriptor<Vehicle>()) {
-                for v in vehicles { modelContext.delete(v) }
-            }
-            if let reminders = try? modelContext.fetch(FetchDescriptor<Reminder>()) {
-                for r in reminders { modelContext.delete(r) }
-            }
-            if let expenses = try? modelContext.fetch(FetchDescriptor<Expense>()) {
-                for e in expenses { modelContext.delete(e) }
-            }
-            if let services = try? modelContext.fetch(FetchDescriptor<ServiceRecord>()) {
-                for s in services { modelContext.delete(s) }
-            }
-            if let parts = try? modelContext.fetch(FetchDescriptor<PartChange>()) {
-                for p in parts { modelContext.delete(p) }
-            }
-            if let docs = try? modelContext.fetch(FetchDescriptor<VehicleDocument>()) {
-                for d in docs { modelContext.delete(d) }
-            }
-            if let inspections = try? modelContext.fetch(FetchDescriptor<InspectionReport>()) {
-                for i in inspections { modelContext.delete(i) }
-            }
-            if let sales = try? modelContext.fetch(FetchDescriptor<SaleFile>()) {
-                for s in sales { modelContext.delete(s) }
-            }
-            // Kullanım profili (Akıllı Sürüş Asistanı verisi)
-            if let profiles = try? modelContext.fetch(FetchDescriptor<VehicleUsageProfile>()) {
-                for p in profiles { modelContext.delete(p) }
-            }
-            // Maintenance plan cache dosyaları (disk'te JSON)
-            MaintenancePlanCacheStore.deleteAll()
-
-            // 2. Local belge dosyalarını ve araç fotoğraflarını fiziksel olarak temizle
-            DocumentStorageService.shared.deleteAllFiles()
-            VehiclePhotoStorageService.shared.deleteAllPhotos()
-
-            // 3. Bildirimleri temizle
-            UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-
-            try modelContext.save()
-
-            // 4. Topluluk profilini anonimleştir ve çıkış yap
+            // Önce sunucu hesabını sil. Yerel veriyi önce silip RPC hata alırsa
+            // kullanıcı uzaktaki hesabı tekrar silmek için oturum/bağlam kaybeder.
             if communityAuth.isAuthenticated {
                 try await communityAuth.deleteAccount()
             }
 
-            // 5. Pro state'i sıfırla — sadece dev mode simülasyonunda; gerçek StoreKit
+            try deleteAllLocalData()
+
+            // Pro state'i sıfırla — sadece dev mode simülasyonunda; gerçek StoreKit
             // entitlement'ı asla ezilmemeli.
             if paywallService.isDevMode {
                 paywallService.disableProForDev()
@@ -736,54 +693,12 @@ struct SettingsView: View {
     }
 
     private func deleteAllData() {
-        // Tüm SwiftData modellerini tek tek sil
-        if let vehicles = try? modelContext.fetch(FetchDescriptor<Vehicle>()) {
-            for v in vehicles { modelContext.delete(v) }
+        do {
+            try deleteAllLocalData()
+        } catch {
+            deleteAccountError = "Veriler silinemedi: \(error.localizedDescription)"
+            return
         }
-        if let reminders = try? modelContext.fetch(FetchDescriptor<Reminder>()) {
-            for r in reminders { modelContext.delete(r) }
-        }
-        if let expenses = try? modelContext.fetch(FetchDescriptor<Expense>()) {
-            for e in expenses { modelContext.delete(e) }
-        }
-        if let services = try? modelContext.fetch(FetchDescriptor<ServiceRecord>()) {
-            for s in services { modelContext.delete(s) }
-        }
-        if let parts = try? modelContext.fetch(FetchDescriptor<PartChange>()) {
-            for p in parts { modelContext.delete(p) }
-        }
-        if let docs = try? modelContext.fetch(FetchDescriptor<VehicleDocument>()) {
-            for d in docs { modelContext.delete(d) }
-        }
-        if let inspections = try? modelContext.fetch(FetchDescriptor<InspectionReport>()) {
-            for i in inspections { modelContext.delete(i) }
-        }
-        if let sales = try? modelContext.fetch(FetchDescriptor<SaleFile>()) {
-            for s in sales { modelContext.delete(s) }
-        }
-        // Kullanım profili (Akıllı Sürüş Asistanı verisi) — modelden silinmezse
-        // "Tüm Verileri Sil" çağrısından sonra bile sürüş alışkanlıkları UI'da
-        // görünmeye devam eder.
-        if let profiles = try? modelContext.fetch(FetchDescriptor<VehicleUsageProfile>()) {
-            for p in profiles { modelContext.delete(p) }
-        }
-
-        // Maintenance plan cache dosyaları (caches/ altında JSON) — disk'te kalırsa
-        // yeni eklenen araç için eski öneriler görüntülenebilir.
-        MaintenancePlanCacheStore.deleteAll()
-
-        // Belgeleri diskten temizle
-        let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("VehicleDocuments")
-        try? FileManager.default.removeItem(at: docDir)
-
-        // Araç fotoğraflarını temizle
-        VehiclePhotoStorageService.shared.deleteAllPhotos()
-
-        // Bildirimleri temizle
-        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-
-        try? modelContext.save()
 
         // Dev mode'da Pro'yu sıfırla — gerçek StoreKit entitlement'ı asla ezilmemeli.
         if paywallService.isDevMode {
@@ -791,6 +706,42 @@ struct SettingsView: View {
         }
 
         dismiss()
+    }
+
+    /// Tüm model türlerini önce eksiksiz fetch eder, sonra tek save ile siler.
+    /// Böylece bir model fetch'i bozulduğunda kısmi silme "başarılı" sayılmaz.
+    private func deleteAllLocalData() throws {
+        let vehicles = try modelContext.fetch(FetchDescriptor<Vehicle>())
+        let reminders = try modelContext.fetch(FetchDescriptor<Reminder>())
+        let expenses = try modelContext.fetch(FetchDescriptor<Expense>())
+        let services = try modelContext.fetch(FetchDescriptor<ServiceRecord>())
+        let parts = try modelContext.fetch(FetchDescriptor<PartChange>())
+        let documents = try modelContext.fetch(FetchDescriptor<VehicleDocument>())
+        let inspections = try modelContext.fetch(FetchDescriptor<InspectionReport>())
+        let saleFiles = try modelContext.fetch(FetchDescriptor<SaleFile>())
+        let receipts = try modelContext.fetch(FetchDescriptor<Receipt>())
+        let usageProfiles = try modelContext.fetch(FetchDescriptor<VehicleUsageProfile>())
+
+        vehicles.forEach(modelContext.delete)
+        reminders.forEach(modelContext.delete)
+        expenses.forEach(modelContext.delete)
+        services.forEach(modelContext.delete)
+        parts.forEach(modelContext.delete)
+        documents.forEach(modelContext.delete)
+        inspections.forEach(modelContext.delete)
+        saleFiles.forEach(modelContext.delete)
+        receipts.forEach(modelContext.delete)
+        usageProfiles.forEach(modelContext.delete)
+        try modelContext.save()
+
+        // DB silme başarılı olduktan sonra bağlı fiziksel verileri temizle.
+        MaintenancePlanCacheStore.deleteAll()
+        InsightSnoozeStore.shared.removeAll()
+        DocumentStorageService.shared.deleteAllFiles()
+        VehiclePhotoStorageService.shared.deleteAllPhotos()
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        aiCloudEnabled = false
+        aiConsentAccepted = false
     }
 
     private func signOut() async {

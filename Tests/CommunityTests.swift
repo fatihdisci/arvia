@@ -201,27 +201,30 @@ final class CommunityRolePermissionTests: XCTestCase {
 
 // MARK: - Auth Gate (forum writing is auth-gated, not Pro-gated)
 
+@MainActor
 final class CommunityAuthGateTests: XCTestCase {
     // Forum yazma artık Pro gerektirmez — auth yeterlidir.
     // canCreateCommunityPost() ve canWriteComment() kaldırıldı.
     // Guest auth kontrolü CommunityAuthService üzerinden yapılır.
     // Bu testler auth-gate modelinin doğru çalıştığını doğrular.
 
-    func testOnlyMultipleVehiclesRemainProGatedForMVP() {
+    func testCommunityIsAuthGatedWhileProductFeaturesFollowCentralPolicy() {
         let free = PaywallService(isProForTesting: false)
-        // Tek araç MVP özellikleri free olmalı
-        XCTAssertTrue(free.canCreateSaleFile())
-        XCTAssertTrue(free.canAccessAdvancedReports())
+        XCTAssertFalse(free.canCreateSaleFile())
+        XCTAssertFalse(free.canAccessAdvancedReports())
+        XCTAssertFalse(free.canUseReceiptScan)
+        XCTAssertFalse(free.canUseAssistant)
         XCTAssertTrue(free.canCreateInspectionReport())
         XCTAssertTrue(free.canAddDocument(currentCount: 5))
         XCTAssertTrue(free.canAddDocument(currentCount: 500))
-        // Pro gate yalnızca ikinci ve sonraki araçlarda kalır
         XCTAssertFalse(free.canAddVehicle(currentCount: 1))
 
         let pro = PaywallService(isProForTesting: true)
         XCTAssertTrue(pro.canCreateSaleFile())
         XCTAssertTrue(pro.canAccessAdvancedReports())
         XCTAssertTrue(pro.canCreateInspectionReport())
+        XCTAssertTrue(pro.canUseReceiptScan)
+        XCTAssertTrue(pro.canUseAssistant)
         XCTAssertTrue(pro.canAddVehicle(currentCount: 99))
         XCTAssertTrue(pro.canAddDocument(currentCount: 500))
     }

@@ -115,7 +115,7 @@ için kameraya erişim gerekir."</code></pre>
       <tr><td>Purchase History</td><td>Yes</td><td>No</td><td>No</td><td>App Functionality</td><td>StoreKit abonelik</td></tr>
       <tr><td>Other Data (maskelenmiş AI metni)</td><td>Yes</td><td>No</td><td>No</td><td>App Functionality</td><td>Bulut AI (opsiyonel)</td></tr>
     </table>
-    <div class="warn"><strong>Bulut AI satırı ("Other Data"):</strong> Özellik varsayılan kapalı ve opt-in olsa da, uygulama bu veriyi gönderme <em>yeteneğine</em> sahip olduğu için beyan edilir. <strong>Linked = No</strong> (anonim clientId), <strong>Tracking = No</strong>. App Privacy formunda "Other Data Types" altından ekleyip amaç olarak "App Functionality" seç. Not: Bu metin User Content'ten türese de kaynağı ayrı olduğu için ayrı işaretlemek en şeffaf yoldur.</div>
+    <div class="warn"><strong>Bulut AI satırı ("Other Data"):</strong> Özellik varsayılan kapalı ve opt-in olsa da, uygulama bu veriyi gönderme <em>yeteneğine</em> sahip olduğu için beyan edilir. <strong>Linked = No</strong> (model girdi/çıktısı saklanmaz; yalnızca hash'lenmiş App Store işlem kimliğine bağlı kota sayacı tutulur), <strong>Tracking = No</strong>. App Privacy formunda "Other Data Types" altından ekleyip amaç olarak "App Functionality" seç. Not: Bu metin User Content'ten türese de kaynağı ayrı olduğu için ayrı işaretlemek en şeffaf yoldur.</div>
 
     <h3>Tracking</h3>
     <p><strong>"Do you or your partners use data for tracking?" → No.</strong> ATT (App Tracking Transparency) yok. Tracking domain yok.</p>
@@ -138,9 +138,9 @@ için kameraya erişim gerekir."</code></pre>
     <h2>5 · Uygulama İçi Satın Alma (IAP)</h2>
     <p>App Store Connect → <kbd>Features → In-App Purchases / Subscriptions</kbd>. Koddaki ürün ID'leri (<code>PaywallService.proProductIDs</code>):</p>
     <ul>
-      <li><code>com.ruhsatim.pro.monthly</code> — Auto-Renewable Subscription (aylık)</li>
-      <li><code>com.ruhsatim.pro.yearly</code> — Auto-Renewable Subscription (yıllık)</li>
-      <li><code>com.ruhsatim.pro.lifetime</code> — Non-Consumable (ömür boyu)</li>
+      <li><code>com.arvia.pro.monthly</code> — Auto-Renewable Subscription (aylık)</li>
+      <li><code>com.arvia.pro.yearly</code> — Auto-Renewable Subscription (yıllık)</li>
+      <li><code>com.arvia.pro.lifetime</code> — Non-Consumable (ömür boyu)</li>
     </ul>
     <ol>
       <li>Abonelikler için bir <strong>Subscription Group</strong> oluştur (örn. "Arvia Pro"), aylık + yıllığı içine koy.</li>

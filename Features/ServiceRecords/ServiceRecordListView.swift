@@ -14,6 +14,7 @@ struct ServiceRecordListView: View {
     @State private var showAddRecord = false
     @State private var editingRecord: ServiceRecord?
     @State private var selectedVehicleFilter: UUID?
+    @State private var operationError: String?
 
     private var filteredRecords: [ServiceRecord] {
         if let vid = selectedVehicleFilter {
@@ -45,6 +46,14 @@ struct ServiceRecordListView: View {
         }
         .sheet(item: $editingRecord) { record in
             ServiceRecordFormView(existingRecord: record)
+        }
+        .alert("İşlem Tamamlanamadı", isPresented: Binding(
+            get: { operationError != nil },
+            set: { if !$0 { operationError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text(operationError ?? "Bilinmeyen bir hata oluştu.")
         }
     }
 
@@ -162,7 +171,12 @@ struct ServiceRecordListView: View {
             modelContext.delete(part)
         }
         modelContext.delete(record)
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            operationError = "Bakım kaydı silinemedi. Verileriniz değiştirilmedi."
+        }
     }
 }
 

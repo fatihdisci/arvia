@@ -12,6 +12,7 @@ import SwiftUI
 // O yüzden: navigationTitle/toolbarTitleDisplayMode'a burada dokunma.
 
 struct RecordsView: View {
+    @EnvironmentObject private var navigationRouter: AppNavigationRouter
     enum Segment: String, CaseIterable, Identifiable {
         case archive = "Geçmiş"
         case reports = "Raporlar"
@@ -36,6 +37,16 @@ struct RecordsView: View {
             .navigationTitle("Kayıtlar")
             .toolbarTitleDisplayMode(.inlineLarge)
         }
+        .onAppear { handlePendingRoute() }
+        .onChange(of: navigationRouter.pendingNotificationRoute) { _, _ in
+            handlePendingRoute()
+        }
+    }
+
+    private func handlePendingRoute() {
+        guard navigationRouter.pendingNotificationRoute == .reports else { return }
+        segment = .reports
+        navigationRouter.clearRouteIfHandled(.reports)
     }
 }
 

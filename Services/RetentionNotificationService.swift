@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import UserNotifications
+import OSLog
 
 // MARK: - Retention Notification Service
 // Kullanıcıyı uygulamaya geri döndürmek için akıllı bildirim sistemi.
@@ -418,10 +419,21 @@ final class RetentionNotificationService {
 // MARK: - Notification Refresh Service
 @MainActor
 enum NotificationRefreshService {
+    private static let logger = Logger(subsystem: "com.ruhsatim.app", category: "Notifications")
+
     static func refreshAll(context: ModelContext) async {
-        let vehicles = (try? context.fetch(FetchDescriptor<Vehicle>())) ?? []
-        let reminders = (try? context.fetch(FetchDescriptor<Reminder>())) ?? []
-        let fileScores = computeFileScores(vehicles: vehicles, reminders: reminders, context: context)
+        let vehicles: [Vehicle]
+        let reminders: [Reminder]
+        let fileScores: [UUID: Int]
+        do {
+            vehicles = try context.fetch(FetchDescriptor<Vehicle>())
+            reminders = try context.fetch(FetchDescriptor<Reminder>())
+            fileScores = try computeFileScores(vehicles: vehicles, reminders: reminders, context: context)
+        } catch {
+            // Boş veri varsaymak mevcut bildirimleri yanlışlıkla iptal edebilir.
+            logger.error("Notification refresh fetch failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
         let retention = RetentionNotificationService.shared
 
         if retention.isImportantDatesEnabled {
@@ -439,9 +451,8 @@ enum NotificationRefreshService {
         await refreshAll(context: context)
     }
 
-    static func cancelAllForVehicle(_ vehicle: Vehicle, context: ModelContext) {
-        let reminders = ((try? context.fetch(FetchDescriptor<Reminder>())) ?? []).filter { $0.vehicleId == vehicle.id }
-        NotificationService.shared.cancelReminders(reminders)
+    static func cancelAllForVehicle(reminderIDs: [UUID]) {
+        NotificationService.shared.cancelReminders(ids: reminderIDs)
         RetentionNotificationService.shared.cancelKmUpdateNotifications()
         RetentionNotificationService.shared.cancelDocumentCompletenessNotifications()
         RetentionNotificationService.shared.cancelSaleFileNotifications()
@@ -451,9 +462,9 @@ enum NotificationRefreshService {
         vehicles: [Vehicle],
         reminders: [Reminder],
         context: ModelContext
-    ) -> [UUID: Int] {
-        let expenses = (try? context.fetch(FetchDescriptor<Expense>())) ?? []
-        let services = (try? context.fetch(FetchDescriptor<ServiceRecord>())) ?? []
+    ) throws -> [UUID: Int] {
+        let expenses = try context.fetch(FetchDescriptor<Expense>())
+        let services = try context.fetch(FetchDescriptor<ServiceRecord>())
         var fileScores: [UUID: Int] = [:]
         for vehicle in vehicles {
             var score = 0
@@ -490,7 +501,12 @@ enum VehicleContextRefreshService {
         vehicle.currentOdometer = newOdometer
         vehicle.odometerIsEstimate = isEstimate
         vehicle.lastOdometerUpdate = Date()
-        try context.save()
+        do {
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
+        }
         await notificationRefresh(context)
     }
 

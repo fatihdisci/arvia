@@ -12,6 +12,7 @@ struct ExpenseListView: View {
 
     @State private var showAddExpense = false
     @State private var editingExpense: Expense?
+    @State private var operationError: String?
 
     // Filtre
     @State private var selectedVehicleFilter: UUID?
@@ -63,6 +64,14 @@ struct ExpenseListView: View {
             }
         }
         .sheet(isPresented: $showAddExpense) { ExpenseFormView() }
+        .alert("İşlem Tamamlanamadı", isPresented: Binding(
+            get: { operationError != nil },
+            set: { if !$0 { operationError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text(operationError ?? "Bilinmeyen bir hata oluştu.")
+        }
     }
 
     // MARK: - Empty State
@@ -126,7 +135,12 @@ struct ExpenseListView: View {
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
                                     modelContext.delete(expense)
-                                    try? modelContext.save()
+                                    do {
+                                        try modelContext.save()
+                                    } catch {
+                                        modelContext.rollback()
+                                        operationError = "Masraf silinemedi. Verileriniz değiştirilmedi."
+                                    }
                                 } label: {
                                     Label("Sil", systemImage: "trash")
                                 }

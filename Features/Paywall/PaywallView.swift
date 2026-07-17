@@ -160,7 +160,7 @@ struct PaywallView: View {
         .presentationDragIndicator(.visible)
     }
 
-    // MARK: - Pro Highlight Features (Free'den farkı: sadece bu 3 özellik Pro'ya özel)
+    // MARK: - Pro Highlight Features
     private struct ProHighlight: Identifiable {
         let id = UUID()
         let icon: String
@@ -183,6 +183,16 @@ struct PaywallView: View {
             icon: "car.2",
             title: "Sınırsız Araç",
             description: "Tüm araçlarını tek garajda yönet. Her birine özel dijital dosya."
+        ),
+        ProHighlight(
+            icon: "doc.richtext",
+            title: "Satış Dosyası",
+            description: "Bakım, ekspertiz ve belge özetini paylaşılabilir PDF'e dönüştür."
+        ),
+        ProHighlight(
+            icon: "chart.xyaxis.line",
+            title: "Gelişmiş Raporlar",
+            description: "Yıllık trendleri, kategori dağılımını ve maliyet ritmini incele."
         ),
     ]
 

@@ -11,6 +11,7 @@ struct DocumentFormView: View {
     @Environment(\.dismiss) private var dismiss
 
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
+    @Query private var allReminders: [Reminder]
 
     let existingDocument: VehicleDocument?
 
@@ -23,6 +24,7 @@ struct DocumentFormView: View {
     @State private var includeInSaleFile = false
     @State private var hasIssueDate = false
     @State private var hasExpiryDate = false
+    @State private var createExpiryReminder = true
 
     // Dosya seçimi
     @State private var selectedPhotoItem: PhotosPickerItem?
@@ -53,6 +55,7 @@ struct DocumentFormView: View {
             _includeInSaleFile = State(initialValue: doc.includeInSaleFile)
             _hasIssueDate = State(initialValue: doc.issueDate != nil)
             _hasExpiryDate = State(initialValue: doc.expiryDate != nil)
+            _createExpiryReminder = State(initialValue: false)
             _importedFileName = State(initialValue: doc.originalFileName)
         } else {
             // Yeni belge: varsayılan tipin adını başlık olarak ata
@@ -97,6 +100,13 @@ struct DocumentFormView: View {
             .onAppear {
                 if !isEditing, vehicles.count == 1 {
                     selectedVehicleId = vehicles.first?.id
+                }
+                if let documentId = existingDocument?.id {
+                    createExpiryReminder = allReminders.contains {
+                        $0.sourceDocumentId == documentId
+                            && $0.statusRaw != ReminderStatus.completed.rawValue
+                            && $0.statusRaw != ReminderStatus.archived.rawValue
+                    }
                 }
             }
             .onChange(of: selectedPhotoItem) { _, newItem in
@@ -186,6 +196,17 @@ struct DocumentFormView: View {
                 .tint(AppColors.accentPrimary)
             if hasExpiryDate {
                 DatePicker("Tarih", selection: Binding(get: { expiryDate ?? Date() }, set: { expiryDate = $0 }), displayedComponents: .date)
+
+                Toggle(isOn: $createExpiryReminder) {
+                    Label("Bitiş için hatırlat", systemImage: "bell.badge")
+                }
+                .tint(AppColors.accentPrimary)
+
+                if createExpiryReminder {
+                    Text("\(documentType.expiryReminderTitle) işi otomatik oluşturulur ve belgeyle birlikte güncellenir.")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
             }
 
             HStack(spacing: AppSpacing.sm) {
@@ -378,6 +399,12 @@ struct DocumentFormView: View {
             modelContext.insert(doc)
         }
 
+        let originalLocalFileName = existingDocument?.localFileName
+        let originalFileData = originalLocalFileName.flatMap {
+            DocumentStorageService.shared.readFileData($0)
+        } ?? existingDocument?.fileData
+        var savedLocalFileName: String?
+
         doc.typeRaw = documentType.rawValue
         doc.title = t
         doc.vehicleId = vehicleId
@@ -386,13 +413,59 @@ struct DocumentFormView: View {
         doc.vendorName = vendorName.trimmingCharacters(in: .whitespaces).isEmpty ? nil : vendorName.trimmingCharacters(in: .whitespaces)
         doc.includeInSaleFile = includeInSaleFile
 
+        let activeLinkedReminders = allReminders.filter {
+            $0.sourceDocumentId == doc.id
+                && $0.statusRaw != ReminderStatus.completed.rawValue
+                && $0.statusRaw != ReminderStatus.archived.rawValue
+        }
+        let activeLinkedReminder = activeLinkedReminders.first
+        var reminderIDsToCancel: [UUID] = []
+        if hasExpiryDate, createExpiryReminder, let expiryDate {
+            let reminder: Reminder
+            if let activeLinkedReminder {
+                reminder = activeLinkedReminder
+            } else {
+                reminder = Reminder(
+                    vehicleId: vehicleId,
+                    sourceDocumentId: doc.id
+                )
+                modelContext.insert(reminder)
+            }
+            reminder.vehicleId = vehicleId
+            reminder.type = documentType.expiryReminderType
+            reminder.title = documentType.expiryReminderTitle
+            reminder.dueDate = expiryDate
+            reminder.dueOdometer = nil
+            reminder.repeatRuleRaw = nil
+            reminder.priority = .warning
+            reminder.status = .active
+            reminder.completedAt = nil
+            reminder.addedToHistoryAt = nil
+            reminder.notes = "Belge bitiş tarihinden otomatik oluşturuldu."
+            reminder.sourceDocumentId = doc.id
+
+            // Bozuk/yarım kalmış eski bir işlem birden fazla otomatik kayıt bıraktıysa
+            // tek kaynak belge için yalnızca bir aktif hatırlatıcı koru.
+            for duplicate in activeLinkedReminders.dropFirst() {
+                reminderIDsToCancel.append(duplicate.id)
+                modelContext.delete(duplicate)
+            }
+        } else {
+            for linkedReminder in activeLinkedReminders {
+                reminderIDsToCancel.append(linkedReminder.id)
+                modelContext.delete(linkedReminder)
+            }
+        }
+
         // Yeni dosya varsa kaydet
         if let data = importedFileData, let fileName = importedFileName {
             // Geçici dosya oluştur
             let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+            defer { try? FileManager.default.removeItem(at: tempURL) }
             do {
                 try data.write(to: tempURL)
             } catch {
+                modelContext.rollback()
                 errors.append("Geçici dosya oluşturulamadı: \(error.localizedDescription)")
                 validationErrors = errors; return
             }
@@ -403,6 +476,7 @@ struct DocumentFormView: View {
                     originalFileName: fileName,
                     documentId: doc.id
                 )
+                savedLocalFileName = result.localFileName
                 doc.localFileName = result.localFileName
                 doc.originalFileName = fileName
                 doc.fileSizeBytes = result.fileSize
@@ -410,9 +484,8 @@ struct DocumentFormView: View {
                 // Veri zaten bellekte; tekrar diskten okumaya gerek yok.
                 doc.fileData = data
 
-                // Geçiciyi temizle
-                try? FileManager.default.removeItem(at: tempURL)
             } catch {
+                modelContext.rollback()
                 errors.append("Dosya kaydedilemedi: \(error.localizedDescription)")
                 validationErrors = errors; return
             }
@@ -420,12 +493,34 @@ struct DocumentFormView: View {
 
         do {
             try modelContext.save()
+            NotificationService.shared.cancelReminders(ids: reminderIDsToCancel)
+            if let originalLocalFileName,
+               let savedLocalFileName,
+               originalLocalFileName != savedLocalFileName {
+                try? DocumentStorageService.shared.deleteFile(originalLocalFileName)
+            }
             // Başarı haptik
             let impact = UINotificationFeedbackGenerator()
             impact.notificationOccurred(.success)
             Task { await NotificationRefreshService.refreshAll(context: modelContext) }
             dismiss()
         } catch {
+            modelContext.rollback()
+            if let savedLocalFileName {
+                if savedLocalFileName == originalLocalFileName,
+                   let originalFileData {
+                    do {
+                        try DocumentStorageService.shared.writeFileData(
+                            originalFileData,
+                            localFileName: savedLocalFileName
+                        )
+                    } catch {
+                        errors.append("Önceki dosya geri yüklenemedi.")
+                    }
+                } else {
+                    try? DocumentStorageService.shared.deleteFile(savedLocalFileName)
+                }
+            }
             errors.append("Kayıt sırasında bir hata oluştu. Lütfen tekrar dene.")
             validationErrors = errors
         }

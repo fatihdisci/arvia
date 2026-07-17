@@ -40,12 +40,24 @@ CREATE POLICY "Users_can_insert_own_profile" ON profiles
 
 -- Kullanıcı kendi profilini güncelleyebilir (banned değilse)
 CREATE POLICY "Users_can_update_own_profile" ON profiles
-  FOR UPDATE USING (
-    auth.uid() = id
-    AND EXISTS (
-      SELECT 1 FROM profiles WHERE id = auth.uid() AND is_banned = false
-    )
-  );
+  FOR UPDATE USING (auth.uid() = id AND is_banned = false)
+  WITH CHECK (auth.uid() = id);
+
+-- RLS satırları korur; hassas sütunları ayrıca kapatmak zorunludur.
+-- Aksi halde kullanıcı kendi satırında role/is_pro/is_verified/is_banned
+-- alanlarını değiştirip moderasyon RPC'lerinde yetki yükseltebilir.
+REVOKE INSERT, UPDATE ON TABLE profiles FROM anon, authenticated;
+GRANT INSERT (
+  id, username, display_name, avatar_url,
+  default_vehicle_brand, default_vehicle_model, default_vehicle_year,
+  show_vehicle_on_posts
+) ON TABLE profiles TO authenticated;
+GRANT UPDATE (
+  username, display_name, avatar_url,
+  default_vehicle_brand, default_vehicle_model, default_vehicle_year,
+  show_vehicle_on_posts
+) ON TABLE profiles TO authenticated;
+GRANT SELECT ON TABLE profiles TO anon, authenticated;
 
 -- ============================================================================
 -- 2. COMMUNITY POSTS — SELECT

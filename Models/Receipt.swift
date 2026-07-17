@@ -14,10 +14,9 @@ final class Receipt {
     var createdAt: Date = Date()
 
     // MARK: - Görüntü verisi
-    // Taranan sayfaların ham görüntüleri (JPEG, sıkıştırılmış). Orijinal sayfalar
-    // ayrıca DocumentStorageService ile belge kasasına da yazılır; burada Receipt'in
-    // kendi kopyası tutulur. (externalStorage koleksiyon tiplerinde güvenilir
-    // desteklenmediği için satır içi saklanır.)
+    // Eski sürümlerde taranan sayfaların ikinci kopyası burada tutuluyordu.
+    // 1.1'den itibaren yeni taramalar için tek kaynak VehicleDocument.fileData'dır;
+    // alan geriye dönük CloudKit/model uyumluluğu için korunur.
     var pageImagesData: [Data] = []
 
     // MARK: - OCR + ayrıştırma

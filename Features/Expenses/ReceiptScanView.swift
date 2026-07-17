@@ -11,6 +11,7 @@ import UniformTypeIdentifiers
 struct ReceiptScanView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var paywallService = PaywallService.shared
 
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
 
@@ -49,6 +50,7 @@ struct ReceiptScanView: View {
     @State private var note = ""
 
     @State private var validationErrors: [String] = []
+    @State private var showPaywall = false
 
     // AI (yapay zekâ) yükseltme durumu
     @State private var aiInFlight = false
@@ -76,7 +78,13 @@ struct ReceiptScanView: View {
 
     var body: some View {
         NavigationStack {
-            content
+            Group {
+                if paywallService.canUseReceiptScan {
+                    content
+                } else {
+                    proLockedContent
+                }
+            }
                 .background(Color.appBackground)
                 .navigationTitle("Fiş/Fatura Tara")
                 .navigationBarTitleDisplayMode(.inline)
@@ -120,6 +128,21 @@ struct ReceiptScanView: View {
                         selectedVehicleId = vehicles.first?.id
                     }
                 }
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView(feature: .receiptScan)
+                .environmentObject(paywallService)
+        }
+    }
+
+    private var proLockedContent: some View {
+        ContentUnavailableView {
+            Label("Fiş/Fatura Tarama Pro'da", systemImage: "lock.fill")
+        } description: {
+            Text("Tarama, OCR kaydı ve yapay zekâ düzeltmesi için geçerli bir Pro hakkı gerekir.")
+        } actions: {
+            Button("Pro'yu İncele") { showPaywall = true }
+                .buttonStyle(.borderedProminent)
         }
     }
 
@@ -574,6 +597,11 @@ struct ReceiptScanView: View {
 
     // MARK: - Save
     private func save() {
+        guard paywallService.canUseReceiptScan else {
+            validationErrors = ["Fiş/fatura tarama için Pro gerekir."]
+            showPaywall = true
+            return
+        }
         var errors: [String] = []
         guard let vehicleId = selectedVehicleId else {
             validationErrors = ["Bir araç seçmelisin."]; return
@@ -588,12 +616,25 @@ struct ReceiptScanView: View {
 
         // 1) Orijinal sayfaları belge kasasına ekle (mevcut DocumentStorageService akışı).
         let pageData = DocumentScannerService.jpegData(for: pages)
-        let documentIds = saveToVault(vehicleId: vehicleId, pageData: pageData, isMaintenance: isMaintenance)
+        let documentIds: [UUID]
+        do {
+            documentIds = try saveToVault(
+                vehicleId: vehicleId,
+                pageData: pageData,
+                isMaintenance: isMaintenance
+            )
+        } catch {
+            modelContext.rollback()
+            validationErrors = ["Fiş görselleri belge kasasına kaydedilemedi: \(error.localizedDescription)"]
+            return
+        }
 
         // 2) Expense veya ServiceRecord oluştur.
         let receipt = Receipt(
             vehicleId: vehicleId,
-            pageImagesData: pageData,
+            // Görseller VehicleDocument.fileData içinde tutulur; ikinci kez
+            // Receipt satırına yazıp yerel/CloudKit alanını ikiye katlamayız.
+            pageImagesData: [],
             rawOCRText: rawOCRText,
             parsedDate: parsed.date,
             parsedTotal: parsed.total,
@@ -640,24 +681,31 @@ struct ReceiptScanView: View {
             Task { await VehicleContextRefreshService.refreshAfterVehicleContextChange(context: modelContext) }
             dismiss()
         } catch {
+            modelContext.rollback()
+            for documentId in documentIds {
+                try? DocumentStorageService.shared.deleteFile("\(documentId.uuidString).jpg")
+            }
             validationErrors = ["Kaydedilemedi: \(error.localizedDescription)"]
         }
     }
 
     /// Sayfaları belge kasasına yazar (DocumentFormView ile aynı DocumentStorageService akışı).
-    private func saveToVault(vehicleId: UUID, pageData: [Data], isMaintenance: Bool) -> [UUID] {
+    private func saveToVault(vehicleId: UUID, pageData: [Data], isMaintenance: Bool) throws -> [UUID] {
         var ids: [UUID] = []
+        var insertedDocuments: [VehicleDocument] = []
+        var savedFileNames: [String] = []
         let docType: DocumentType = isMaintenance ? .serviceInvoice : .other
-        for (index, data) in pageData.enumerated() {
-            let doc = VehicleDocument(
-                vehicleId: vehicleId,
-                type: docType,
-                title: pageData.count > 1 ? "Fiş — Sayfa \(index + 1)" : "Taranan Fiş",
-                includeInSaleFile: false
-            )
-            let fileName = "\(doc.id.uuidString).jpg"
-            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-            do {
+        do {
+            for (index, data) in pageData.enumerated() {
+                let doc = VehicleDocument(
+                    vehicleId: vehicleId,
+                    type: docType,
+                    title: pageData.count > 1 ? "Fiş — Sayfa \(index + 1)" : "Taranan Fiş",
+                    includeInSaleFile: false
+                )
+                let fileName = "\(doc.id.uuidString).jpg"
+                let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+                defer { try? FileManager.default.removeItem(at: tempURL) }
                 try data.write(to: tempURL)
                 let result = try DocumentStorageService.shared.saveFile(
                     from: tempURL,
@@ -668,13 +716,17 @@ struct ReceiptScanView: View {
                 doc.originalFileName = fileName
                 doc.fileSizeBytes = result.fileSize
                 doc.fileData = data
-                try? FileManager.default.removeItem(at: tempURL)
                 modelContext.insert(doc)
+                insertedDocuments.append(doc)
+                savedFileNames.append(result.localFileName)
                 ids.append(doc.id)
-            } catch {
-                // Bir sayfa yazılamazsa atla — akışı durdurma.
-                continue
             }
+        } catch {
+            insertedDocuments.forEach(modelContext.delete)
+            for fileName in savedFileNames {
+                try? DocumentStorageService.shared.deleteFile(fileName)
+            }
+            throw error
         }
         return ids
     }

@@ -30,14 +30,14 @@
   <a class="back" href="index.html">← Arvia</a>
   <div class="card">
     <h1>Gizlilik Politikası</h1>
-    <p class="updated">Son güncelleme: 5 Temmuz 2026</p>
+    <p class="updated">Son güncelleme: 17 Temmuz 2026</p>
 
     <h2>Genel Bakış</h2>
-    <p>Arvia, gizliliğinize saygı duyar ve <strong>yerel-öncelikli (local-first)</strong> çalışır. Uygulamanın <strong>tüm temel özellikleri tamamen cihazınızda</strong>, internet olmadan çalışır ve verileriniz cihazınızdan çıkmaz.</p>
-    <p>Yalnızca <strong>siz açıkça açtığınızda</strong> devreye giren iki isteğe bağlı özellik veri gönderir: <strong>Topluluk</strong> (giriş yaparsanız) ve <strong>Bulut Yapay Zekâ</strong> (onay verirseniz). Bu iki özellik de <strong>varsayılan olarak kapalıdır</strong>. Ayrıntılar aşağıdadır.</p>
+    <p>Arvia, gizliliğinize saygı duyar ve <strong>yerel-öncelikli (local-first)</strong> çalışır. Temel özellikler internet olmadan kullanılabilir. Araç dosyanız, iCloud hesabınız açıksa Apple'ın özel CloudKit veritabanı üzerinden kendi cihazlarınız arasında eşzamanlanabilir.</p>
+    <p><strong>Topluluk</strong> yalnızca giriş yaparsanız, <strong>Bulut Yapay Zekâ</strong> ise yalnızca ayrıca onay verirseniz veri gönderir. Ayrıntılar aşağıdadır.</p>
 
     <h2>Cihazda Saklanan Veriler</h2>
-    <p>Aşağıdaki veriler <strong>yalnızca cihazınızda</strong>, uygulamanın kendi depolama alanında saklanır:</p>
+    <p>Aşağıdaki veriler uygulamanın kendi depolama alanında tutulur ve iCloud kullanılabiliyorsa Apple hesabınızın <strong>özel CloudKit veritabanına</strong> eşzamanlanabilir:</p>
     <ul>
       <li><strong>Araç bilgileri:</strong> Plaka, marka, model, yıl, kilometre, yakıt tipi, vites tipi, satın alma bilgileri.</li>
       <li><strong>Masraf kayıtları:</strong> Yakıt, bakım, sigorta, MTV, tamir ve diğer harcama tutarları ile tarihleri.</li>
@@ -47,7 +47,7 @@
       <li><strong>Fiş/fatura görselleri ve okunan metin:</strong> Kamerayla taranan veya seçilen fiş görüntüleri ve bunlardan cihaz üstünde çıkarılan metin.</li>
       <li><strong>Kullanım profili:</strong> Günlük kilometre, güzergâh tipi, yakıt tüketimi gibi Akıllı Sürüş Asistanı tercihleri.</li>
     </ul>
-    <p>Bu verilerin hiçbiri, siz aşağıdaki isteğe bağlı özellikleri açmadıkça bir sunucuya gönderilmez.</p>
+    <p>Bu veriler geliştiricinin kendi sunucusuna yüklenmez. CloudKit eşzamanlaması Apple tarafından, Apple Kimliğinizin özel alanında işletilir.</p>
 
     <h2>Kamera ve Fiş Tarama</h2>
     <p>Fiş/fatura tarama özelliği kamera erişimi ister. Kamera <strong>yalnızca</strong> siz bir belge/fiş taradığınızda kullanılır. Görüntülerden metin çıkarma (OCR) işlemi <strong>tamamen cihazınızda</strong> Apple Vision çerçevesiyle yapılır; görüntüler bir sunucuya gönderilmez. Görüntüler araç belge kasanızda cihazınızda saklanır.</p>
@@ -61,8 +61,8 @@
     <ul>
       <li><strong>Gönderilen:</strong> Yalnızca <strong>metin</strong> gönderilir (fiş görselleri değil). Metin, cihazınızdan çıkmadan <strong>önce maskelenir</strong>: T.C. kimlik numarası, plaka, IBAN ve telefon numaraları otomatik olarak <span class="highlight">[MASKED]</span> ile gizlenir.</li>
       <li><strong>Nereye:</strong> Metin, tarafımızca işletilen bir ara sunucu (Vercel) üzerinden bir <strong>üçüncü taraf yapay zekâ sağlayıcısına (DeepSeek)</strong> iletilir. Bu sunucular <strong>yurt dışında</strong> bulunabilir.</li>
-      <li><strong>Kimlik:</strong> Kimliğinizle eşleşen bir hesap oluşturulmaz. Yalnızca cihazda üretilen <strong>anonim bir kimlik</strong> (kota sayacı için) kullanılır.</li>
-      <li><strong>Saklama:</strong> Ara sunucu, gönderdiğiniz metin içeriğini <strong>kaydetmez/loglamaz</strong>. Yalnızca kötüye kullanımı önlemek için anonim kullanım sayaçları ve tekrarları önlemek için içeriğin geri döndürülemez bir <strong>özet (hash)</strong> değeri tutulur.</li>
+      <li><strong>Pro doğrulaması:</strong> Kötüye kullanım ve yetkisiz maliyeti önlemek için App Store makbuzu Apple üzerinden doğrulanır. Ödeme kartı bilgileri alınmaz. Kota anahtarı, Apple işlem numarasının geri döndürülemez özetiyle oluşturulur.</li>
+      <li><strong>Saklama:</strong> Ara sunucu, gönderdiğiniz metni veya yapay zekâ yanıtını <strong>kaydetmez/loglamaz</strong>. Yalnızca kötüye kullanımı önlemek için Apple işlem numarasının geri döndürülemez özetiyle anahtarlanan kullanım sayaçları tutulur.</li>
       <li><strong>Kapatma:</strong> Özelliği istediğiniz zaman <em>Ayarlar → Yapay Zekâ</em>'dan kapatabilirsiniz. Kapalıyken hiçbir metin gönderilmez; özellikler cihaz üstü kurallarla çalışmaya devam eder.</li>
     </ul>
 
@@ -74,7 +74,7 @@
       <li>Amplitude / Mixpanel</li>
       <li>Reklam SDK'ları</li>
     </ul>
-    <p>Kullanılan altyapı hizmetleri yalnızca yukarıda açıklanan isteğe bağlı özellikler içindir: <strong>Supabase</strong> (topluluk kimlik doğrulama ve içerik), <strong>Vercel + DeepSeek</strong> (bulut yapay zekâ). Bunlar kullanıcıyı izleme (tracking) amacıyla kullanılmaz.</p>
+    <p>Kullanılan altyapı hizmetleri: <strong>Apple CloudKit</strong> (özel araç dosyası eşzamanlama), <strong>Supabase</strong> (topluluk kimlik doğrulama ve içerik), <strong>Vercel + DeepSeek</strong> (bulut yapay zekâ). Bunlar kullanıcıyı reklam amacıyla izlemek için kullanılmaz.</p>
 
     <h2>Satın Alma İşlemleri</h2>
     <p>Pro abonelik ve diğer satın alma işlemleri Apple'ın <strong>StoreKit</strong> çerçevesi üzerinden yönetilir. Ödeme bilgileri Apple tarafından işlenir; uygulama kredi kartı veya ödeme bilgilerine erişmez.</p>
@@ -82,11 +82,11 @@
     <h2>Veri Paylaşımı</h2>
     <p>Uygulama tarafından oluşturulan belgeler (satış dosyası PDF'i) <strong>yalnızca sizin başlattığınız paylaşım işlemiyle</strong> iletilir. Yukarıda açıklanan isteğe bağlı özellikler (Topluluk, Bulut Yapay Zekâ) dışında, siz paylaşmadıkça hiçbir belge veya veri cihazınızdan çıkmaz. Verileriniz hiçbir zaman satılmaz veya reklam amacıyla kullanılmaz.</p>
 
-    <h2>iCloud Eşzamanlama (Gelecek Özellik)</h2>
-    <p>Uygulamanın ilerideki bir sürümünde, isteğe bağlı iCloud eşzamanlama özelliği sunulabilir. Bu özellik etkinleştirildiğinde araç kayıtları ve belgeleriniz Apple iCloud hesabınızın <strong>özel veritabanında</strong> saklanır ve aynı Apple Kimliği ile giriş yaptığınız cihazlarınız arasında eşzamanlanır. iCloud eşzamanlama <strong>varsayılan olarak kapalıdır</strong> ve yalnızca siz etkinleştirirseniz çalışır.</p>
+    <h2>iCloud Eşzamanlama</h2>
+    <p>Araç kayıtları, belgeler, fotoğraflar, fişler ve uygulama içindeki ilgili veriler Apple iCloud hesabınızın <strong>özel CloudKit veritabanında</strong> saklanabilir ve aynı Apple Kimliğini kullanan cihazlarınız arasında eşzamanlanır. Bu alana diğer Arvia kullanıcıları erişemez. iCloud erişimini cihazınızın Apple Kimliği/iCloud ayarlarından yönetebilirsiniz.</p>
 
     <h2>App Silindiğinde</h2>
-    <p>Uygulamayı cihazınızdan sildiğinizde, uygulamaya ait tüm veriler (araç kayıtları, masraflar, belgeler ve hatırlatıcılar) cihazınızdan <strong>tamamen silinir.</strong></p>
+    <p>Uygulamayı bir cihazdan kaldırmak o cihazdaki yerel kopyayı siler; iCloud özel veritabanındaki eşzamanlanmış kayıtlar diğer cihazlar ve yeniden yükleme için kalabilir. Kayıtları iCloud dahil silmek için uygulama içindeki <strong>Ayarlar → Tüm Verileri Sil</strong> seçeneğini kullanın ve eşzamanlamanın tamamlanması için internet bağlantısını koruyun.</p>
 
     <h2>İletişim</h2>
     <p>Gizlilik politikamızla ilgili sorularınız için:<br>

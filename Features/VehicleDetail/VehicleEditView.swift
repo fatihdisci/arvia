@@ -467,14 +467,14 @@ struct VehicleEditView: View {
     }
 
     private func applyChanges() -> Bool {
+        let oldPhotoFileName = vehicle.photoFileName
+        var newPhotoFileName: String?
+
         // Fotoğraf: yeni seçildiyse kaydet, değişmediyse dokunma
         if let newImage = selectedPhotoImage {
-            // Eski fotoğraf varsa sil
-            if let oldFileName = vehicle.photoFileName {
-                VehiclePhotoStorageService.shared.deletePhoto(fileName: oldFileName)
-            }
             do {
                 let saved = try VehiclePhotoStorageService.shared.savePhotoReturningData(newImage)
+                newPhotoFileName = saved.fileName
                 vehicle.photoFileName = saved.fileName
                 vehicle.photoData = saved.data
             } catch {
@@ -502,10 +502,19 @@ struct VehicleEditView: View {
 
         do {
             try modelContext.save()
+            if let oldPhotoFileName,
+               let newPhotoFileName,
+               oldPhotoFileName != newPhotoFileName {
+                VehiclePhotoStorageService.shared.deletePhoto(fileName: oldPhotoFileName)
+            }
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.success)
             Task { await VehicleContextRefreshService.refreshAfterVehicleContextChange(context: modelContext) }
         } catch {
+            modelContext.rollback()
+            if let newPhotoFileName {
+                VehiclePhotoStorageService.shared.deletePhoto(fileName: newPhotoFileName)
+            }
             validationErrors = ["Kaydedilemedi: \(error.localizedDescription)"]
             return false
         }

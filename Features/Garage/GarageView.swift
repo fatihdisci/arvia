@@ -55,6 +55,7 @@ struct GarageView: View {
     @State private var activeVehicleId: UUID?
     @State private var navigationPath: [UUID] = []
     @State private var hasAppeared = false
+    @State private var operationError: String?
 
     private var activeVehicles: [Vehicle] {
         vehicles.filter { $0.archivedAt == nil }
@@ -247,6 +248,14 @@ struct GarageView: View {
             }
             .onAppear {
                 handleNotificationRoute(navigationRouter.pendingNotificationRoute)
+            }
+            .alert("İşlem Tamamlanamadı", isPresented: Binding(
+                get: { operationError != nil },
+                set: { if !$0 { operationError = nil } }
+            )) {
+                Button("Tamam", role: .cancel) {}
+            } message: {
+                Text(operationError ?? "Bilinmeyen hata")
             }
         }
     }
@@ -516,16 +525,29 @@ struct GarageView: View {
                 guard let image = UIImage(data: data) else { return }
                 let saved = try VehiclePhotoStorageService.shared.savePhotoReturningData(image)
                 await MainActor.run {
+                    let oldFileName = vehicle.photoFileName
                     vehicle.photoFileName = saved.fileName
                     vehicle.photoData = saved.data
-                    try? modelContext.save()
+                    do {
+                        try modelContext.save()
+                        if let oldFileName, oldFileName != saved.fileName {
+                            VehiclePhotoStorageService.shared.deletePhoto(fileName: oldFileName)
+                        }
+                    } catch {
+                        modelContext.rollback()
+                        VehiclePhotoStorageService.shared.deletePhoto(fileName: saved.fileName)
+                        operationError = "Fotoğraf kaydedilemedi: \(error.localizedDescription)"
+                    }
                     garagePhotoItem = nil
-                    let generator = UINotificationFeedbackGenerator()
-                    generator.notificationOccurred(.success)
+                    if operationError == nil {
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
                 }
             } catch {
                 await MainActor.run {
                     garagePhotoItem = nil
+                    operationError = "Fotoğraf okunamadı: \(error.localizedDescription)"
                 }
             }
         }
@@ -880,6 +902,14 @@ struct GarageView: View {
                 }
             case .secondVehicle:
                 showAddVehicle = true
+            case .saleFile:
+                if currentVehicle != nil {
+                    showSaleFile = true
+                } else {
+                    showAddVehicle = true
+                }
+            case .advancedReports:
+                navigationRouter.route(.reports)
             }
         } else {
             paywallFeature = feature.paywallFeature
@@ -1025,12 +1055,16 @@ struct GarageView: View {
             profileBand: profile?.dailyKmBand
         ) else { return }
         Task {
-            try? await VehicleContextRefreshService.updateCurrentOdometer(
-                vehicle: vehicle,
-                newOdometer: estimate.estimatedOdometer,
-                isEstimate: true,
-                context: modelContext
-            )
+            do {
+                try await VehicleContextRefreshService.updateCurrentOdometer(
+                    vehicle: vehicle,
+                    newOdometer: estimate.estimatedOdometer,
+                    isEstimate: true,
+                    context: modelContext
+                )
+            } catch {
+                operationError = "Kilometre tahmini kaydedilemedi: \(error.localizedDescription)"
+            }
         }
     }
 

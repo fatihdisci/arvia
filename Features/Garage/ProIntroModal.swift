@@ -33,7 +33,7 @@ struct ProBadge: View {
 
 // MARK: - Pro Intro Modal
 // Garaj toolbar'ındaki Pro rozetinden açılan kompakt tanıtım modali.
-// Sadece gerçekten Pro'ya has 3 özelliği listeler (Asistan, Fiş Tarama, Sınırsız Araç).
+// Gerçek Pro yetki politikasındaki özellikleri listeler.
 // Free kullanıcıya satıra tıklayınca paywall açılır; Pro kullanıcıya doğrudan feature'a yönlendirilir.
 // Modal `.medium` detent ile açılır — içerik kısa olduğu için büyük ekrana gerek yok,
 // tab bar'ın üstünde kalması için alt padding'e güvenli alan eklenir.
@@ -70,7 +70,7 @@ struct ProIntroModal: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
 
@@ -200,20 +200,21 @@ struct ProIntroModal: View {
 }
 
 // MARK: - Pro Intro Modal Feature
-// Modalda listelenen Pro özellikleri. Sadece gerçekten Pro'ya has 3 özellik:
-// Akıllı Sürüş Asistanı, Fiş/Fatura Tarama, Sınırsız Araç.
-// Diğer şeyler (belge kasası, satış dosyası limitleri, gelişmiş raporlar) free'de
-// kısmen açık olduğu için Pro'ya has satır olarak gösterilmiyor — modal şişmesin.
+// Modalda listelenen gerçek Pro özellikleri.
 enum ProIntroModalFeature: CaseIterable {
     case assistant
     case receiptScan
     case secondVehicle
+    case saleFile
+    case advancedReports
 
     var icon: String {
         switch self {
         case .assistant: return "steeringwheel"
         case .receiptScan: return "doc.viewfinder"
         case .secondVehicle: return "car.2"
+        case .saleFile: return "doc.richtext"
+        case .advancedReports: return "chart.xyaxis.line"
         }
     }
 
@@ -222,6 +223,8 @@ enum ProIntroModalFeature: CaseIterable {
         case .assistant: return "Akıllı Sürüş Asistanı"
         case .receiptScan: return "Fiş/Fatura Tarama"
         case .secondVehicle: return "Sınırsız Araç"
+        case .saleFile: return "Satış Dosyası"
+        case .advancedReports: return "Gelişmiş Raporlar"
         }
     }
 
@@ -230,6 +233,8 @@ enum ProIntroModalFeature: CaseIterable {
         case .assistant: return "Kullanımına göre kişisel bakım önerileri."
         case .receiptScan: return "Fişleri fotoğrafla, masrafın saniyeler içinde eklensin."
         case .secondVehicle: return "İkinci, üçüncü aracını tek garajda yönet."
+        case .saleFile: return "Araç geçmişini paylaşılabilir PDF'e dönüştür."
+        case .advancedReports: return "Yıllık trend ve maliyet kırılımlarını gör."
         }
     }
 
@@ -239,6 +244,8 @@ enum ProIntroModalFeature: CaseIterable {
         case .assistant: return .assistant
         case .receiptScan: return .receiptScan
         case .secondVehicle: return .secondVehicle
+        case .saleFile: return .saleFileExport
+        case .advancedReports: return .advancedReports
         }
     }
 }

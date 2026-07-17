@@ -28,6 +28,12 @@ final class AIProxyServiceTests: XCTestCase {
         }
     }
 
+    func testMissingProEntitlementMapsTo403() {
+        XCTAssertThrowsError(try AIProxyService.mapResponse(status: 403, data: data("{}"))) { error in
+            XCTAssertEqual(error as? AIProxyError, .proEntitlementRequired)
+        }
+    }
+
     func testUpstreamMapsForOther5xx() {
         XCTAssertThrowsError(try AIProxyService.mapResponse(status: 502, data: data("{}"))) { error in
             XCTAssertEqual(error as? AIProxyError, .upstream(status: 502))
@@ -93,8 +99,7 @@ final class AIProxyServiceTests: XCTestCase {
         // Consent açık ama payload 20k sınırını aşıyor → ağ'a çıkmadan payloadTooLarge.
         let service = AIProxyService(
             consent: StubConsent(enabled: true),
-            configProvider: { AIProxyConfig(baseURL: URL(string: "https://example.com")!, clientSecret: "x") },
-            clientIdProvider: { "test-client" }
+            configProvider: { AIProxyConfig(baseURL: URL(string: "https://example.com")!, clientSecret: "x") }
         )
         let huge = String(repeating: "a", count: 20_001)
         do {
@@ -102,6 +107,22 @@ final class AIProxyServiceTests: XCTestCase {
             XCTFail("beklenen .payloadTooLarge")
         } catch let error as AIProxyError {
             XCTAssertEqual(error, .payloadTooLarge)
+        } catch {
+            XCTFail("beklenmeyen hata: \(error)")
+        }
+    }
+
+    func testCompleteRequiresAppReceiptBeforeNetwork() async {
+        let service = AIProxyService(
+            consent: StubConsent(enabled: true),
+            configProvider: { AIProxyConfig(baseURL: URL(string: "https://example.com")!, clientSecret: "x") },
+            appReceiptProvider: { nil }
+        )
+        do {
+            _ = try await service.complete(task: .maintenancePlan, payload: "{}")
+            XCTFail("beklenen .receiptUnavailable")
+        } catch let error as AIProxyError {
+            XCTAssertEqual(error, .receiptUnavailable)
         } catch {
             XCTFail("beklenmeyen hata: \(error)")
         }

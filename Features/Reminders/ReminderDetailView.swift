@@ -16,6 +16,7 @@ struct ReminderDetailView: View {
     @State private var showCompletionOptions = false
     @State private var showSnoozeSheet = false
     @State private var snoozeDays = 7
+    @State private var operationError: String?
 
     var body: some View {
         ScrollView {
@@ -69,6 +70,14 @@ struct ReminderDetailView: View {
         }
         .sheet(isPresented: $showSnoozeSheet) {
             snoozeSheet
+        }
+        .alert("İşlem Tamamlanamadı", isPresented: Binding(
+            get: { operationError != nil },
+            set: { if !$0 { operationError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text(operationError ?? "Bilinmeyen bir hata oluştu.")
         }
     }
 
@@ -297,12 +306,16 @@ struct ReminderDetailView: View {
     private func snoozeReminder() {
         let newDate = Reminder.snoozedDueDate(currentDueDate: reminder.dueDate, days: snoozeDays)
         reminder.dueDate = newDate
-        NotificationService.shared.cancelReminder(reminder)
-        try? modelContext.save()
-        Task { await NotificationService.shared.scheduleReminder(reminder) }
-        let impact = UINotificationFeedbackGenerator()
-        impact.notificationOccurred(.success)
-        dismiss()
+        do {
+            try modelContext.save()
+            NotificationService.shared.cancelReminder(reminder)
+            Task { await NotificationService.shared.scheduleReminder(reminder) }
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            dismiss()
+        } catch {
+            modelContext.rollback()
+            operationError = "Yapılacak ertelenemedi. Verileriniz değiştirilmedi."
+        }
     }
 
     // MARK: - Helpers
@@ -334,14 +347,11 @@ struct ReminderDetailView: View {
 
     /// Tamamlama her zaman completedAt ve addedToHistoryAt set eder; HistoryView'da görünür.
     private func completeAndAddToHistory() {
-        let impact = UINotificationFeedbackGenerator()
-        impact.notificationOccurred(.success)
         let rule = reminder.repeatRule
         let oldDueDate = reminder.dueDate
         let oldDueOdometer = reminder.dueOdometer
         reminder.completeAndAddToHistory()
-        try? modelContext.save()
-        NotificationService.shared.cancelReminder(reminder)
+        var nextReminder: Reminder?
 
         if rule != .none, let baseDate = oldDueDate ?? reminder.completedAt {
             if let nextDate = ReminderRepeatEngine.shared.nextDueDate(from: baseDate, rule: rule) {
@@ -352,18 +362,35 @@ struct ReminderDetailView: View {
                     priority: reminder.priority, status: .active, notes: reminder.notes
                 )
                 modelContext.insert(next)
-                try? modelContext.save()
-                Task { await NotificationService.shared.scheduleReminder(next) }
+                nextReminder = next
             }
         }
-        dismiss()
+
+        do {
+            try modelContext.save()
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            NotificationService.shared.cancelReminder(reminder)
+            if let nextReminder {
+                Task { await NotificationService.shared.scheduleReminder(nextReminder) }
+            }
+            dismiss()
+        } catch {
+            modelContext.rollback()
+            operationError = "Yapılacak tamamlanamadı. Verileriniz değiştirilmedi."
+        }
     }
 
     private func deleteReminder() {
-        NotificationService.shared.cancelReminder(reminder)
+        let reminderID = reminder.id
         modelContext.delete(reminder)
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            NotificationService.shared.cancelReminder(id: reminderID)
+            dismiss()
+        } catch {
+            modelContext.rollback()
+            operationError = "Yapılacak silinemedi. Verileriniz değiştirilmedi."
+        }
     }
 }
 

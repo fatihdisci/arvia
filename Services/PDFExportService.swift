@@ -7,6 +7,14 @@ import PDFKit
 
 final class PDFExportService {
 
+    enum PDFExportError: LocalizedError {
+        case proRequired
+
+        var errorDescription: String? {
+            "Satış dosyası oluşturmak için Arvia Pro gerekir."
+        }
+    }
+
     struct PDFData {
         let vehicle: Vehicle
         let serviceRecords: [ServiceRecord]
@@ -30,14 +38,18 @@ final class PDFExportService {
     private static let brandFooterShortURL = "arvia.app"
 
     // MARK: - Generate
-    func generatePDF(data: PDFData) -> URL {
+    @MainActor
+    func generatePDF(data: PDFData) throws -> URL {
+        guard PaywallService.shared.canCreateSaleFile() else {
+            throw PDFExportError.proRequired
+        }
         let fileName = "SatisDosyasi-\(data.vehicle.id.uuidString.prefix(8)).pdf"
         let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
 
         let format = UIGraphicsPDFRendererFormat()
         let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight), format: format)
 
-        try? renderer.writePDF(to: outputURL) { context in
+        try renderer.writePDF(to: outputURL) { context in
             // Kapak
             context.beginPage()
             drawCover(context: context, data: data)

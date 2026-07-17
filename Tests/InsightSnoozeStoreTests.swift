@@ -147,10 +147,32 @@ final class InsightSnoozeStoreTests: XCTestCase {
         let vehicleId = UUID()
         let insight = makeInsight(type: .overdueReminder, relatedReminderId: UUID())
         store.snooze(vehicleId: vehicleId, insight: insight)
+        store.snooze(insightType: .fuelTypeGuidance, forVehicle: vehicleId, days: 3)
+        store.dismiss(insightType: .saleFileReadiness, forVehicle: vehicleId)
         XCTAssertFalse(store.allEntries().isEmpty)
 
         store.removeAll()
         XCTAssertTrue(store.allEntries().isEmpty)
+        XCTAssertFalse(store.isSnoozed(insightType: .fuelTypeGuidance, forVehicle: vehicleId))
+        XCTAssertFalse(store.isDismissed(insightType: .saleFileReadiness, forVehicle: vehicleId))
+    }
+
+    func testClearAllForVehicleKeepsOtherVehicles() {
+        let vehicleA = UUID()
+        let vehicleB = UUID()
+        let insightA = makeInsight(type: .fuelTypeGuidance)
+        let insightB = makeInsight(type: .fuelTypeGuidance)
+        store.snooze(vehicleId: vehicleA, insight: insightA)
+        store.snooze(vehicleId: vehicleB, insight: insightB)
+        store.snooze(insightType: .maintenance, forVehicle: vehicleA, days: 2)
+        store.snooze(insightType: .maintenance, forVehicle: vehicleB, days: 2)
+
+        store.clearAll(forVehicle: vehicleA)
+
+        XCTAssertFalse(store.isSnoozed(vehicleId: vehicleA, insightId: insightA.id))
+        XCTAssertFalse(store.isSnoozed(insightType: .maintenance, forVehicle: vehicleA))
+        XCTAssertTrue(store.isSnoozed(vehicleId: vehicleB, insightId: insightB.id))
+        XCTAssertTrue(store.isSnoozed(insightType: .maintenance, forVehicle: vehicleB))
     }
 
     // MARK: - Critical Override

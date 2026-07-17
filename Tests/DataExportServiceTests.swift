@@ -15,7 +15,8 @@ final class DataExportServiceTests: XCTestCase {
         let schema = Schema([
             Vehicle.self, Reminder.self, Expense.self,
             ServiceRecord.self, PartChange.self,
-            VehicleDocument.self, InspectionReport.self, SaleFile.self
+            VehicleDocument.self, InspectionReport.self, SaleFile.self,
+            Receipt.self, VehicleUsageProfile.self
         ])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         container = try! ModelContainer(for: schema, configurations: config)
@@ -39,6 +40,8 @@ final class DataExportServiceTests: XCTestCase {
         XCTAssertEqual(result.recordCounts["documents"], 0)
         XCTAssertEqual(result.recordCounts["inspectionReports"], 0)
         XCTAssertEqual(result.recordCounts["saleFiles"], 0)
+        XCTAssertEqual(result.recordCounts["receipts"], 0)
+        XCTAssertEqual(result.recordCounts["usageProfiles"], 0)
 
         // Boş diziler
         XCTAssertEqual((json["vehicles"] as? [Any])?.count, 0)
@@ -60,7 +63,8 @@ final class DataExportServiceTests: XCTestCase {
         let expectedKeys: Set<String> = [
             "vehicles", "reminders", "expenses", "serviceRecords",
             "partChanges", "documents", "inspectionReports", "saleFiles",
-            "exportDate", "appVersion", "recordCounts", "note"
+            "receipts", "usageProfiles", "exportDate", "appVersion",
+            "exportFormatVersion", "recordCounts", "note"
         ]
         for key in expectedKeys {
             XCTAssertTrue(json.keys.contains(key), "Missing top-level key: \(key)")
@@ -69,7 +73,8 @@ final class DataExportServiceTests: XCTestCase {
         // Metadata keys
         XCTAssertNotNil(json["exportDate"] as? String)
         XCTAssertNotNil(json["appVersion"] as? String)
-        XCTAssertEqual(json["note"] as? String, "Belge dosyaları (PDF/fotoğraf) JSON içine dahil edilmez.")
+        XCTAssertEqual(json["exportFormatVersion"] as? Int, 3)
+        XCTAssertEqual(json["note"] as? String, "Belge dosyaları, araç fotoğrafları ve taranmış fiş görselleri JSON içine dahil edilmez.")
     }
 
     // MARK: - Document Files Not Embedded
@@ -122,6 +127,36 @@ final class DataExportServiceTests: XCTestCase {
         XCTAssertEqual(result.recordCounts["reminders"], 1)
         XCTAssertEqual(result.recordCounts["expenses"], 1)
         XCTAssertEqual(result.recordCounts["serviceRecords"], 0)
+    }
+
+    func testReceiptAndUsageProfileAreIncludedWithoutBinaryImages() throws {
+        let vehicle = Vehicle(brand: "Test", model: "Car")
+        context.insert(vehicle)
+        context.insert(Receipt(
+            vehicleId: vehicle.id,
+            pageImagesData: [Data([0x01, 0x02])],
+            rawOCRText: "TOPLAM 100 TL",
+            parsedTotal: 100
+        ))
+        context.insert(VehicleUsageProfile(
+            vehicleId: vehicle.id,
+            dailyKmBand: .from50to100,
+            routeType: .city
+        ))
+        try context.save()
+
+        let result = try DataExportService.export(context: context)
+        let data = try Data(contentsOf: result.url)
+        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let receipts = json["receipts"] as! [[String: Any]]
+        let profiles = json["usageProfiles"] as! [[String: Any]]
+
+        XCTAssertEqual(receipts.count, 1)
+        XCTAssertEqual(receipts[0]["pageCount"] as? Int, 1)
+        XCTAssertNil(receipts[0]["pageImagesData"])
+        XCTAssertEqual(profiles.first?["dailyKmBand"] as? String, DailyKmBand.from50to100.rawValue)
+        XCTAssertEqual(result.recordCounts["receipts"], 1)
+        XCTAssertEqual(result.recordCounts["usageProfiles"], 1)
     }
 
     // MARK: - Filename Format

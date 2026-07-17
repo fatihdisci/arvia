@@ -64,10 +64,6 @@ final class CommunityProfileService {
             "id": AnyJSON.string(userId.uuidString),
             "username": AnyJSON.string(username),
             "display_name": displayName.map { AnyJSON.string($0) } ?? AnyJSON.null,
-            "role": AnyJSON.string("user"),
-            "is_verified": AnyJSON.bool(false),
-            "is_banned": AnyJSON.bool(false),
-            "is_pro": AnyJSON.bool(false),
             "show_vehicle_on_posts": AnyJSON.bool(false),
         ]
 
@@ -105,7 +101,6 @@ final class CommunityProfileService {
             "default_vehicle_model": defaultVehicleModel.map { AnyJSON.string($0) } ?? AnyJSON.null,
             "default_vehicle_year": defaultVehicleYear.map { AnyJSON.integer($0) } ?? AnyJSON.null,
             "show_vehicle_on_posts": AnyJSON.bool(showVehicleOnPosts),
-            "updated_at": AnyJSON.string(Date().ISO8601Format()),
         ]
 
         let response: CommunityProfile = try await client
@@ -118,34 +113,6 @@ final class CommunityProfileService {
             .value
 
         return response
-    }
-
-    // MARK: - Anonymize (Soft-delete)
-
-    /// Profili anonimleştir. Post/comment geçmişi korunur, moderation bütünlüğü bozulmaz.
-    func anonymizeProfile(userId: UUID) async throws {
-        guard let client = client else {
-            throw CommunityServiceError.configMissing
-        }
-
-        let shortId = userId.uuidString.prefix(8)
-        let payload: JSONObject = [
-            "username": AnyJSON.string("del_\(shortId)"),
-            "display_name": AnyJSON.string("Silinmiş Kullanıcı"),
-            "avatar_url": AnyJSON.null,
-            "default_vehicle_brand": AnyJSON.null,
-            "default_vehicle_model": AnyJSON.null,
-            "default_vehicle_year": AnyJSON.null,
-            "show_vehicle_on_posts": AnyJSON.bool(false),
-            "is_banned": AnyJSON.bool(true),
-            "updated_at": AnyJSON.string(Date().ISO8601Format()),
-        ]
-
-        try await client
-            .from("profiles")
-            .update(payload)
-            .eq("id", value: userId.uuidString)
-            .execute()
     }
 
     // MARK: - Username Check

@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import QuickLook
 
 // MARK: - Documents Section (Belgeler)
@@ -9,6 +10,8 @@ struct DocumentsSection: View {
     let onAddDocument: () -> Void
 
     @Environment(\.modelContext) private var modelContext
+    @Query private var allReminders: [Reminder]
+    @State private var operationError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -66,6 +69,14 @@ struct DocumentsSection: View {
                         .padding(.top, AppSpacing.xxs)
                 }
             }
+        }
+        .alert("İşlem Tamamlanamadı", isPresented: Binding(
+            get: { operationError != nil },
+            set: { if !$0 { operationError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text(operationError ?? "Bilinmeyen bir hata oluştu.")
         }
     }
 
@@ -161,9 +172,23 @@ struct DocumentsSection: View {
     }
 
     private func deleteDocument(_ doc: VehicleDocument) {
-        try? DocumentStorageService.shared.deleteFile(doc.localFileName)
+        let fileName = doc.localFileName
+        let linkedReminders = allReminders.filter { $0.sourceDocumentId == doc.id }
+        let linkedReminderIDs = linkedReminders.map(\.id)
+        linkedReminders.forEach(modelContext.delete)
         modelContext.delete(doc)
-        try? modelContext.save()
-        Task { await NotificationRefreshService.refreshAll(context: modelContext) }
+        do {
+            try modelContext.save()
+            NotificationService.shared.cancelReminders(ids: linkedReminderIDs)
+            do {
+                try DocumentStorageService.shared.deleteFile(fileName)
+            } catch {
+                operationError = "Belge kaydı silindi ancak dosya temizlenemedi."
+            }
+            Task { await NotificationRefreshService.refreshAll(context: modelContext) }
+        } catch {
+            modelContext.rollback()
+            operationError = "Belge silinemedi. Verileriniz değiştirilmedi."
+        }
     }
 }

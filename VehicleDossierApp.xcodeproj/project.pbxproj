@@ -111,6 +111,8 @@
 		CF476ACA43594312B1A9AFD9 /* AppShadows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A93D2896D854B1181EF1689 /* AppShadows.swift */; };
 		D16E81A8C17348298B0BEE9A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AD5A71876E6544B1A09B0FA9 /* Assets.xcassets */; };
 		D231D1E06738422FB8B904E2 /* PDFExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F36BED4AAE2741B7962E8682 /* PDFExportService.swift */; };
+		DEAD0001DEAD0001DEAD0001 /* DataExportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1674E199F7584DF5BA1F6763 /* DataExportServiceTests.swift */; };
+		C0AA0002C0AA0002C0AA0002 /* CommunityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AA0001C0AA0001C0AA0001 /* CommunityTests.swift */; };
 		D23AF0F0C6E54C8388CF2EFB /* Expense.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DF06932F1449458A48C053 /* Expense.swift */; };
 		D720170EE189493215C1A451 /* CommunityEnums.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3A76F4FA6D84C19DABB119 /* CommunityEnums.swift */; };
 		D95D8065ACD04ED7986CF967 /* DocumentStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4349C93A9B5494B85D140E6 /* DocumentStorageService.swift */; };
@@ -179,7 +181,8 @@
 		10F2CC53672C2CCEFA92B275 /* CommunityProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityProfileView.swift; sourceTree = "<group>"; };
 		12DF06932F1449458A48C053 /* Expense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Expense.swift; sourceTree = "<group>"; };
 		1596A40B83B44069AB02AE67 /* Tests/InsightSnoozeStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/InsightSnoozeStoreTests.swift; sourceTree = SOURCE_ROOT; };
-		1674E199F7584DF5BA1F6763 /* DataExportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportServiceTests.swift; sourceTree = "<group>"; };
+		1674E199F7584DF5BA1F6763 /* DataExportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/DataExportServiceTests.swift; sourceTree = SOURCE_ROOT; };
+		C0AA0001C0AA0001C0AA0001 /* CommunityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/CommunityTests.swift; sourceTree = SOURCE_ROOT; };
 		172F0844A2F37F667AD8C5F9 /* CommunityEmptyStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityEmptyStates.swift; sourceTree = "<group>"; };
 		184A535D307090C964A75727 /* CommunityFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityFeedView.swift; sourceTree = "<group>"; };
 		18F7B1E47658C83D66A35FD1 /* Configuration/Supabase-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Configuration/Supabase-Info.plist"; sourceTree = SOURCE_ROOT; };
@@ -705,7 +708,6 @@
 				66ACCF15CABF440CB4B63F3C /* AppTypography.swift */,
 				A2AE0C3029E54EBAAD6EBFF8 /* AppColors.swift */,
 				E5D5075331134109B5D3A983 /* Components */,
-				1674E199F7584DF5BA1F6763 /* DataExportServiceTests.swift */,
 			);
 			path = DesignSystem;
 			sourceTree = "<group>";
@@ -722,6 +724,8 @@
 				AIP1TPRX0001AIP1TPRX0001 /* Tests/AIProxyServiceTests.swift */,
 				LLM1TMRG0001LLM1TMRG0001 /* Tests/AIReceiptMergeTests.swift */,
 				LLM1TMPB0001LLM1TMPB0001 /* Tests/MaintenancePlanPayloadBuilderTests.swift */,
+				1674E199F7584DF5BA1F6763 /* DataExportServiceTests.swift */,
+				C0AA0001C0AA0001C0AA0001 /* CommunityTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -996,6 +1000,8 @@
 				LLM1TMRG0002LLM1TMRG0002 /* Tests/AIReceiptMergeTests.swift in Sources */,
 				LLM1TMPB0002LLM1TMPB0002 /* Tests/MaintenancePlanPayloadBuilderTests.swift in Sources */,
 				C32ADF231A8F497281953818 /* Tests/InsightSnoozeStoreTests.swift in Sources */,
+				DEAD0001DEAD0001DEAD0001 /* DataExportServiceTests.swift in Sources */,
+				C0AA0002C0AA0002C0AA0002 /* CommunityTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1087,7 +1093,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Ruhsatim.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 8XPP7Z37GF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1102,7 +1108,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.1.0;
 				NEW_SETTING = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.ruhsatim.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1121,7 +1127,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Ruhsatim.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 8XPP7Z37GF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1136,7 +1142,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.1.0;
 				NEW_SETTING = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.ruhsatim.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";

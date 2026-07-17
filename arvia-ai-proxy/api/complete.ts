@@ -15,14 +15,37 @@ const DEEPSEEK_THINKING = { type: "disabled" } as const;
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MAX_PAYLOAD_CHARS = 20_000;
+const MAX_RECEIPT_CHARS = 2_000_000;
 
 const MONTHLY_LIMITS: Record<Task, number> = {
   receipt_parse: 100,
   maintenance_plan: 50,
 };
 
-const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 const COUNTER_TTL_SECONDS = 60 * 60 * 24 * 35; // covers a calendar month
+const DAILY_COUNTER_TTL_SECONDS = 60 * 60 * 24 * 2;
+
+// A stolen app binary/shared header must never create an unbounded model bill.
+// These are hard installation-wide ceilings; override downward from Vercel env
+// during incident response without shipping a new app.
+function positiveIntegerEnv(name: string, fallback: number): number {
+  const parsed = Number(process.env[name]);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const GLOBAL_DAILY_LIMITS: Record<Task, number> = {
+  receipt_parse: positiveIntegerEnv("GLOBAL_DAILY_RECEIPT_LIMIT", 2_000),
+  maintenance_plan: positiveIntegerEnv("GLOBAL_DAILY_MAINTENANCE_LIMIT", 1_000),
+};
+
+const PRO_PRODUCT_IDS = new Set([
+  "com.arvia.pro.monthly",
+  "com.arvia.pro.yearly",
+  "com.arvia.pro.lifetime",
+]);
+const EXPECTED_BUNDLE_ID = process.env.ARVIA_BUNDLE_ID ?? "com.ruhsatim.app";
+const APPLE_PRODUCTION_VERIFY_URL = "https://buy.itunes.apple.com/verifyReceipt";
+const APPLE_SANDBOX_VERIFY_URL = "https://sandbox.itunes.apple.com/verifyReceipt";
 
 type Task = "receipt_parse" | "maintenance_plan";
 
@@ -85,20 +108,87 @@ function monthKey(): string {
   return new Date().toISOString().slice(0, 7); // YYYY-MM
 }
 
+function dayKey(): string {
+  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+type AppleReceiptItem = {
+  product_id?: string;
+  transaction_id?: string;
+  original_transaction_id?: string;
+  expires_date_ms?: string;
+  cancellation_date_ms?: string;
+};
+
+type AppleReceiptResponse = {
+  status?: number;
+  receipt?: { bundle_id?: string; in_app?: AppleReceiptItem[] };
+  latest_receipt_info?: AppleReceiptItem[];
+};
+
+async function callAppleVerifyReceipt(url: string, appReceipt: string): Promise<AppleReceiptResponse> {
+  const password = process.env.ARVIA_APP_SHARED_SECRET;
+  if (!password) {
+    throw new MissingEnvError(["ARVIA_APP_SHARED_SECRET"]);
+  }
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      "receipt-data": appReceipt,
+      password,
+      "exclude-old-transactions": false,
+    }),
+  });
+  if (!response.ok) throw new Error("apple_verify_unreachable");
+  return (await response.json()) as AppleReceiptResponse;
+}
+
+// Returns a server-derived stable quota key. Client-provided identifiers are
+// deliberately not trusted: entitlement and identity both come from Apple.
+async function verifyProEntitlement(appReceipt: string): Promise<string | null> {
+  let response = await callAppleVerifyReceipt(APPLE_PRODUCTION_VERIFY_URL, appReceipt);
+  if (response.status === 21007) {
+    response = await callAppleVerifyReceipt(APPLE_SANDBOX_VERIFY_URL, appReceipt);
+  }
+  if (response.status !== 0 || response.receipt?.bundle_id !== EXPECTED_BUNDLE_ID) {
+    return null;
+  }
+
+  const now = Date.now();
+  const items = [...(response.receipt.in_app ?? []), ...(response.latest_receipt_info ?? [])];
+  const valid = items.find((item) => {
+    if (!item.product_id || !PRO_PRODUCT_IDS.has(item.product_id) || item.cancellation_date_ms) {
+      return false;
+    }
+    // Non-consumable lifetime purchases have no expiration date.
+    return item.product_id === "com.arvia.pro.lifetime" || Number(item.expires_date_ms ?? 0) > now;
+  });
+  const transactionId = valid?.original_transaction_id ?? valid?.transaction_id;
+  return transactionId ? await sha256Hex(transactionId) : null;
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") {
     return json(405, { error: { code: "method_not_allowed" } });
   }
 
+  const startupEnv = ["ARVIA_CLIENT_SECRET", "DEEPSEEK_API_KEY"].filter(
+    (name) => !process.env[name],
+  );
+  if (startupEnv.length > 0) {
+    return json(500, { error: { code: "server_misconfigured", missing: startupEnv } });
+  }
+
   // Abuse guard: shared header secret. NOTE: this is obfuscation, not security —
   // the secret ships inside the app binary and can be extracted. The real cost
-  // ceiling is the per-clientId Upstash quota below.
+  // ceilings are Apple-entitlement and global Upstash quotas below.
   const clientHeader = req.headers.get("x-arvia-client");
   if (!clientHeader || clientHeader !== process.env.ARVIA_CLIENT_SECRET) {
     return json(401, { error: { code: "unauthorized" } });
   }
 
-  let body: { task?: string; payload?: string; clientId?: string };
+  let body: { task?: string; payload?: string; appReceipt?: string };
   try {
     body = await req.json();
   } catch {
@@ -107,16 +197,32 @@ export default async function handler(req: Request): Promise<Response> {
 
   const task = body.task as Task;
   const payload = body.payload;
-  const clientId = body.clientId;
+  const appReceipt = body.appReceipt;
 
   if (task !== "receipt_parse" && task !== "maintenance_plan") {
     return json(400, { error: { code: "invalid_task" } });
   }
-  if (typeof payload !== "string" || typeof clientId !== "string" || clientId.length === 0) {
+  if (typeof payload !== "string" || typeof appReceipt !== "string" || appReceipt.length === 0) {
     return json(400, { error: { code: "invalid_request" } });
   }
   if (payload.length > MAX_PAYLOAD_CHARS) {
     return json(413, { error: { code: "payload_too_large", limit: MAX_PAYLOAD_CHARS } });
+  }
+  if (appReceipt.length > MAX_RECEIPT_CHARS) {
+    return json(413, { error: { code: "receipt_too_large", limit: MAX_RECEIPT_CHARS } });
+  }
+
+  let entitlementKey: string | null;
+  try {
+    entitlementKey = await verifyProEntitlement(appReceipt);
+  } catch (err) {
+    if (err instanceof MissingEnvError) {
+      return json(500, { error: { code: "server_misconfigured", missing: err.vars } });
+    }
+    return json(502, { error: { code: "app_store_verification_failed" } });
+  }
+  if (!entitlementKey) {
+    return json(403, { error: { code: "pro_entitlement_required" } });
   }
 
   // Constructed here (not at module load) so a missing/misconfigured Upstash
@@ -133,21 +239,24 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    // ── Cache: SHA-256(task + payload). A hit returns without calling the
-    //    model and WITHOUT incrementing the quota counter. Only hashes touch Redis.
-    const cacheKey = `cache:${task}:${await sha256Hex(task + payload)}`;
-    const cached = await redis.get(cacheKey);
-    if (cached !== null && cached !== undefined) {
-      return json(200, { result: cached, cached: true });
-    }
-
-    // ── Rate limit: per clientId monthly counter.
-    const counterKey = `count:${task}:${clientId}:${monthKey()}`;
-    const used = Number((await redis.get<number>(counterKey)) ?? 0);
-    if (used >= MONTHLY_LIMITS[task]) {
+    // ── Rate limits: Apple-derived entitlement identity + global daily ceiling.
+    // Reserve counters before the model call so concurrent requests cannot race
+    // past the budget. Failed upstream calls still consume a reservation, which
+    // intentionally favours bounded cost over retries during an incident.
+    const counterKey = `count:${task}:${entitlementKey}:${monthKey()}`;
+    const used = await redis.incr(counterKey);
+    if (used === 1) await redis.expire(counterKey, COUNTER_TTL_SECONDS);
+    if (used > MONTHLY_LIMITS[task]) {
       return json(429, {
         error: { code: "quota_exceeded", task, limit: MONTHLY_LIMITS[task] },
       });
+    }
+
+    const globalCounterKey = `global:${task}:${dayKey()}`;
+    const globalUsed = await redis.incr(globalCounterKey);
+    if (globalUsed === 1) await redis.expire(globalCounterKey, DAILY_COUNTER_TTL_SECONDS);
+    if (globalUsed > GLOBAL_DAILY_LIMITS[task]) {
+      return json(429, { error: { code: "global_quota_exceeded", task } });
     }
 
     // ── Call DeepSeek (temperature 0, forced JSON).
@@ -199,13 +308,8 @@ export default async function handler(req: Request): Promise<Response> {
       result = Array.isArray(suggestions) ? suggestions.slice(0, 3) : Array.isArray(parsed) ? parsed : [];
     }
 
-    // Increment quota (first write sets the monthly TTL) and cache the result.
-    const count = await redis.incr(counterKey);
-    if (count === 1) {
-      await redis.expire(counterKey, COUNTER_TTL_SECONDS);
-    }
-    await redis.set(cacheKey, result, { ex: CACHE_TTL_SECONDS });
-
+    // Model input/output is never persisted. Only hashed entitlement counters
+    // are stored in Redis; quota was reserved before the upstream call.
     return json(200, { result, cached: false });
   } catch {
     // Any unforeseen failure (e.g. Redis unreachable) — never let the platform

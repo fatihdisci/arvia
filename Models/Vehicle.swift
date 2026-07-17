@@ -76,7 +76,10 @@ final class Vehicle {
 
     var odometerDisplay: String {
         // Tahmini okumalar "~" ile gösterilir (Akıllı Asistan).
-        "\(odometerIsEstimate ? "~" : "")\(currentOdometer.formatted()) km"
+        let value = currentOdometer.formatted(
+            .number.locale(Locale(identifier: "tr_TR"))
+        )
+        return "\(odometerIsEstimate ? "~" : "")\(value) km"
     }
 
     var fullName: String {

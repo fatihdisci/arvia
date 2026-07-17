@@ -12,7 +12,8 @@ INFOPLIST_KEY_SUPABASE_URL = $(SUPABASE_URL)
 INFOPLIST_KEY_SUPABASE_ANON_KEY = $(SUPABASE_ANON_KEY)
 
 // Arvia AI proxy (Vercel edge). Base URL + shared header secret.
-// Secret is obfuscation only — the real cost ceiling is the server-side quota.
+// Secret is obfuscation only. The proxy additionally verifies the App Store
+// receipt server-side and enforces entitlement/global quotas.
 ARVIA_AI_PROXY_URL = https:/$()/YOUR-PROXY.vercel.app
 ARVIA_AI_CLIENT_SECRET = YOUR_ARVIA_CLIENT_SECRET
 INFOPLIST_KEY_ARVIA_AI_PROXY_URL = $(ARVIA_AI_PROXY_URL)

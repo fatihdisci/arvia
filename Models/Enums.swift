@@ -308,6 +308,27 @@ enum DocumentType: String, Codable, CaseIterable {
             return all
         }
     }
+
+    /// Belge bitiş tarihinden otomatik üretilecek hatırlatıcı şablonu.
+    var expiryReminderType: ReminderType {
+        switch self {
+        case .insurancePolicy: return .trafficInsurance
+        case .cascoPolicy: return .casco
+        case .inspectionReport: return .inspection
+        case .warrantyDocument, .helmetGearWarranty: return .warranty
+        default: return .custom
+        }
+    }
+
+    var expiryReminderTitle: String {
+        switch self {
+        case .inspectionReport: return "Muayene süresi"
+        case .insurancePolicy: return "Trafik sigortası yenileme"
+        case .cascoPolicy: return "Kasko yenileme"
+        case .warrantyDocument, .helmetGearWarranty: return "Garanti bitişi"
+        default: return "\(displayName) bitişi"
+        }
+    }
 }
 
 // MARK: - Service Type

@@ -45,6 +45,7 @@ struct VehicleDetailView: View {
     @State private var showMaintenancePlan = false
     @State private var showAssistantPaywall = false
     @State private var showAIConsent = false
+    @State private var operationError: String?
     private let snoozeStore = InsightSnoozeStore.shared
 
     // Filtered data
@@ -338,6 +339,14 @@ struct VehicleDetailView: View {
         } message: {
             Text("Bu işlem geri alınamaz. Araca ait tüm hatırlatıcılar, masraflar, bakım kayıtları, belgeler ve ekspertiz raporları kalıcı olarak silinir.")
         }
+        .alert("İşlem Tamamlanamadı", isPresented: Binding(
+            get: { operationError != nil },
+            set: { if !$0 { operationError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text(operationError ?? "Bilinmeyen hata")
+        }
         .task {
             snoozeStore.removeExpired()
         }
@@ -439,12 +448,16 @@ struct VehicleDetailView: View {
             profileBand: profile?.dailyKmBand
         ) else { return }
         Task {
-            try? await VehicleContextRefreshService.updateCurrentOdometer(
-                vehicle: vehicle,
-                newOdometer: estimate.estimatedOdometer,
-                isEstimate: true,
-                context: modelContext
-            )
+            do {
+                try await VehicleContextRefreshService.updateCurrentOdometer(
+                    vehicle: vehicle,
+                    newOdometer: estimate.estimatedOdometer,
+                    isEstimate: true,
+                    context: modelContext
+                )
+            } catch {
+                operationError = "Kilometre tahmini kaydedilemedi: \(error.localizedDescription)"
+            }
         }
     }
 
@@ -624,7 +637,12 @@ struct VehicleDetailView: View {
 
     private func handleDeleteInspection(_ report: InspectionReport) {
         modelContext.delete(report)
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            operationError = "Ekspertiz raporu silinemedi: \(error.localizedDescription)"
+        }
     }
 
     private func handleSaleFileTap() {
@@ -634,55 +652,93 @@ struct VehicleDetailView: View {
     // MARK: - Archive / Delete
     private func archiveVehicle() {
         vehicle.archivedAt = Date()
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            operationError = "Araç arşivlenemedi: \(error.localizedDescription)"
+            return
+        }
         Task { await NotificationRefreshService.refreshAll(context: modelContext) }
         dismiss()
     }
 
     private func deleteVehicle() {
-        // Önce tüm hatırlatıcı bildirimlerini iptal et
-        for reminder in reminders {
-            NotificationService.shared.cancelReminder(reminder)
-        }
+        let vehicleId = vehicle.id
+        let vehicleReminders = reminders
+        let vehicleReminderIDs = vehicleReminders.map(\.id)
 
         // Tüm ilişkili verileri sil
-        for reminder in reminders { modelContext.delete(reminder) }
+        for reminder in vehicleReminders { modelContext.delete(reminder) }
         for expense in expenses { modelContext.delete(expense) }
         for service in serviceRecords { modelContext.delete(service) }
 
+        let allParts: [PartChange]
+        let allDocs: [VehicleDocument]
+        let allInspections: [InspectionReport]
+        let allSales: [SaleFile]
+        let allReceipts: [Receipt]
+        let allProfiles: [VehicleUsageProfile]
+        do {
+            allParts = try modelContext.fetch(FetchDescriptor<PartChange>())
+            allDocs = try modelContext.fetch(FetchDescriptor<VehicleDocument>())
+            allInspections = try modelContext.fetch(FetchDescriptor<InspectionReport>())
+            allSales = try modelContext.fetch(FetchDescriptor<SaleFile>())
+            allReceipts = try modelContext.fetch(FetchDescriptor<Receipt>())
+            allProfiles = try modelContext.fetch(FetchDescriptor<VehicleUsageProfile>())
+        } catch {
+            modelContext.rollback()
+            operationError = "İlişkili kayıtlar okunamadı: \(error.localizedDescription)"
+            return
+        }
+
         // PartChange'leri sil (serviceRecordId ile bağlı)
-        let allParts = (try? modelContext.fetch(FetchDescriptor<PartChange>())) ?? []
         for part in allParts where serviceRecords.contains(where: { $0.id == part.serviceRecordId }) {
             modelContext.delete(part)
         }
 
-        // Belgeleri sil — DB kaydı + fiziksel dosya birlikte temizlenir.
-        let allDocs = (try? modelContext.fetch(FetchDescriptor<VehicleDocument>())) ?? []
-        for doc in allDocs where doc.vehicleId == vehicle.id {
-            try? DocumentStorageService.shared.deleteFile(doc.localFileName)
-            modelContext.delete(doc)
-        }
+        // Fiziksel dosyalar yalnızca DB save başarılı olduktan sonra silinir.
+        let vehicleDocs = allDocs.filter { $0.vehicleId == vehicleId }
+        let documentFileNames = vehicleDocs.map(\.localFileName)
+        for doc in vehicleDocs { modelContext.delete(doc) }
 
         // Ekspertiz raporlarını sil
-        let allInspections = (try? modelContext.fetch(FetchDescriptor<InspectionReport>())) ?? []
-        for inspection in allInspections where inspection.vehicleId == vehicle.id {
+        for inspection in allInspections where inspection.vehicleId == vehicleId {
             modelContext.delete(inspection)
         }
 
         // Satış dosyalarını sil
-        let allSales = (try? modelContext.fetch(FetchDescriptor<SaleFile>())) ?? []
-        for sale in allSales where sale.vehicleId == vehicle.id {
+        for sale in allSales where sale.vehicleId == vehicleId {
             modelContext.delete(sale)
         }
 
-        // Araç fotoğrafını fiziksel diskten sil
-        if let photoFileName = vehicle.photoFileName {
-            VehiclePhotoStorageService.shared.deletePhoto(fileName: photoFileName)
+        for receipt in allReceipts where receipt.vehicleId == vehicleId {
+            modelContext.delete(receipt)
+        }
+        for profile in allProfiles where profile.vehicleId == vehicleId && !profile.appliesToAllVehicles {
+            modelContext.delete(profile)
         }
 
+        let photoFileName = vehicle.photoFileName
         modelContext.delete(vehicle)
-        try? modelContext.save()
-        NotificationRefreshService.cancelAllForVehicle(vehicle, context: modelContext)
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            operationError = "Araç silinemedi: \(error.localizedDescription)"
+            return
+        }
+
+        // Bildirimleri ancak veri silme işlemi kalıcılaştıktan sonra iptal et.
+        NotificationRefreshService.cancelAllForVehicle(reminderIDs: vehicleReminderIDs)
+        for fileName in documentFileNames {
+            try? DocumentStorageService.shared.deleteFile(fileName)
+        }
+        if let photoFileName {
+            VehiclePhotoStorageService.shared.deletePhoto(fileName: photoFileName)
+        }
+        MaintenancePlanCacheStore.clear(vehicleId: vehicleId)
+        snoozeStore.clearAll(forVehicle: vehicleId)
         Task { await NotificationRefreshService.refreshAll(context: modelContext) }
 
         let generator = UINotificationFeedbackGenerator()

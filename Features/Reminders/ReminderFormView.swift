@@ -348,6 +348,7 @@ struct ReminderFormView: View {
                 Task { await VehicleContextRefreshService.refreshAfterVehicleContextChange(context: modelContext) }
                 dismiss()
             } catch {
+                modelContext.rollback()
                 validationErrors = ["Kaydedilemedi: \(error.localizedDescription)"]
             }
         } else {
@@ -371,6 +372,7 @@ struct ReminderFormView: View {
                 Task { await VehicleContextRefreshService.refreshAfterVehicleContextChange(context: modelContext) }
                 dismiss()
             } catch {
+                modelContext.rollback()
                 validationErrors = ["Kaydedilemedi: \(error.localizedDescription)"]
             }
         }

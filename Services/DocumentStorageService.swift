@@ -32,18 +32,23 @@ final class DocumentStorageService {
         let localName = documentId.uuidString + (ext.isEmpty ? "" : ".\(ext)")
         let destination = documentsDirectory.appendingPathComponent(localName)
 
-        // Varsa eski dosyayı sil
-        if fileManager.fileExists(atPath: destination.path) {
-            try fileManager.removeItem(at: destination)
-        }
-
-        // Copy (güvenli kopya — orijinal temp dosya silinebilir)
-        try fileManager.copyItem(at: sourceURL, to: destination)
+        // Atomik yazma: yeni dosya tamamen yazılamazsa mevcut kopya korunur.
+        let data = try Data(contentsOf: sourceURL)
+        try data.write(to: destination, options: .atomic)
 
         let attributes = try fileManager.attributesOfItem(atPath: destination.path)
         let fileSize = (attributes[.size] as? Int) ?? 0
 
         return (localName, fileSize)
+    }
+
+    /// Başarısız bir metadata kaydından sonra önceki dosyayı atomik olarak geri yükler.
+    func writeFileData(_ data: Data, localFileName: String) throws {
+        try fileManager.createDirectory(at: documentsDirectory, withIntermediateDirectories: true)
+        try data.write(
+            to: documentsDirectory.appendingPathComponent(localFileName),
+            options: .atomic
+        )
     }
 
     // MARK: - Read

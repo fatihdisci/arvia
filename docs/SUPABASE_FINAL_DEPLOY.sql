@@ -249,12 +249,22 @@ CREATE POLICY "Users_can_insert_own_profile" ON profiles
 
 DROP POLICY IF EXISTS "Users_can_update_own_profile" ON profiles;
 CREATE POLICY "Users_can_update_own_profile" ON profiles
-  FOR UPDATE USING (
-    auth.uid() = id
-    AND EXISTS (
-      SELECT 1 FROM profiles WHERE id = auth.uid() AND is_banned = false
-    )
-  );
+  FOR UPDATE USING (auth.uid() = id AND is_banned = false)
+  WITH CHECK (auth.uid() = id);
+
+-- RLS tek başına sütun bazlı yetki yükseltmeyi engellemez.
+REVOKE INSERT, UPDATE ON TABLE profiles FROM anon, authenticated;
+GRANT INSERT (
+  id, username, display_name, avatar_url,
+  default_vehicle_brand, default_vehicle_model, default_vehicle_year,
+  show_vehicle_on_posts
+) ON TABLE profiles TO authenticated;
+GRANT UPDATE (
+  username, display_name, avatar_url,
+  default_vehicle_brand, default_vehicle_model, default_vehicle_year,
+  show_vehicle_on_posts
+) ON TABLE profiles TO authenticated;
+GRANT SELECT ON TABLE profiles TO anon, authenticated;
 
 -- ----------------------------------------------------------------------------
 -- COMMUNITY POSTS — SELECT
@@ -271,17 +281,17 @@ CREATE POLICY "Visible_non_deleted_posts" ON community_posts
   );
 
 -- ----------------------------------------------------------------------------
--- COMMUNITY POSTS — INSERT (Pro/admin/moderator only + banned kontrolü)
+-- COMMUNITY POSTS — INSERT (authenticated + banned kontrolü; Pro şartı yok)
 -- ----------------------------------------------------------------------------
 
 DROP POLICY IF EXISTS "Pro_or_admin_can_create_posts" ON community_posts;
-CREATE POLICY "Pro_or_admin_can_create_posts" ON community_posts
+DROP POLICY IF EXISTS "Authenticated_can_create_posts" ON community_posts;
+CREATE POLICY "Authenticated_can_create_posts" ON community_posts
   FOR INSERT WITH CHECK (
     author_id = auth.uid()
     AND auth.uid() IN (
       SELECT id FROM profiles
       WHERE is_banned = false
-      AND (is_pro = true OR role IN ('admin', 'moderator'))
     )
   );
 
@@ -330,17 +340,17 @@ CREATE POLICY "Visible_non_deleted_comments" ON community_comments
   );
 
 -- ----------------------------------------------------------------------------
--- COMMUNITY COMMENTS — INSERT (Pro/admin/moderator only + banned kontrolü)
+-- COMMUNITY COMMENTS — INSERT (authenticated + banned kontrolü; Pro şartı yok)
 -- ----------------------------------------------------------------------------
 
 DROP POLICY IF EXISTS "Pro_or_admin_can_create_comments" ON community_comments;
-CREATE POLICY "Pro_or_admin_can_create_comments" ON community_comments
+DROP POLICY IF EXISTS "Authenticated_can_create_comments" ON community_comments;
+CREATE POLICY "Authenticated_can_create_comments" ON community_comments
   FOR INSERT WITH CHECK (
     author_id = auth.uid()
     AND auth.uid() IN (
       SELECT id FROM profiles
       WHERE is_banned = false
-      AND (is_pro = true OR role IN ('admin', 'moderator'))
     )
   );
 

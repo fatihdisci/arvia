@@ -514,6 +514,43 @@ final class VehicleModelTests: XCTestCase {
     }
 }
 
+final class Release110ProductTests: XCTestCase {
+    func testDocumentTypesMapToExpectedExpiryReminderTemplates() {
+        XCTAssertEqual(DocumentType.insurancePolicy.expiryReminderType, .trafficInsurance)
+        XCTAssertEqual(DocumentType.cascoPolicy.expiryReminderType, .casco)
+        XCTAssertEqual(DocumentType.inspectionReport.expiryReminderType, .inspection)
+        XCTAssertEqual(DocumentType.warrantyDocument.expiryReminderType, .warranty)
+        XCTAssertEqual(DocumentType.serviceInvoice.expiryReminderType, .custom)
+    }
+
+    func testDocumentReminderKeepsSourceRelationship() {
+        let documentId = UUID()
+        let reminder = Reminder(
+            vehicleId: UUID(),
+            type: .trafficInsurance,
+            title: DocumentType.insurancePolicy.expiryReminderTitle,
+            dueDate: Date(),
+            sourceDocumentId: documentId
+        )
+
+        XCTAssertEqual(reminder.sourceDocumentId, documentId)
+        XCTAssertEqual(reminder.title, "Trafik sigortası yenileme")
+    }
+
+    func testCostPerKmUsesDistanceBetweenReadings() {
+        XCTAssertEqual(
+            ReportMetrics.costPerKm(totalCost: 1_000, odometerReadings: [10_000, 10_500]),
+            2
+        )
+    }
+
+    func testCostPerKmRejectsSingleOrDuplicateReading() {
+        XCTAssertNil(ReportMetrics.costPerKm(totalCost: 1_000, odometerReadings: [10_000]))
+        XCTAssertNil(ReportMetrics.costPerKm(totalCost: 1_000, odometerReadings: [10_000, 10_000]))
+        XCTAssertNil(ReportMetrics.costPerKm(totalCost: 0, odometerReadings: [10_000, 10_500]))
+    }
+}
+
 // MARK: - Arvia Rehber Insight Tests
 final class VehicleInsightServiceTests: XCTestCase {
     private lazy var calendar: Calendar = {
@@ -1318,6 +1355,34 @@ final class PaywallLimitTests: XCTestCase {
             "com.arvia.pro.yearly",
             "com.arvia.pro.lifetime",
         ])
+    }
+
+    func testRevokedSubscriptionDoesNotCancelAnotherValidProEntitlement() {
+        let states = [
+            PaywallService.EntitlementState(
+                productID: "com.arvia.pro.monthly",
+                isRevoked: true
+            ),
+            PaywallService.EntitlementState(
+                productID: "com.arvia.pro.lifetime",
+                isRevoked: false
+            ),
+        ]
+        XCTAssertTrue(PaywallService.resolvesPro(from: states))
+    }
+
+    func testOnlyRevokedOrUnrelatedEntitlementsResolveFree() {
+        let states = [
+            PaywallService.EntitlementState(
+                productID: "com.arvia.pro.yearly",
+                isRevoked: true
+            ),
+            PaywallService.EntitlementState(
+                productID: "com.example.other",
+                isRevoked: false
+            ),
+        ]
+        XCTAssertFalse(PaywallService.resolvesPro(from: states))
     }
 
     // Belge limiti MVP'de kaldırıldı; limit araç sayısında kalmalı.

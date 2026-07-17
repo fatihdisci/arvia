@@ -24,6 +24,7 @@ struct UsageProfileFlowView: View {
     @State private var selectedTripTypes: Set<String> = []
 
     @State private var didLoad = false
+    @State private var saveError: String?
 
     private let tripTypeOptions = [
         "İşe gidiş-geliş",
@@ -68,6 +69,14 @@ struct UsageProfileFlowView: View {
                 }
             }
             .onAppear(perform: loadExisting)
+            .alert("Profil Kaydedilemedi", isPresented: Binding(
+                get: { saveError != nil },
+                set: { if !$0 { saveError = nil } }
+            )) {
+                Button("Tamam", role: .cancel) {}
+            } message: {
+                Text(saveError ?? "Bilinmeyen hata")
+            }
         }
     }
 
@@ -339,15 +348,21 @@ struct UsageProfileFlowView: View {
             return
         }
         let trimmedUser = primaryUser.trimmingCharacters(in: .whitespaces)
-        service.saveGlobalProfile(
-            dailyKmBand: dailyKmBand,
-            routeType: routeType,
-            fuelConsumptionCity: hasCityConsumption ? cityConsumption : nil,
-            fuelConsumptionHighway: hasHighwayConsumption ? highwayConsumption : nil,
-            primaryUser: trimmedUser.isEmpty ? nil : trimmedUser,
-            tripTypes: Array(selectedTripTypes).sorted(),
-            context: modelContext
-        )
+        do {
+            try service.saveGlobalProfile(
+                dailyKmBand: dailyKmBand,
+                routeType: routeType,
+                fuelConsumptionCity: hasCityConsumption ? cityConsumption : nil,
+                fuelConsumptionHighway: hasHighwayConsumption ? highwayConsumption : nil,
+                primaryUser: trimmedUser.isEmpty ? nil : trimmedUser,
+                tripTypes: Array(selectedTripTypes).sorted(),
+                context: modelContext
+            )
+        } catch {
+            modelContext.rollback()
+            saveError = error.localizedDescription
+            return
+        }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         dismiss()
     }
@@ -1054,4 +1069,3 @@ enum AssistantDemoData {
         ),
     ]
 }
-

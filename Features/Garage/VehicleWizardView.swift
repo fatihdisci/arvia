@@ -145,8 +145,8 @@ struct VehicleWizardView: View {
     @State private var currentStep: Int = 1
     @State private var showBrandPicker: Bool = false
     @State private var showModelPicker: Bool = false
-    @State private var showErrors: Bool = false
     @State private var showPaywall: Bool = false
+    @State private var operationError: String?
 
     /// Aktif TextField. Picker seçimleri ve step geçişlerinde nil yapılır
     /// (klavye kapanır). ScrollViewReader onChange ile aktif field'a scroll eder.
@@ -227,6 +227,14 @@ struct VehicleWizardView: View {
             .onChange(of: draft.selectedPhotoItem) { _, newItem in
                 if let item = newItem { loadPhotoItem(item) }
             }
+            .alert("İşlem Tamamlanamadı", isPresented: Binding(
+                get: { operationError != nil },
+                set: { if !$0 { operationError = nil } }
+            )) {
+                Button("Tamam", role: .cancel) {}
+            } message: {
+                Text(operationError ?? "Bilinmeyen bir hata oluştu.")
+            }
         }
     }
 
@@ -298,13 +306,21 @@ struct VehicleWizardView: View {
         let errors = draft.validateForSave()
         guard errors.isEmpty else {
             // Validation error varsa kullanıcıyı Step 1'e geri gönder.
-            showErrors = true
+            operationError = errors.joined(separator: "\n")
             currentStep = 1
             return
         }
 
         // Paywall gate.
-        let activeVehicles = (try? modelContext.fetch(FetchDescriptor<Vehicle>()))?.filter { $0.archivedAt == nil } ?? []
+        let activeVehicles: [Vehicle]
+        do {
+            activeVehicles = try modelContext.fetch(FetchDescriptor<Vehicle>())
+                .filter { $0.archivedAt == nil }
+        } catch {
+            // Araç sayısı doğrulanamıyorsa ücretsiz limit için güvenli biçimde kapalı kal.
+            operationError = "Araç limiti doğrulanamadı. Lütfen tekrar dene."
+            return
+        }
         if !paywallService.canAddVehicle(currentCount: activeVehicles.count) {
             showPaywall = true
             return
@@ -324,6 +340,7 @@ struct VehicleWizardView: View {
                 savedPhotoData = saved.data
             } catch {
                 draft.photoError = error.localizedDescription
+                operationError = error.localizedDescription
                 return
             }
         }
@@ -352,18 +369,34 @@ struct VehicleWizardView: View {
         modelContext.insert(vehicle)
 
         // Step 3 — seçilen hatırlatıcıları oluştur.
-        createStepThreeReminders(for: vehicle.id)
+        let reminders = createStepThreeReminders(for: vehicle.id)
 
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            if let savedPhotoFileName {
+                VehiclePhotoStorageService.shared.deletePhoto(fileName: savedPhotoFileName)
+            }
+            draft.photoError = "Araç kaydedilemedi: \(error.localizedDescription)"
+            operationError = draft.photoError
+            return
+        }
 
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
 
-        Task { await NotificationRefreshService.refreshAll(context: modelContext) }
+        Task {
+            for reminder in reminders {
+                await NotificationService.shared.scheduleReminder(reminder)
+            }
+            await NotificationRefreshService.refreshAll(context: modelContext)
+        }
         dismiss()
     }
 
-    private func createStepThreeReminders(for vehicleId: UUID) {
+    private func createStepThreeReminders(for vehicleId: UUID) -> [Reminder] {
+        var reminders: [Reminder] = []
         if draft.addInspectionReminder {
             let r = Reminder(
                 vehicleId: vehicleId,
@@ -373,7 +406,7 @@ struct VehicleWizardView: View {
                 priority: .warning
             )
             modelContext.insert(r)
-            Task { await NotificationService.shared.scheduleReminder(r) }
+            reminders.append(r)
         }
 
         if draft.addInsuranceReminder {
@@ -385,7 +418,7 @@ struct VehicleWizardView: View {
                 priority: .warning
             )
             modelContext.insert(r)
-            Task { await NotificationService.shared.scheduleReminder(r) }
+            reminders.append(r)
         }
 
         if draft.addCascoReminder {
@@ -397,7 +430,7 @@ struct VehicleWizardView: View {
                 priority: .warning
             )
             modelContext.insert(r)
-            Task { await NotificationService.shared.scheduleReminder(r) }
+            reminders.append(r)
         }
 
         if draft.addLastServiceReminder {
@@ -412,7 +445,7 @@ struct VehicleWizardView: View {
                 priority: .info
             )
             modelContext.insert(r)
-            Task { await NotificationService.shared.scheduleReminder(r) }
+            reminders.append(r)
         }
 
         if draft.addMTVReminder {
@@ -433,8 +466,9 @@ struct VehicleWizardView: View {
                 priority: .info
             )
             modelContext.insert(r)
-            Task { await NotificationService.shared.scheduleReminder(r) }
+            reminders.append(r)
         }
+        return reminders
     }
 
     // MARK: - Photo handling
@@ -461,6 +495,7 @@ struct VehicleWizardView: View {
                     draft.selectedPhotoItem = nil
                     draft.selectedPhotoImage = nil
                     draft.photoError = (error as? LocalizedError)?.errorDescription ?? "Fotoğraf okunamadı."
+                    operationError = draft.photoError
                 }
             }
         }

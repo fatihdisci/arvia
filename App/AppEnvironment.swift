@@ -21,16 +21,4 @@ enum AppEnvironment {
     static let isSupabaseEnabled = false
     static let isCommunityEnabled = true
 
-    // MARK: Limits
-    enum Free {
-        static let maxVehicles = 1
-        static let maxDocuments = 5
-        static let maxSaleFileExports = 2
-    }
-
-    enum Pro {
-        static let maxVehicles = Int.max
-        static let maxDocuments = Int.max
-        static let maxSaleFileExports = Int.max
-    }
 }
