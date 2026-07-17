@@ -74,6 +74,24 @@ struct PaywallView: View {
     @State private var isRestoring = false
     @State private var currentPage = 0
 
+    // Onboarding'de seçilen öncelik — paywall değer önerisini kişiselleştirir.
+    @AppStorage(OnboardingConstants.goalKey) private var primaryGoalRaw = ""
+
+    /// Kullanıcının amacına göre kişiselleştirilmiş değer önerisi. Amaç yoksa
+    /// paywall'ı tetikleyen özelliğin bağlamsal pitch'ine düşer.
+    private var heroSubtitle: String {
+        switch OnboardingGoal(rawValue: primaryGoalRaw) {
+        case .importantDates, .maintenance:
+            return "Önemli araç tarihlerini ve bakımını sınırsız takip et."
+        case .expenses:
+            return "Tüm masraf geçmişini ve gelişmiş raporlarını gör."
+        case .documents:
+            return "Belgelerini ve araç arşivini sınırsız sakla."
+        case nil:
+            return feature.shortPitch
+        }
+    }
+
     // MARK: - Pricing Options (StoreKit veya dev mode fallback)
     struct PricingOption: Identifiable {
         let id: String // product ID
@@ -154,6 +172,21 @@ struct PaywallView: View {
                     Button("Kapat") { dismiss() }
                         .foregroundColor(AppColors.textSecondary)
                 }
+            }
+            // Satın alma / geri yükleme hataları ve "ödeme bekleniyor" (pending)
+            // durumu sessiz kalmasın — kullanıcıya açıkça göster.
+            .alert("İşlem Tamamlanamadı", isPresented: Binding(
+                get: { paywallService.purchaseError != nil },
+                set: { if !$0 { paywallService.purchaseError = nil } }
+            )) {
+                Button("Tamam", role: .cancel) { paywallService.purchaseError = nil }
+            } message: {
+                Text(paywallService.purchaseError ?? "")
+            }
+            .onAppear {
+                // Önceki oturumdan kalan bayat hatayı, paywall açılır açılmaz
+                // yanıltıcı bir uyarı göstermemek için temizle.
+                paywallService.purchaseError = nil
             }
         }
         .presentationDetents([.large])
@@ -251,10 +284,11 @@ struct PaywallView: View {
                 Text("Arvia Pro")
                     .font(AppTypography.bodyMedium)
                     .foregroundColor(AppColors.textPrimary)
-                Text("Akıllı asistan, fiş tarama, sınırsız araç ve daha fazlası.")
+                Text(heroSubtitle)
                     .font(AppTypography.caption)
                     .foregroundColor(AppColors.textSecondary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
         }
