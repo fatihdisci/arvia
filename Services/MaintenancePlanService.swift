@@ -7,22 +7,124 @@ import CryptoKit
 enum MaintenancePlanPayloadBuilder {
     struct ServiceLine: Equatable {
         let title: String
+        let date: Date?
         let km: Int?
+        let oilType: String?
+        let notes: String?
+        let nextDueDate: Date?
+        let nextDueOdometer: Int?
+
+        init(
+            title: String,
+            date: Date? = nil,
+            km: Int? = nil,
+            oilType: String? = nil,
+            notes: String? = nil,
+            nextDueDate: Date? = nil,
+            nextDueOdometer: Int? = nil
+        ) {
+            self.title = title
+            self.date = date
+            self.km = km
+            self.oilType = oilType
+            self.notes = notes
+            self.nextDueDate = nextDueDate
+            self.nextDueOdometer = nextDueOdometer
+        }
+    }
+
+    struct ReminderLine: Equatable {
+        let title: String
+        let type: String
+        let dueDate: Date?
+        let dueOdometer: Int?
+        let priority: String
+        let state: String
+        let notes: String?
+    }
+
+    struct InspectionLine: Equatable {
+        let date: Date
+        let km: Int?
+        let summary: String
+        let verificationStatus: String
+    }
+
+    struct MaintenanceExpenseLine: Equatable {
+        let category: String
+        let date: Date
+        let km: Int?
+        let note: String?
     }
 
     struct Input: Equatable {
         var brand: String
         var model: String
         var year: Int?
+        var vehicleType: String
+        var bodyType: String?
+        var engineCC: Int?
         var fuelType: String
+        var transmissionType: String?
+        var usageType: String
         var odometer: Int
+        var odometerIsEstimate: Bool
+        var odometerUpdatedAt: Date?
         var dailyKmBand: String?
         var routeType: String?
         var fuelConsumptionCity: Double?
         var fuelConsumptionHighway: Double?
-        var primaryUser: String?
         var tripTypes: [String]
-        var recentServices: [ServiceLine] // en fazla 5
+        var recentServices: [ServiceLine]
+        var activeReminders: [ReminderLine]
+        var recentInspections: [InspectionLine]
+        var recentMaintenanceExpenses: [MaintenanceExpenseLine]
+
+        init(
+            brand: String,
+            model: String,
+            year: Int?,
+            vehicleType: String = "car",
+            bodyType: String? = nil,
+            engineCC: Int? = nil,
+            fuelType: String,
+            transmissionType: String? = nil,
+            usageType: String = "personal",
+            odometer: Int,
+            odometerIsEstimate: Bool = false,
+            odometerUpdatedAt: Date? = nil,
+            dailyKmBand: String?,
+            routeType: String?,
+            fuelConsumptionCity: Double?,
+            fuelConsumptionHighway: Double?,
+            tripTypes: [String],
+            recentServices: [ServiceLine],
+            activeReminders: [ReminderLine] = [],
+            recentInspections: [InspectionLine] = [],
+            recentMaintenanceExpenses: [MaintenanceExpenseLine] = []
+        ) {
+            self.brand = brand
+            self.model = model
+            self.year = year
+            self.vehicleType = vehicleType
+            self.bodyType = bodyType
+            self.engineCC = engineCC
+            self.fuelType = fuelType
+            self.transmissionType = transmissionType
+            self.usageType = usageType
+            self.odometer = odometer
+            self.odometerIsEstimate = odometerIsEstimate
+            self.odometerUpdatedAt = odometerUpdatedAt
+            self.dailyKmBand = dailyKmBand
+            self.routeType = routeType
+            self.fuelConsumptionCity = fuelConsumptionCity
+            self.fuelConsumptionHighway = fuelConsumptionHighway
+            self.tripTypes = tripTypes
+            self.recentServices = recentServices
+            self.activeReminders = activeReminders
+            self.recentInspections = recentInspections
+            self.recentMaintenanceExpenses = recentMaintenanceExpenses
+        }
     }
 
     /// Maskelenmiş, deterministik JSON string döndürür.
@@ -33,20 +135,64 @@ enum MaintenancePlanPayloadBuilder {
                 routeType: input.routeType,
                 fuelConsumptionCity: input.fuelConsumptionCity,
                 fuelConsumptionHighway: input.fuelConsumptionHighway,
-                primaryUser: input.primaryUser,
-                tripTypes: input.tripTypes
+                tripTypes: input.tripTypes.prefix(8).map { clipped($0, limit: 80) }
             ),
             vehicle: .init(
-                brand: input.brand,
-                model: input.model,
+                brand: clipped(input.brand, limit: 80),
+                model: clipped(input.model, limit: 80),
                 year: input.year,
+                vehicleType: input.vehicleType,
+                bodyType: input.bodyType.map { clipped($0, limit: 60) },
+                engineCC: input.engineCC,
                 fuelType: input.fuelType,
-                odometer: input.odometer
+                transmissionType: input.transmissionType,
+                usageType: input.usageType,
+                odometer: input.odometer,
+                odometerIsEstimate: input.odometerIsEstimate,
+                odometerUpdatedAt: input.odometerUpdatedAt
             ),
-            recentServices: input.recentServices.prefix(5).map { .init(title: $0.title, km: $0.km) }
+            recentServices: input.recentServices.prefix(10).map {
+                .init(
+                    title: clipped($0.title, limit: 100),
+                    date: $0.date,
+                    km: $0.km,
+                    oilType: $0.oilType.map { clipped($0, limit: 80) },
+                    notes: nonEmptyClipped($0.notes, limit: 240),
+                    nextDueDate: $0.nextDueDate,
+                    nextDueOdometer: $0.nextDueOdometer
+                )
+            },
+            activeReminders: input.activeReminders.prefix(8).map {
+                .init(
+                    title: clipped($0.title, limit: 100),
+                    type: $0.type,
+                    dueDate: $0.dueDate,
+                    dueOdometer: $0.dueOdometer,
+                    priority: $0.priority,
+                    state: $0.state,
+                    notes: nonEmptyClipped($0.notes, limit: 180)
+                )
+            },
+            recentInspections: input.recentInspections.prefix(3).map {
+                .init(
+                    date: $0.date,
+                    km: $0.km,
+                    summary: clipped($0.summary, limit: 400),
+                    verificationStatus: $0.verificationStatus
+                )
+            },
+            recentMaintenanceExpenses: input.recentMaintenanceExpenses.prefix(8).map {
+                .init(
+                    category: $0.category,
+                    date: $0.date,
+                    km: $0.km,
+                    note: nonEmptyClipped($0.note, limit: 180)
+                )
+            }
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
         let json = (try? encoder.encode(payload)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
         // Savunma amaçlı maskeleme — JSON string değerleri içindeki olası PII gizlenir.
         return PIIMaskingService.mask(json)
@@ -58,23 +204,68 @@ enum MaintenancePlanPayloadBuilder {
             let routeType: String?
             let fuelConsumptionCity: Double?
             let fuelConsumptionHighway: Double?
-            let primaryUser: String?
             let tripTypes: [String]
         }
         struct Vehicle: Encodable {
             let brand: String
             let model: String
             let year: Int?
+            let vehicleType: String
+            let bodyType: String?
+            let engineCC: Int?
             let fuelType: String
+            let transmissionType: String?
+            let usageType: String
             let odometer: Int
+            let odometerIsEstimate: Bool
+            let odometerUpdatedAt: Date?
         }
         struct Service: Encodable {
             let title: String
+            let date: Date?
             let km: Int?
+            let oilType: String?
+            let notes: String?
+            let nextDueDate: Date?
+            let nextDueOdometer: Int?
+        }
+        struct ActiveReminder: Encodable {
+            let title: String
+            let type: String
+            let dueDate: Date?
+            let dueOdometer: Int?
+            let priority: String
+            let state: String
+            let notes: String?
+        }
+        struct Inspection: Encodable {
+            let date: Date
+            let km: Int?
+            let summary: String
+            let verificationStatus: String
+        }
+        struct MaintenanceExpense: Encodable {
+            let category: String
+            let date: Date
+            let km: Int?
+            let note: String?
         }
         let profile: Profile
         let vehicle: Vehicle
         let recentServices: [Service]
+        let activeReminders: [ActiveReminder]
+        let recentInspections: [Inspection]
+        let recentMaintenanceExpenses: [MaintenanceExpense]
+    }
+
+    private static func clipped(_ value: String, limit: Int) -> String {
+        String(value.trimmingCharacters(in: .whitespacesAndNewlines).prefix(limit))
+    }
+
+    private static func nonEmptyClipped(_ value: String?, limit: Int) -> String? {
+        guard let value else { return nil }
+        let clipped = clipped(value, limit: limit)
+        return clipped.isEmpty ? nil : clipped
     }
 }
 

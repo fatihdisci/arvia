@@ -20,10 +20,10 @@ struct AIConsentView: View {
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
                         bullet(icon: "text.redaction",
                                title: "Ne gönderilir?",
-                               body: "Yalnızca maskelenmiş metin. TC kimlik, plaka, IBAN ve telefon gibi bilgiler cihazından çıkmadan önce otomatik olarak [MASKED] ile gizlenir.")
+                               body: "Fiş okuma için maskelenmiş OCR metni; bakım planı için araç özellikleri, kullanım profili, bakım/hatırlatıcı kayıtları ve ekspertiz özetleri gönderilir. TC kimlik, plaka, IBAN ve telefon gibi bilgiler cihazından çıkmadan önce [MASKED] ile gizlenir.")
                         bullet(icon: "globe",
                                title: "Nereye gider?",
-                               body: "Metin, isteği işleyen yurt dışındaki bir yapay zekâ sunucusuna iletilir. Kimliğinle eşleşen bir hesap oluşturulmaz; anonim bir cihaz kimliği kullanılır.")
+                               body: "Metin, isteği işleyen yurt dışındaki bir yapay zekâ sunucusuna iletilir. Kimliğinle eşleşen bir AI hesabı oluşturulmaz; Apple işlem numarasının geri döndürülemez özeti yalnızca kullanım kotası için tutulur.")
                         bullet(icon: "sparkles",
                                title: "Neden?",
                                body: "Fiş okuma ve bakım önerileri gibi özellikleri daha isabetli hale getirmek için. Bu özellikler olmadan da uygulama tümüyle çalışır.")

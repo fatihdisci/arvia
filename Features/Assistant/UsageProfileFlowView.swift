@@ -832,11 +832,24 @@ struct AssistantView: View {
                     .font(.caption)
                     .foregroundColor(color)
             }
+            if let confidence = suggestion.confidence {
+                Label(confidenceLabel(confidence), systemImage: "checkmark.shield")
+                    .font(AppTypography.captionMedium)
+                    .foregroundColor(confidenceColor(confidence))
+            }
             Text(suggestion.message)
                 .font(AppTypography.secondary)
                 .foregroundColor(AppColors.textSecondary)
-                .lineLimit(3)
+                .lineLimit(4)
                 .fixedSize(horizontal: false, vertical: true)
+
+            if let evidence = suggestion.evidence?.first, !evidence.isEmpty {
+                Label(evidence, systemImage: "scope")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textTertiary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             if suggestion.suggestedIntervalKm != nil || suggestion.suggestedIntervalMonths != nil {
                 HStack(spacing: AppSpacing.xs) {
@@ -1002,6 +1015,22 @@ struct AssistantView: View {
         case "important": return AppColors.critical
         case "warning": return AppColors.warning
         default: return AppColors.accentPrimary
+        }
+    }
+
+    private func confidenceLabel(_ confidence: String) -> String {
+        switch confidence {
+        case "high": return "Yüksek güven"
+        case "medium": return "Orta güven"
+        default: return "Sınırlı güven"
+        }
+    }
+
+    private func confidenceColor(_ confidence: String) -> Color {
+        switch confidence {
+        case "high": return AppColors.success
+        case "medium": return AppColors.warning
+        default: return AppColors.textTertiary
         }
     }
 

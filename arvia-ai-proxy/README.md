@@ -40,7 +40,7 @@ The iOS client reads the active verified StoreKit 2 transaction without calling
 API. Legacy `appReceipt` requests remain temporarily supported during rollout.
 
 - `receipt_parse` → `{ "result": { date, total, vendor, odometer, category, isMaintenanceInvoice, lineItems[] }, "cached": bool }`
-- `maintenance_plan` → `{ "result": [ up to 3 { title, message, severity, suggestedIntervalKm?, suggestedIntervalMonths? } ], "cached": bool }`
+- `maintenance_plan` → `{ "result": [ up to 3 { title, message, severity, suggestedIntervalKm?, suggestedIntervalMonths?, evidence[], confidence, recommendedAction, limitation? } ], "cached": bool }`. `suggestedIntervalKm` is remaining distance from the current odometer, not a generic service interval.
 
 Error shape (all non-2xx): `{ "error": { "code": "<machine_readable>" , ... } }`
 Notable codes: `unauthorized` (401), `pro_entitlement_required` (403),
@@ -126,7 +126,7 @@ curl -s -X POST "$URL/api/complete" \
   -H "X-Arvia-Client: $SECRET" \
   -H "Content-Type: application/json" \
   -d '{"task":"maintenance_plan","transactionId":"'$TRANSACTION_ID'",
-       "payload":"{\"fuelType\":\"lpg\",\"dailyKm\":80,\"routeType\":\"city\",\"ageYears\":7,\"odometer\":95000}"}'
+       "payload":"{\"vehicle\":{\"brand\":\"Toyota\",\"model\":\"Corolla\",\"year\":2019,\"fuelType\":\"gasoline\",\"odometer\":95000,\"odometerIsEstimate\":false},\"profile\":{\"dailyKmBand\":\"from50to100\",\"routeType\":\"city\"},\"recentServices\":[{\"title\":\"Yağ Değişimi\",\"date\":\"2026-05-01T09:00:00Z\",\"km\":90000,\"nextDueOdometer\":100000}],\"activeReminders\":[],\"recentInspections\":[],\"recentMaintenanceExpenses\":[]}"}'
 ```
 
 Expected:
@@ -134,8 +134,7 @@ Expected:
 ```json
 {
   "result": [
-    { "title": "Triger seti kontrolü", "message": "100.000 km'ye yaklaşıyorsun; triger seti kontrol edilmeli.", "severity": "important", "suggestedIntervalKm": 5000, "suggestedIntervalMonths": null },
-    { "title": "Subap ayarı", "message": "LPG kullanımı subap ayarını daha sık gerektirir.", "severity": "warning", "suggestedIntervalKm": null, "suggestedIntervalMonths": 12 }
+    { "title": "Yağ bakım vadesini takip et", "message": "Son yağ değişimi 90.000 km'de kayıtlı ve sonraki vade 100.000 km olarak girilmiş.", "severity": "warning", "suggestedIntervalKm": 5000, "suggestedIntervalMonths": null, "evidence": ["Mevcut kilometre 95.000 km", "Yağ değişimi 90.000 km'de kayıtlı", "Kayıtlı sonraki vade 100.000 km"], "confidence": "high", "recommendedAction": "5.000 km içinde yağ bakım kaydını kontrol et ve gerekirse randevu oluştur.", "limitation": "Girilen vadenin üretici servis planıyla uyumunu kullanım kılavuzundan doğrula." }
   ],
   "cached": false
 }

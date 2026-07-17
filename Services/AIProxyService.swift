@@ -34,6 +34,37 @@ struct MaintenancePlanSuggestion: Codable, Equatable {
     let severity: String
     let suggestedIntervalKm: Int?
     let suggestedIntervalMonths: Int?
+    /// Modelin öneriyi hangi somut araç verilerine dayandırdığını gösterir.
+    /// Optional tutulur: eski cache ve 1.0.x proxy cevapları decode edilmeye devam eder.
+    let evidence: [String]?
+    /// high / medium / low. Belirsizlik kullanıcıdan gizlenmez.
+    let confidence: String?
+    /// Kullanıcının doğrudan uygulayabileceği kısa sonraki adım.
+    let recommendedAction: String?
+    /// Eksik veri veya üretici planı gereksinimi gibi önerinin sınırı.
+    let limitation: String?
+
+    init(
+        title: String,
+        message: String,
+        severity: String,
+        suggestedIntervalKm: Int?,
+        suggestedIntervalMonths: Int?,
+        evidence: [String]? = nil,
+        confidence: String? = nil,
+        recommendedAction: String? = nil,
+        limitation: String? = nil
+    ) {
+        self.title = title
+        self.message = message
+        self.severity = severity
+        self.suggestedIntervalKm = suggestedIntervalKm
+        self.suggestedIntervalMonths = suggestedIntervalMonths
+        self.evidence = evidence
+        self.confidence = confidence
+        self.recommendedAction = recommendedAction
+        self.limitation = limitation
+    }
 }
 
 // MARK: - Errors
