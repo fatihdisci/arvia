@@ -48,6 +48,8 @@ struct ContextualTipBanner: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
+                        .frame(width: AppSpacing.minimumTapTarget, height: AppSpacing.minimumTapTarget)
+                        .contentShape(Rectangle())
                 }
                 .accessibilityLabel("Kapat")
             }

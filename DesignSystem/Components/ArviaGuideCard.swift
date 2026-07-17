@@ -42,6 +42,8 @@ struct VehicleInsightCard: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(AppColors.textTertiary)
                             .font(.title3)
+                            .frame(width: AppSpacing.minimumTapTarget, height: AppSpacing.minimumTapTarget)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Öneriyi kapat")

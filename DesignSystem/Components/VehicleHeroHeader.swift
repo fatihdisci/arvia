@@ -8,6 +8,7 @@ import SwiftUI
 
 struct VehicleHeroHeader: View {
     let vehicle: Vehicle
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
     var body: some View {
@@ -26,8 +27,13 @@ struct VehicleHeroHeader: View {
         .padding(.horizontal, AppSpacing.screenMarginH)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 10)
-        .animation(.easeOut(duration: 0.32), value: appeared)
-        .onAppear { appeared = true }
+        .onAppear {
+            if reduceMotion {
+                appeared = true
+            } else {
+                withAnimation(.easeOut(duration: 0.32)) { appeared = true }
+            }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityText)
     }

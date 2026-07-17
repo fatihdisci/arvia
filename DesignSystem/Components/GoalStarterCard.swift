@@ -46,7 +46,7 @@ struct GoalStarterCard: View {
                     Image(systemName: "xmark")
                         .font(.caption.weight(.semibold))
                         .foregroundColor(AppColors.textTertiary)
-                        .frame(width: 28, height: 28)
+                        .frame(width: AppSpacing.minimumTapTarget, height: AppSpacing.minimumTapTarget)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

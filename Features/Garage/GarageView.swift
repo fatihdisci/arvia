@@ -9,6 +9,7 @@ import PhotosUI
 
 struct GarageView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var paywallService: PaywallService
     @EnvironmentObject private var navigationRouter: AppNavigationRouter
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
@@ -365,6 +366,10 @@ struct GarageView: View {
                               : AppColors.backgroundSecondary.opacity(0.4))
                 )
                 .foregroundColor(enabled ? AppColors.textPrimary : AppColors.textTertiary)
+                // Görsel daire 36pt kalsın (tasarım kararı) ama dokunma alanı
+                // 44pt minimuma çıkarılsın — contentShape görünümü değiştirmez.
+                .frame(width: AppSpacing.minimumTapTarget, height: AppSpacing.minimumTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
@@ -486,7 +491,6 @@ struct GarageView: View {
                 .padding(.bottom, AppSpacing.md)
                 .opacity(hasAppeared ? 1 : 0)
                 .offset(y: hasAppeared ? 0 : 12)
-                .animation(.easeOut(duration: 0.35), value: hasAppeared)
             }
         }
         .overlay(alignment: .bottomTrailing) {
@@ -497,7 +501,13 @@ struct GarageView: View {
                 showReceiptProBadge: !paywallService.canUseReceiptScan
             )
         }
-        .onAppear { hasAppeared = true }
+        .onAppear {
+            if reduceMotion {
+                hasAppeared = true
+            } else {
+                withAnimation(.easeOut(duration: 0.35)) { hasAppeared = true }
+            }
+        }
         .onChange(of: activeVehicles.count) { _, newCount in
             guard newCount > 0 else { return }
             if let id = activeVehicleId, !activeVehicles.contains(where: { $0.id == id }) {
