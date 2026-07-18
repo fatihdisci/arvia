@@ -69,6 +69,11 @@ enum DemoDataSeeder {
         )
         context.insert(moto)
 
+        // Ekran görüntüleri için hero kartlarının dolu görünmesi adına, tasarım
+        // paletiyle (AMOLED siyah + turkuaz) render edilmiş araç görselleri ekle.
+        attachDemoPhoto(to: car, symbolName: "car.side.fill")
+        attachDemoPhoto(to: moto, symbolName: "motorcycle")
+
         let allVehicles = [car, moto]
 
         // MARK: - Hatırlatıcılar (her araç için)
@@ -297,6 +302,71 @@ enum DemoDataSeeder {
         return 2
     }
 
+    // MARK: - Demo Vehicle Photo
+    /// Araç için tasarım paletiyle (AMOLED siyah zemin + turkuaz vurgu, araç
+    /// silueti + plaka) bir "fotoğraf" render eder ve araca bağlar. Ekran
+    /// görüntülerinde hero kartı boş placeholder yerine dolu görünsün diye.
+    /// Gerçek fotoğraf değildir; kullanıcı istediğinde kendi fotoğrafıyla değiştirebilir.
+    private static func attachDemoPhoto(to vehicle: Vehicle, symbolName: String) {
+        let size = CGSize(width: 1200, height: 800)
+        let accent = UIColor(red: 0x00/255, green: 0xE5/255, blue: 0xC7/255, alpha: 1)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+
+            // Zemin — üstte hafif turkuaz ışıltı, altta AMOLED siyah dikey gradyan.
+            let colors = [
+                UIColor(red: 0x0E/255, green: 0x14/255, blue: 0x14/255, alpha: 1).cgColor,
+                UIColor(red: 0x05/255, green: 0x07/255, blue: 0x07/255, alpha: 1).cgColor,
+            ] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
+                cg.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
+            }
+
+            // Turkuaz yumuşak ışıltı (silüetin arkasında).
+            if let glow = CGGradient(
+                colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                colors: [accent.withAlphaComponent(0.22).cgColor, accent.withAlphaComponent(0).cgColor] as CFArray,
+                locations: [0, 1]
+            ) {
+                let center = CGPoint(x: size.width / 2, y: size.height * 0.42)
+                cg.drawRadialGradient(glow, startCenter: center, startRadius: 0,
+                                      endCenter: center, endRadius: size.width * 0.42, options: [])
+            }
+
+            // Araç silueti (SF Symbol).
+            let config = UIImage.SymbolConfiguration(pointSize: 380, weight: .regular)
+            let symbol = (UIImage(systemName: symbolName, withConfiguration: config)
+                          ?? UIImage(systemName: "car.fill", withConfiguration: config))?
+                .withTintColor(accent.withAlphaComponent(0.92), renderingMode: .alwaysOriginal)
+            if let symbol {
+                let maxW = size.width * 0.5
+                let scale = min(maxW / symbol.size.width, 1)
+                let drawSize = CGSize(width: symbol.size.width * scale, height: symbol.size.height * scale)
+                let origin = CGPoint(x: (size.width - drawSize.width) / 2,
+                                     y: size.height * 0.40 - drawSize.height / 2)
+                symbol.draw(in: CGRect(origin: origin, size: drawSize))
+            }
+
+            // Plaka metni (alt orta).
+            let plate = vehicle.plate as NSString
+            let plateFont = UIFont(name: "JetBrainsMono-Bold", size: 66)
+                ?? UIFont.monospacedSystemFont(ofSize: 66, weight: .bold)
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: plateFont,
+                .foregroundColor: UIColor.white.withAlphaComponent(0.92),
+                .kern: 4,
+            ]
+            let textSize = plate.size(withAttributes: attrs)
+            plate.draw(at: CGPoint(x: (size.width - textSize.width) / 2, y: size.height * 0.72),
+                       withAttributes: attrs)
+        }
+
+        guard let saved = try? VehiclePhotoStorageService.shared.savePhotoReturningData(image) else { return }
+        vehicle.photoFileName = saved.fileName
+        vehicle.photoData = saved.data
+    }
+
     /// Tüm verileri siler.
     static func deleteAll(context: ModelContext) {
         if let sales = try? context.fetch(FetchDescriptor<SaleFile>()) { for s in sales { context.delete(s) } }
@@ -311,6 +381,8 @@ enum DemoDataSeeder {
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("VehicleDocuments")
         try? FileManager.default.removeItem(at: docDir)
+        // Demo araç fotoğraflarını da temizle (yeniden seed'de yetim dosya kalmasın).
+        VehiclePhotoStorageService.shared.deleteAllPhotos()
         try? context.save()
         UINotificationFeedbackGenerator().notificationOccurred(.warning)
     }
