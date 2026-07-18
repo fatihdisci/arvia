@@ -410,7 +410,7 @@ final class RetentionNotificationService {
 
         center.add(request) { error in
             if let error = error {
-                print("RetentionNotificationService: schedule error for \(id): \(error)")
+                Self.logger.error("Retention notification schedule failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }

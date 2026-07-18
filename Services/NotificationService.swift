@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import OSLog
 
 // MARK: - Notification Service
 // Yerel bildirimleri yönetir: izin isteme, schedule, iptal.
@@ -7,6 +8,7 @@ import UserNotifications
 
 final class NotificationService {
     static let shared = NotificationService()
+    private static let logger = Logger(subsystem: "com.ruhsatim.app", category: "Notifications")
 
     private let center = UNUserNotificationCenter.current()
     private var isAuthorized = false
@@ -90,7 +92,7 @@ final class NotificationService {
             do {
                 try await center.add(request)
             } catch {
-                print("NotificationService: schedule error for \(identifier): \(error)")
+                Self.logger.error("Notification schedule failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
